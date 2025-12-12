@@ -1,0 +1,9 @@
+H:\utils\Repos\IL2GB_VREM\clone_pipeline.cpp;H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\x64\Debug\clone_pipeline.obj
+H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\get_settings_from_uniforms.cpp;H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\x64\Debug\get_settings_from_uniforms.obj
+H:\utils\Repos\IL2GB_VREM\init_cleanup.cpp;H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\x64\Debug\init_cleanup.obj
+H:\utils\Repos\IL2GB_VREM\load_shader_code.cpp;H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\x64\Debug\load_shader_code.obj
+H:\utils\Repos\IL2GB_VREM\misc.cpp;H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\x64\Debug\misc.obj
+H:\utils\Repos\IL2GB_VREM\on_init_pipeline.cpp;H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\x64\Debug\on_init_pipeline.obj
+H:\utils\Repos\IL2GB_VREM\on_present_reload.cpp;H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\x64\Debug\on_present_reload.obj
+H:\utils\Repos\IL2GB_VREM\addon_logs.cpp;H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\x64\Debug\addon_logs.obj
+H:\utils\Repos\IL2GB_VREM\save_pipelines.cpp;H:\utils\Repos\IL2GB_VREM\IL2GB_VREM\x64\Debug\save_pipelines.obj

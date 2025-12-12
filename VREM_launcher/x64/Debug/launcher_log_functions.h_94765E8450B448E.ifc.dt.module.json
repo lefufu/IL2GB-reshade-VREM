@@ -1,0 +1,22 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\launcher_log_functions.obj",
+            "outputs": [
+                "x64\\Debug\\launcher_log_functions.h_94765E8450B448E.ifc.dt.module.json",
+                "x64\\Debug\\launcher_log_functions.h_94765E8450B448E.ifc.dt.d.json",
+                "x64\\Debug\\launcher_log_functions.h.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "H:\\utils\\Repos\\IL2GB_VREM\\VREM_launcher\\launcher_log_functions.h",
+                    "source-path": "h:\\utils\\repos\\il2gb_vrem\\vrem_launcher\\launcher_log_functions.h",
+                    "lookup-method": "absolute"
+                }
+            ],
+            "requires": []
+        }
+    ]
+}
