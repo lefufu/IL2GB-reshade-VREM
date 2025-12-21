@@ -91,11 +91,23 @@ uint32_t calculateShaderHash(const reshade::api::shader_desc& desc)
 /// check if a hash is in the mod list
 /// 
 /// 
-std::optional<Shader_Definition> is_in_mod_hash(uint32_t hash) {
-	auto it = shader_by_hash.find(hash);
+std::optional<Shader_Definition> is_in_mod_hash(uint32_t hash[], uint32_t subobject_count) {
+	
+	bool found = false;
+	Shader_Definition foundShader;
 
-	if (it != shader_by_hash.end()) {
-		return it->second;
+	for (uint32_t i = 0; i < subobject_count; i++)
+	{
+		
+		auto it = shader_by_hash.find(hash[i]);
+		if (it != shader_by_hash.end()) {
+			foundShader = it->second;
+			found = true;
+		}
+	}
+	if (found)
+	{
+		return foundShader;
 	}
 	else
 	{

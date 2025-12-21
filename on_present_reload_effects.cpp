@@ -5,7 +5,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-//  VREM settings definition
+//  VREM mod "on present" and "on_reload" call => read settings from uniform
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -41,36 +41,58 @@
 // 
 /////////////////////////////////////////////////////////////////////////
 
-
-#include <unordered_map>
-#include <string>
+#include <reshade.hpp>
+#include <thread>
 
 #include "loader_addon_shared.h"
+#include "VREM_settings.h"
+#include "addon_functions.h"
+#include "addon_logs.h"
 
-extern bool addon_init;
-extern float VREM_setting[];
-extern std::unordered_map<std::string, int> settings_mapping;
+using namespace reshade::api;
 
-extern SharedState* g_shared_state;
+extern "C" {
+    //*******************************************************************************
+    _declspec(dllexport) void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
+    {
 
-// mod setting
-#define VREM_SETTINGS_NAME "VREM_settings.fx"
+        // to get VREM settings => read from uniform values
+        if (g_shared_state->overlay_is_open || addon_init == true) {
+            // Récupérer l'état actuel des uniforms
+            get_settings_from_uniforms(runtime);
+            addon_init = false;
 
-// settings will be in a table, to use numbers instead of string to get parameters values
-// mapping value are in get_settings_from_uniforms
+        }
+        /*
+        // fps limiter function
+        // if (g_shared_state->s_fps_limit <= 0)
+        if (VREM_setting[DUMMY] == 0)
+            return;
 
-constexpr uint8_t PARAMS_NB = 10;
+        const auto time_per_frame = std::chrono::high_resolution_clock::duration(std::chrono::seconds(1)) / int(VREM_setting[FPS_LIMIT]);
+        const auto next_time_point = g_shared_state->s_last_time_point + time_per_frame;
 
+        while (next_time_point > std::chrono::high_resolution_clock::now())
+            std::this_thread::sleep_for(std::chrono::high_resolution_clock::duration(std::chrono::milliseconds(1)));
 
-constexpr uint8_t DUMMY = 1;
-constexpr uint8_t DEFAULT = 0;
-constexpr uint8_t ROTOR = 1;
-constexpr uint8_t IHADSS = 2;
-constexpr uint8_t COLOR = 3;
-constexpr uint8_t LABEL = 4;
-constexpr uint8_t NS430 = 5;
-constexpr uint8_t REFLECT = 6;
-constexpr uint8_t NVG = 7;
-constexpr uint8_t EFFECTS = 8;
-constexpr uint8_t FPS_LIMIT = 9;
+        g_shared_state->s_last_time_point = next_time_point;
+        */
 
+		// generate filtered shader list and clone pipelines if needed
+        if (g_shared_state->filtered_pipeline_to_setup) {
+			g_shared_state->filtered_pipeline_to_setup = false;
+			setup_filtered_pipelines();
+ 
+		}
+    }
+
+    //*******************************************************************************
+    _declspec(dllexport) void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)
+    {
+
+        log_effect_reloaded();
+
+        // reload all uniforms
+        get_settings_from_uniforms(runtime);
+    }
+}

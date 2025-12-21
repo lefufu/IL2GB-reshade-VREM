@@ -50,14 +50,19 @@
 extern void get_settings_from_uniforms(reshade::api::effect_runtime* runtime);
 // extern uint32_t calculateShaderHash(void* shaderData);
 extern uint32_t calculateShaderHash(const reshade::api::shader_desc& desc);
-extern std::optional<Shader_Definition> is_in_mod_hash(uint32_t hash);
-extern bool load_shader_code(std::vector<std::vector<uint8_t>>& shaderCode, wchar_t filename[]);
-extern void clone_pipeline(reshade::api::device* device, reshade::api::pipeline_layout layout, uint32_t subobjectCount, const reshade::api::pipeline_subobject* subobjects, reshade::api::pipeline pipeline, std::vector<std::vector<uint8_t>>& ReplaceshaderCode, Shader_Definition* newShader);
+extern std::optional<Shader_Definition> is_in_mod_hash(uint32_t hash[], uint32_t subobject_count);
+extern bool load_shader_code(std::unordered_map<uint32_t, std::vector<uint8_t>>& shader_cache, uint32_t hash, const wchar_t filename[]);
+extern reshade::api::pipeline clone_pipeline(reshade::api::device* device, reshade::api::pipeline_layout layout, uint32_t subobjectCount, const reshade::api::pipeline_subobject* subobjects, reshade::api::pipeline pipeline, uint32_t hash[]);
 extern void save_pipeline_in_list(reshade::api::device* device, reshade::api::pipeline_layout layout, uint32_t subobject_count, const reshade::api::pipeline_subobject* subobjects, reshade::api::pipeline pipeline);
 extern save_pipeline* find__pipeline_per_handle(uint64_t handle);
 extern std::vector<save_pipeline*> find__pipelines_per_hash(uint32_t hash);
 extern size_t number_of_saved_pipeline();
 extern void delete_saved_pipeline(save_pipeline& p);
 extern void delete_all_saved_pipelines();
+// extern bool hasMatch(const std::vector<uint32_t>& list, const uint32_t* array, size_t array_size);
+extern bool setup_filtered_pipelines();
+extern void read_all_shader_code();
+extern void delete_cloned_pipelines(reshade::api::device* dev);
+
 
 

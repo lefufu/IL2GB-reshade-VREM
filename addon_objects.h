@@ -118,6 +118,8 @@ struct Shader_Definition {
 	uint32_t draw_count; //used only for action "skip"
 	reshade::api::pipeline substitute_pipeline; //cloned pipeline/shader with code changed
 	uint32_t hash;
+	std::vector<uint32_t> VREM_options;
+
 
 	// Constructor
 
@@ -134,7 +136,15 @@ struct Shader_Definition {
 		
 	}
 
+	// Constructeur avec paramètres (avec liste)
+	Shader_Definition(uint32_t act, Feature feat, const wchar_t* filename, uint32_t count,
+		std::initializer_list<uint32_t> list)
+		: action(act), feature(feat), draw_count(count), hash(0), VREM_options(list) {
+		wcsncpy_s(replace_filename, filename, MAXNAMECHAR);
+	}
+
 };
 
 extern std::unordered_map<uint32_t, Shader_Definition> shader_by_hash;
 extern std::unordered_map<uint64_t, Shader_Definition> filtered_pipeline;
+extern std::unordered_map<uint64_t, reshade::api::pipeline> cloned_pipeline_list;

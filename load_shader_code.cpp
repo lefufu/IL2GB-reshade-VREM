@@ -5,7 +5,9 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-// load shader code : read shader from .cso file
+// load shader code : functions to 
+//		read mod shader to replace from .cso file 
+//		delete shader code cached
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -49,45 +51,74 @@
 #include "config.hpp"
 #include "addon_logs.h"
 
+//shader code cache to keep loaded code in memory, avoid mutliple load of same shader, handle option change without reloading all cso key=hash of shader
+std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;
+
 using namespace reshade::api;
 
 // *******************************************************************************************************
 // load_shader_code() : load shader code from cso file
 // 
-bool load_shader_code(std::vector<std::vector<uint8_t>>& shaderCode, wchar_t filename[])
+//bool load_shader_code(std::vector<std::vector<uint8_t>>& shaderCode, wchar_t filename[])
+
+bool load_shader_code(std::unordered_map<uint32_t, std::vector<uint8_t>>& shader_cache,
+    uint32_t hash,
+    const wchar_t filename[])
 {
+    // Vérifier si déjà en cache
+    if (shader_cache.find(hash) != shader_cache.end())
+        return true; // Déjà chargé
 
-	// Prepend executable file name to image files
-	wchar_t file_prefix[MAX_PATH] = L"";
-	GetModuleFileNameW(nullptr, file_prefix, ARRAYSIZE(file_prefix));
+    // Prepend executable file name to image files
+    wchar_t file_prefix[MAX_PATH] = L"";
+    GetModuleFileNameW(nullptr, file_prefix, ARRAYSIZE(file_prefix));
+    std::filesystem::path replace_path = file_prefix;
+    replace_path = replace_path.parent_path();
+    replace_path /= RESHADE_ADDON_SHADER_LOAD_DIR;
+    replace_path /= filename;
 
-	std::filesystem::path replace_path = file_prefix;
-	replace_path = replace_path.parent_path();
-	replace_path /= RESHADE_ADDON_SHADER_LOAD_DIR;
+    // Check if a replacement file for this shader hash exists
+    if (!std::filesystem::exists(replace_path))
+        return false;
 
-	replace_path /= filename;
+    std::ifstream file(replace_path, std::ios::binary);
+    if (!file)
+    {
+		log_shader_code_error(filename, hash);
+        return false;
+    }
+        
 
-	// Check if a replacement file for this shader hash exists and if so, overwrite the shader code with its contents
-	if (!std::filesystem::exists(replace_path))
-		return false;
+    file.seekg(0, std::ios::end);
+    std::vector<uint8_t> shader_code(static_cast<size_t>(file.tellg()));
+    file.seekg(0, std::ios::beg).read(reinterpret_cast<char*>(shader_code.data()), shader_code.size());
 
-	std::ifstream file(replace_path, std::ios::binary);
-	file.seekg(0, std::ios::end);
-	std::vector<uint8_t> shader_code(static_cast<size_t>(file.tellg()));
-	file.seekg(0, std::ios::beg).read(reinterpret_cast<char*>(shader_code.data()), shader_code.size());
+    log_shader_code_readed(filename, hash, shader_code.size());
 
-	// Keep the shader code memory alive after returning from this 'create_pipeline' event callback
-	// It may only be freed after the 'init_pipeline' event was called for this pipeline
-	shaderCode.push_back(std::move(shader_code));
+    // Stocker dans la map
+    shader_cache[hash] = std::move(shader_code);
 
-	log_shader_code_readed(filename, shaderCode);
+    return true;
+}
 
-	/*
-	// log info
-	std::stringstream s;
-	s << "Shader readed, size = " << (void*)shaderCode.size() << ")";
-	reshade::log::message(reshade::log::level::info, s.str().c_str());
-	*/
 
-	return true;
+// *******************************************************************************************************
+// read_all_shader_code() : load all .cso shader code from the shader_by_hash list
+// 
+
+void read_all_shader_code()
+{
+	for (const auto& [hash, shader_def] : shader_by_hash)
+	{
+		// read code only for replace options
+		if (shader_def.action & action_replace || shader_def.action & action_replace_bind)
+		{
+			// check if a replacement filename is specified
+			if (shader_def.replace_filename[0] != L'\0')
+			{
+				// Vos actions ici
+                load_shader_code(shader_code_cache, hash, shader_def.replace_filename);
+			}
+		}
+	}
 }

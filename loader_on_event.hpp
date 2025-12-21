@@ -65,7 +65,7 @@ typedef void (*InitFunc)(
     SharedState*
     );
 
-typedef void (*CleanupFunc)(PersistentPipelineData*);
+typedef void (*CleanupFunc)(reshade::api::device*, PersistentPipelineData*);
 
 //*********************************************************************************************
 // function mapping defintion (!!! they should also be handled in VREMHotReloader for a working mapping !!!)
@@ -226,7 +226,7 @@ private:
         if (!addon_module) return;
 
         if (funcs.cleanup) {
-            funcs.cleanup(&persistent_data);
+            funcs.cleanup(cached_device, &persistent_data);
         }
 
 

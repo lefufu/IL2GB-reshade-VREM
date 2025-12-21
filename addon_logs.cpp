@@ -53,14 +53,21 @@
 void log_addon_init() {
 	if (g_shared_state->debug)
 	{
-		reshade::log::message(reshade::log::level::info, "VREM addon : initialization");
+		reshade::log::message(reshade::log::level::info, "addon - initialization");
 	}
 }
 
-void log_addon_cleanup() {
+void log_addon_cleanup_cloned() {
 	if (g_shared_state->debug)
 	{
-		reshade::log::message(reshade::log::level::info, "VREM addon : cleaning up");
+		reshade::log::message(reshade::log::level::info, "addon - cleaning up cloned pipelines");
+	}
+}
+
+void log_addon_cleanup_filtered() {
+	if (g_shared_state->debug)
+	{
+		reshade::log::message(reshade::log::level::info, "addon - cleaning up filtered pipelines");
 	}
 }
 
@@ -86,7 +93,7 @@ void log_uniform(std::string effect_name, std::string uniform_name, float unifor
 void log_effect_reloaded() {
 	if (g_shared_state->debug)
 	{
-		reshade::log::message(reshade::log::level::info, "VREM addon :effect reloaded => update settings from uniforms");
+		reshade::log::message(reshade::log::level::info, "addon - effect reloaded => update settings from uniforms");
 	}
 }
 
@@ -95,7 +102,7 @@ void log_pipeline_init(PipeLine_Definition pipeline)
 	if (g_shared_state->debug)
 	{
 		std::stringstream s;
-		s << "on_init_pipeline : added pipeline, hash = " << std::hex << pipeline.hash << ", handle = " << std::hex << pipeline.handle << ", type = " << to_string(pipeline.type) << "; ";
+		s << "addon - on_init_pipeline : added pipeline, hash = " << std::hex << pipeline.hash << ", handle = " << std::hex << pipeline.handle << ", type = " << to_string(pipeline.type) << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
@@ -106,35 +113,27 @@ void log_filtered_added(uint64_t handle) {
 		std::stringstream s;
 		//filtered_pipeline
 
-		s << "on_init_pipeline : added filtered pipeline, handle = " << std::hex << handle << ", hash = " << std::hex << filtered_pipeline[handle].hash;
-		s << ", action = " << to_string(filtered_pipeline[handle].action) << ", feature = " << to_string(filtered_pipeline[handle].feature);
-		s << ", replace_filename = " << to_string(filtered_pipeline[handle].replace_filename) << "; ";
+		s << "addon - on_present : added filtered pipeline, handle = " << std::hex << handle  << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 
 }
 
-void log_shader_code_readed(wchar_t filename[], std::vector<std::vector<uint8_t>>& shaderCode) {
+void log_shader_code_readed(const wchar_t filename[], uint32_t hash, size_t code_size) {
 	if (g_shared_state->debug)
 	{
 		std::stringstream s;
-		s << "load_shader_code() - Shader " << to_string(filename)  << " readed, size = " << (void*)shaderCode.size() << ")";
+		s << "addon - load_shader_code() - Shader " << to_string(filename)  << "hash =" << std::hex << hash  << " readed, size = " << code_size << ")";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
 
-void log_shader_code_error(pipeline pipelineHandle, uint32_t hash, wchar_t filename[])
+void log_shader_code_error(const wchar_t filename[], uint32_t hash)
 {
 
 	std::stringstream s;
-
-	s << "onInitPipeline, pipelineHandle: " << (void*)pipelineHandle.handle << "), ";
-	s << "hash to handle = " << std::hex << hash << " ;";
-	s << "!!! Error in loading code for :" << to_string(filename) << "; !!!";
-
+	s << "ERROR : addon - load_shader_code() - Shader " << to_string(filename) << "hash =" << std::hex << hash << " file not found";
 	reshade::log::message(reshade::log::level::error, s.str().c_str());
-	s.str("");
-	s.clear();
 }
 
 void log_cloning_pipeline(reshade::api::pipeline pipeline, reshade::api::pipeline_layout layout, Shader_Definition* newShader, uint32_t subobjectCount) {
@@ -145,9 +144,9 @@ void log_cloning_pipeline(reshade::api::pipeline pipeline, reshade::api::pipelin
 		std::stringstream s;
 
 		//log beginning of copy
-		s << "CLONING PIPELINE("
-			<< reinterpret_cast<void*>(pipeline.handle)
-			<< ") Layout : " << reinterpret_cast<void*>(layout.handle)
+		s << "addon - cloning pipeline ("
+			<< std::hex << pipeline.handle
+			<< ") Layout : " << std::hex << layout.handle
 			<< ", Hash = " << std::hex << newShader->hash << ";"
 			<< ", subobjects counts: " << (subobjectCount)
 			<< " )";
@@ -162,7 +161,7 @@ void  log_pipeline_clone_OK(uint64_t orig_handle, uint64_t cloned_handle) {
 	if (g_shared_state->debug)
 	{
 		std::stringstream s;
-		s << "pipeline  cloned  ("
+		s << "addon - pipeline  cloned  ("
 			<< ", orig pipeline handle: " << std::hex << orig_handle
 			<< ", cloned pipeline handle: " << std::hex << cloned_handle
 			<< ")";
@@ -175,8 +174,8 @@ void  log_pipeline_clone_OK(uint64_t orig_handle, uint64_t cloned_handle) {
 void  log_pipeline_clone_error(uint64_t orig_handle) {
 
 		std::stringstream s;
-		s << "!!! Error in cloning pipeline !!! ("
-			<< ", orig pipeline: " << reinterpret_cast<void*>(orig_handle)
+		s << "ERROR : addon - error in cloning pipeline ("
+			<< ", orig pipeline: " << std::hex << orig_handle
 			<< ")";
 		reshade::log::message(reshade::log::level::error, s.str().c_str());
 
@@ -186,7 +185,7 @@ void  log_pipeline_clone_error(uint64_t orig_handle) {
 void log_saved_pipelines_value(save_pipeline saved_pipeline) {
 	if (g_shared_state->debug)
 	{
-		uint32_t hash;
+		//uint32_t hash;
 		std::stringstream s;
 		s << "addon - saved pipeline : handle = " << std::hex << saved_pipeline.pipeline.handle << ", subobject_count = " << saved_pipeline.subobject_count << "; ";
 		// reshade::log::message(reshade::log::level::info, s.str().c_str());
@@ -195,32 +194,30 @@ void log_saved_pipelines_value(save_pipeline saved_pipeline) {
 
 		// display sub_objects
 		for (uint32_t i = 0; i < saved_pipeline.subobject_count; i++) {
-			hash = 0;
+			//hash = 0;
 			const auto& sub = saved_pipeline.subobjects[i];
 
-			switch (sub.type) {
-				case reshade::api::pipeline_subobject_type::vertex_shader: {
-					hash = saved_pipeline.vs_hash;
-					break;
-				}
-
-				case reshade::api::pipeline_subobject_type::pixel_shader: {
-					hash = saved_pipeline.ps_hash;
-					break;
-				}
-			}
-			s << "subobject[" << i << "] : hash = " << std::hex << hash << ", type = " << to_string(sub.type) << "; ";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-			s.str("");
-			s.clear();
+			s << "subobject[" << i << "] : hash = " << std::hex << saved_pipeline.hash[i] << ", type = " << to_string(sub.type) << "; ";
+			//reshade::log::message(reshade::log::level::info, s.str().c_str());
+			//s.str("");
+			//s.clear();
 		}
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
 
 void log_error_code_for_hash() {
-	reshade::log::message(reshade::log::level::error, "VREM addon : can not get code for computing shader hash");
+	reshade::log::message(reshade::log::level::error, "ERROR : addon - can not get code for computing shader hash");
 }
 
+void log_shader(reshade::api::pipeline pipeline, Shader_Definition shader_def, bool status) {
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+		s << "addon - shader identified in pipeline: " << std::hex << pipeline.handle << ", " << to_string(shader_def) << ", active : " << status << "; ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
 
 /*
 void shader_by_hash() {

@@ -97,16 +97,16 @@ void log_delete_saved_pipelines() {
 void log_saved_pipelines_value(save_pipeline saved_pipeline) {
 	if (g_shared_state.debug)
 	{
-		uint32_t hash;
+		//uint32_t hash;
 		std::stringstream s;
 		s << "VREM launcher: pipeline handle = " << std::hex << saved_pipeline.pipeline.handle << ", subobject_count = " << saved_pipeline.subobject_count << "; ";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
+		//reshade::log::message(reshade::log::level::info, s.str().c_str());
 		// s.str("");
 		// s.clear();
 
 		// display sub_objects
 		for (uint32_t i = 0; i < saved_pipeline.subobject_count; i++) {
-			hash = 0;
+			//hash = 0;
 			const auto& sub = saved_pipeline.subobjects[i];
 			/*
 			switch (sub.type) {
@@ -122,10 +122,11 @@ void log_saved_pipelines_value(save_pipeline saved_pipeline) {
 			} */
 			
 			s << "subobject[" << i << "] : hash = " << std::hex << saved_pipeline.hash[i] << ", type = " << to_string(sub.type) << "; ";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-			s.str("");
-			s.clear();
+			//reshade::log::message(reshade::log::level::info, s.str().c_str());
+			//s.str("");
+			//s.clear();
 		}
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
 

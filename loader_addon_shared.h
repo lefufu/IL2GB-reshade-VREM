@@ -124,6 +124,9 @@ struct SharedState {
     // debug flag
     bool debug = true;
 
+	// flag to setup generation of filtered pipeline list and cloning
+	bool filtered_pipeline_to_setup = true;
+
     PersistentPipelineData VREM_pipelines;
 };
 

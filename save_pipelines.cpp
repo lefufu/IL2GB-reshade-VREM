@@ -5,7 +5,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-// Save pipelines info functions
+// Save pipelines info (to clone them) functions
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.

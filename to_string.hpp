@@ -662,6 +662,46 @@ inline auto to_string(Feature feature) {
 	}
 }
 
+inline std::string to_string(const Shader_Definition& shader_def) {
+	std::stringstream ss;
+
+	ss << "Shader_Definition {";
+	ss << " hash: 0x" << std::hex << shader_def.hash;
+	ss << ", action: " << to_string(shader_def.action);
+	ss << ", feature: " << to_string(shader_def.feature);
+
+	if (shader_def.action & action_replace || shader_def.action & action_replace_bind) {
+		ss << ", replace_file: ";
+		if (shader_def.replace_filename[0] != L'\0') {
+			// Convert wchar_t to char for display
+			std::wstring ws(shader_def.replace_filename);
+			std::string filename(ws.begin(), ws.end());
+			ss << "\"" << filename << "\"";
+		}
+		else {
+			ss << "\"\"";
+		}
+	}
+
+	if (shader_def.action & action_skip) {
+		ss << ", draw_count: " << std::dec << shader_def.draw_count;
+	}
+
+	ss << ", pipeline: " << (shader_def.substitute_pipeline.handle != 0 ? "valid" : "null");
+
+	if (!shader_def.VREM_options.empty()) {
+		ss << ", VREM_options: [";
+		for (size_t i = 0; i < shader_def.VREM_options.size(); ++i) {
+			if (i > 0) ss << ", ";
+			ss << shader_def.VREM_options[i];
+		}
+		ss << "]";
+	}
+
+	ss << " }";
+	return ss.str();
+}
+
 
 // convert wchar_t* to std::string
 inline std::string to_string(const wchar_t* wcharStr) {

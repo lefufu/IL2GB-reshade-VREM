@@ -48,10 +48,13 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <algorithm>
 
 #include "addon_objects.h"
 #include "addon_logs.h"
 
+extern std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;
+std::unordered_map<uint64_t, reshade::api::pipeline> cloned_pipeline_list;
 
 using namespace reshade::api;
 
@@ -60,48 +63,41 @@ using namespace reshade::api;
 /// <summary>
 /// clone pipeline with a shader and replace code by the modded one
 /// </summary>
-/// 
-/// 
-void clone_pipeline(
+
+pipeline clone_pipeline(
     device* device,
     reshade::api::pipeline_layout layout,
     uint32_t subobjectCount,
     const reshade::api::pipeline_subobject* subobjects,
     reshade::api::pipeline pipeline,
-    std::vector<std::vector<uint8_t>>& ReplaceshaderCode,
-    Shader_Definition* newShader)
+    uint32_t hash[])
 {
 
-    struct CachedShader {
+    /*struct CachedShader {
         void* data = nullptr;
         size_t size = 0;
-    };
+    };*/
 
-    log_cloning_pipeline(pipeline, layout, newShader, subobjectCount);
-    /*
-    std::stringstream s;
-    if (debug_flag)
-    {
-        //log beginning of copy
-        s << "CLONING PIPELINE("
-            << reinterpret_cast<void*>(pipeline.handle)
-            << ") Layout : " << reinterpret_cast<void*>(layout.handle)
-            << ", Hash = " << std::hex << newShader->hash << ";"
-            << ", subobjects counts: " << (subobjectCount)
-            << " )";
-        reshade::log::message(reshade::log::level::info, s.str().c_str());
-        s.str("");
-        s.clear();
-    }
-    */
+    reshade::api::pipeline pipelineClone = {};
+
     // clone subobjects
     reshade::api::pipeline_subobject* newSubobjects = new reshade::api::pipeline_subobject[subobjectCount];
     memcpy(newSubobjects, subobjects, sizeof(reshade::api::pipeline_subobject) * subobjectCount);
 
+
     // clone the desc and change code source
     for (uint32_t i = 0; i < subobjectCount; ++i) {
         auto clonedSubObject = &newSubobjects[i];
-        CachedShader* cache;
+        //CachedShader* cache;
+
+        auto it = shader_code_cache.find(hash[i]);
+        if (it == shader_code_cache.end())
+        {
+            // Log error: shader not found in cache
+            return pipelineClone; // Retourne un pipeline invalide
+        }
+
+        const std::vector<uint8_t>& shader_code = it->second;
 
         //original Desc
         shader_desc desc = *static_cast<shader_desc*>(subobjects[i].data);
@@ -115,16 +111,10 @@ void clone_pipeline(
 
         // change code source to use the new one 
         // clone ReplaceshaderCode
-        cache = new CachedShader{
-            malloc(ReplaceshaderCode.back().size()),
-            ReplaceshaderCode.back().size()
-        };
-        memcpy(cache->data, ReplaceshaderCode.back().data(), cache->size);
-        clonedDesc.code = cache->data;
-        clonedDesc.code_size = cache->size;
+        clonedDesc.code = shader_code.data();
+        clonedDesc.code_size = shader_code.size();
 
         // create cloned pipeline
-        reshade::api::pipeline pipelineClone;
 
         bool builtPipelineOK = device->create_pipeline(
             layout,
@@ -134,28 +124,12 @@ void clone_pipeline(
         );
 
         if (builtPipelineOK) {
-            // Add cloned Pipeline to the new_shader object
-            newShader->substitute_pipeline = pipelineClone;
-
             log_pipeline_clone_OK(pipeline.handle, pipelineClone.handle);
-            /*
-            if (debug_flag)
-            {
-                s << "pipeline  cloned  ("
-                    << ", orig pipeline handle: " << reinterpret_cast<void*>(pipeline.handle)
-                    << ", cloned pipeline handle: " << reinterpret_cast<void*>(pipelineClone.handle)
-                    << ")";
-                reshade::log::message(reshade::log::level::info, s.str().c_str());
-                s.str("");
-                s.clear();
-            }
-            */
         }
         else
         {
-            // log error
-            log_pipeline_clone_error(pipeline.handle);
             /*
+            // log error
             s << "!!! Error in cloning pipeline !!! ("
                 << ", orig pipeline: " << reinterpret_cast<void*>(pipeline.handle)
                 << ")";
@@ -164,6 +138,28 @@ void clone_pipeline(
         }
 
         // free allocated memory as the shader is created or failed
-        free(cache->data);
+        // free(cache->data);
+        delete[] newSubobjects;
     }
+    return pipelineClone;
+}
+
+// *******************************************************************************************************
+/// <summary>
+/// delete cloned pipeline with a shader and replace code by the modded one
+/// </summary>
+
+void delete_cloned_pipelines(reshade::api::device* dev)
+{
+    for (auto& [handle, pipeline] : cloned_pipeline_list)
+    {
+		// check if pipeline is valid before destroying
+        if (pipeline.handle != 0)
+        {
+            dev->destroy_pipeline(pipeline);
+        }
+    }
+
+    // clean the map
+    cloned_pipeline_list.clear();
 }
