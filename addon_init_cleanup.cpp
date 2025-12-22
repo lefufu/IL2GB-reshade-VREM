@@ -122,6 +122,8 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 // structure to contain shaders/pipeline to process, regarding mod option selected
 std::unordered_map<uint64_t, Shader_Definition> filtered_pipeline;
 
+std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;
+
 
 
 extern "C" {
@@ -136,6 +138,8 @@ extern "C" {
     {
         // set the g_shared_state vaiable of the addon to the variable shared by the launcher
         g_shared_state = shared_state;
+
+		g_shared_state->device = device;
 
         log_addon_init();
         // reshade::log::message(reshade::log::level::info, "** DCS VREM: Initialisation de l'addon...");
@@ -170,18 +174,34 @@ extern "C" {
     //*******************************************************************************
 	// called when the addon is unloaded
 	//*******************************************************************************
-    __declspec(dllexport) void vrem_cleanup(reshade::api::device* device, PersistentPipelineData* persistent_data)
+    __declspec(dllexport) void vrem_cleanup(PersistentPipelineData* persistent_data)
     {
 		// delete cloned pipelines => if reload .cso may have changed
+
+		
 		log_addon_cleanup_cloned();
-		delete_cloned_pipelines(device);
 
-		// delete the filtered shader/pipeline list => if reload shader list may have changed
-		log_addon_cleanup_filtered();
-		filtered_pipeline.clear();
+		if (g_shared_state == nullptr || g_shared_state->device == nullptr)
+		{
+			log_device_null();
+		}
+		else
+		{
+			delete_cloned_pipelines(g_shared_state->device);
 
-		// to reload filtered and cloned
-		g_shared_state->filtered_pipeline_to_setup = true;
+			// clean the filtered shader/pipeline list => if reload shader list may have changed
+			log_addon_cleanup_filtered();
+			filtered_pipeline.clear();
+
+			// clean the shader code cache
+			log_cleanup_shader_code();
+			shader_code_cache.clear();
+
+			// to reload filtered and cloned
+			g_shared_state->filtered_pipeline_to_setup = true;
+		}
+
+
 
         // Nettoyer uniquement les données temporaires
         // shader_code.clear();

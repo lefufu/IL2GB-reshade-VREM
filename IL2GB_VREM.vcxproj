@@ -19,10 +19,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="IL2GB_VREM\IL2GB_VREM.cpp" />
-    <ClCompile Include="init_cleanup.cpp" />
+    <ClCompile Include="clone_pipeline.cpp" />
+    <ClCompile Include="IL2GB_VREM\get_settings_from_uniforms.cpp" />
+    <ClCompile Include="addon_init_cleanup.cpp" />
+    <ClCompile Include="load_shader_code.cpp" />
+    <ClCompile Include="misc.cpp" />
+    <ClCompile Include="on_init_pipeline.cpp" />
+    <ClCompile Include="on_present_reload_effects.cpp" />
+    <ClCompile Include="addon_logs.cpp" />
+    <ClCompile Include="save_pipelines.cpp" />
+    <ClCompile Include="setup_filtered_pipelines.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="addon_functions.h" />
+    <ClInclude Include="addon_logs.h" />
+    <ClInclude Include="addon_objects.h" />
+    <ClInclude Include="to_string.hpp" />
     <ClInclude Include="VREM_settings.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

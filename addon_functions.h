@@ -60,7 +60,7 @@ extern size_t number_of_saved_pipeline();
 extern void delete_saved_pipeline(save_pipeline& p);
 extern void delete_all_saved_pipelines();
 // extern bool hasMatch(const std::vector<uint32_t>& list, const uint32_t* array, size_t array_size);
-extern bool setup_filtered_pipelines();
+extern bool setup_filtered_pipelines(reshade::api::device* device);
 extern void read_all_shader_code();
 extern void delete_cloned_pipelines(reshade::api::device* dev);
 

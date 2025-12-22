@@ -116,6 +116,8 @@ struct PersistentPipelineData {
 
 // Structure to hold shared variables
 struct SharedState {
+    reshade::api::device* device = {};
+    
     // for fps used to test the logic
     float last_fps_limit = 0;
     std::chrono::high_resolution_clock::time_point s_last_time_point;

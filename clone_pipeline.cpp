@@ -114,33 +114,29 @@ pipeline clone_pipeline(
         clonedDesc.code = shader_code.data();
         clonedDesc.code_size = shader_code.size();
 
-        // create cloned pipeline
-
-        bool builtPipelineOK = device->create_pipeline(
-            layout,
-            subobjectCount,
-            &newSubobjects[0],
-            &pipelineClone
-        );
-
-        if (builtPipelineOK) {
-            log_pipeline_clone_OK(pipeline.handle, pipelineClone.handle);
-        }
-        else
-        {
-            /*
-            // log error
-            s << "!!! Error in cloning pipeline !!! ("
-                << ", orig pipeline: " << reinterpret_cast<void*>(pipeline.handle)
-                << ")";
-            reshade::log::message(reshade::log::level::info, s.str().c_str());
-            */
-        }
-
-        // free allocated memory as the shader is created or failed
-        // free(cache->data);
-        delete[] newSubobjects;
     }
+
+    // create cloned pipeline
+
+    bool builtPipelineOK = device->create_pipeline(
+        layout,
+        subobjectCount,
+        &newSubobjects[0],
+        &pipelineClone
+    );
+
+    if (builtPipelineOK) {
+        log_pipeline_clone_OK(pipeline.handle, pipelineClone.handle);
+    }
+    else
+    {
+        log_pipeline_clone_error(pipeline.handle);
+    }
+    // free allocated memory as the shader is created or failed
+    // free(cache->data);
+
+    delete[] newSubobjects;
+
     return pipelineClone;
 }
 
@@ -153,13 +149,14 @@ void delete_cloned_pipelines(reshade::api::device* dev)
 {
     for (auto& [handle, pipeline] : cloned_pipeline_list)
     {
-		// check if pipeline is valid before destroying
+		       
+        // check if pipeline is valid before destroying
         if (pipeline.handle != 0)
         {
+			log_delete_cloned_pipeline(pipeline.handle);
             dev->destroy_pipeline(pipeline);
         }
     }
-
     // clean the map
     cloned_pipeline_list.clear();
 }

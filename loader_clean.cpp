@@ -5,7 +5,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-//  VREM mod "on present" and "on_reload" call => read settings from uniform
+//  all functions to clean persistent objects not deleted by addon 
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -41,64 +41,68 @@
 // 
 /////////////////////////////////////////////////////////////////////////
 
-#include <reshade.hpp>
-#include <thread>
-
 #include "loader_addon_shared.h"
-#include "VREM_settings.h"
-#include "addon_functions.h"
-#include "addon_logs.h"
+#include "loader_logs.h"
 
-using namespace reshade::api;
+extern SharedState g_shared_state;
 
-extern "C" {
-    //*******************************************************************************
-    _declspec(dllexport) void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
-    {
+//----------------------------------------------------------------------------------------
+// delete one pipeline in the list of saved pipelines
 
-        // not used, 
-        reshade::api::device* device = runtime->get_device();
+// Fonction pour nettoyer un pipeline stocké
+void delete_saved_pipeline(save_pipeline& p) {
 
-        // to get VREM settings => read from uniform values
-        if (g_shared_state->overlay_is_open || addon_init == true) {
-            // Récupérer l'état actuel des uniforms
-            get_settings_from_uniforms(runtime);
-            addon_init = false;
+    //  clean vectors (free memory)
+    p.subobjects.clear();
+    p.subobjects.shrink_to_fit();
 
-        }
+    p.vs_bytecode.clear();
+    p.vs_bytecode.shrink_to_fit();
 
-		g_shared_state->device = device;
-        /*
-        // fps limiter function
-        // if (g_shared_state->s_fps_limit <= 0)
-        if (VREM_setting[DUMMY] == 0)
-            return;
+    p.ps_bytecode.clear();
+    p.ps_bytecode.shrink_to_fit();
 
-        const auto time_per_frame = std::chrono::high_resolution_clock::duration(std::chrono::seconds(1)) / int(VREM_setting[FPS_LIMIT]);
-        const auto next_time_point = g_shared_state->s_last_time_point + time_per_frame;
+    p.gs_bytecode.clear();
+    p.gs_bytecode.shrink_to_fit();
 
-        while (next_time_point > std::chrono::high_resolution_clock::now())
-            std::this_thread::sleep_for(std::chrono::high_resolution_clock::duration(std::chrono::milliseconds(1)));
+    p.hs_bytecode.clear();
+    p.hs_bytecode.shrink_to_fit();
 
-        g_shared_state->s_last_time_point = next_time_point;
-        */
+    p.ds_bytecode.clear();
+    p.ds_bytecode.shrink_to_fit();
 
-		// generate filtered shader list and clone pipelines if needed
-        if (g_shared_state->filtered_pipeline_to_setup) {
+    p.input_elements.clear();
+    p.input_elements.shrink_to_fit();
 
-          	g_shared_state->filtered_pipeline_to_setup = false;
-			setup_filtered_pipelines(g_shared_state->device);
- 
-		}
+    p.render_target_formats.clear();
+    p.render_target_formats.shrink_to_fit();
+
+    // initialize pointers
+    p.device = nullptr;
+    p.layout = {};
+    p.pipeline = {};
+}
+
+//----------------------------------------------------------------------------------------
+// Delete the full list
+void delete_all_saved_pipelines() {
+    log_delete_saved_pipelines();
+        for (auto& p : g_shared_state.VREM_pipelines.saved_pipelines) {
+        log_saved_pipelines_value(p);
+        delete_saved_pipeline(p);
     }
+    g_shared_state.VREM_pipelines.saved_pipelines.clear();
+    g_shared_state.VREM_pipelines.saved_pipelines.shrink_to_fit();
+}
 
-    //*******************************************************************************
-    _declspec(dllexport) void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)
-    {
 
-        log_effect_reloaded();
 
-        // reload all uniforms
-        get_settings_from_uniforms(runtime);
-    }
+//----------------------------------------------------------------------------------------
+// free memory of addon persistant unordered_map 
+void delete_persistant_objects() {
+	// may be useless but to be sure
+    std::unordered_map<uint32_t, PipeLine_Definition>().swap(g_shared_state.VREM_pipelines.pipeline_by_hash);
+    std::unordered_map<uint64_t, PipeLine_Definition>().swap(g_shared_state.VREM_pipelines.pipeline_by_handle);
+    // delete saved pipelines
+    delete_all_saved_pipelines();
 }

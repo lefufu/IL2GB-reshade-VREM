@@ -222,6 +222,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         }
 
         // clean remanents objects 
+        delete_persistant_objects();
 
         reshade::unregister_addon(hModule);
         break;

@@ -52,7 +52,7 @@
 #include "addon_logs.h"
 
 //shader code cache to keep loaded code in memory, avoid mutliple load of same shader, handle option change without reloading all cso key=hash of shader
-std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;
+extern std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;
 
 using namespace reshade::api;
 

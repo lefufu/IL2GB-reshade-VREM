@@ -75,13 +75,14 @@ bool check_if_active_option(Shader_Definition shader_def)
 /// setup filetered pipelines regarding mod settings
 /// </summary>
 
-bool setup_filtered_pipelines()
+bool setup_filtered_pipelines(reshade::api::device* device)
 {
 
 	// parse the shader list to load all shader codes and store codes in shader_code_cache
 	read_all_shader_code();
 	
-	
+	uint64_t last_handle;
+
 	// parse the list of saved pipelines to identify which one to keep regarding mod settings
 	for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines)
 	{
@@ -115,24 +116,25 @@ bool setup_filtered_pipelines()
 						shader_def_opt.value().substitute_pipeline = cloned_pipeline;
 						//add cloned pipeline in cloned_pipeline to suppress them if addon is reloaded
 						cloned_pipeline_list.emplace(cloned_pipeline.handle, cloned_pipeline);
+						last_handle = cloned_pipeline.handle;
 					}
 
 				}
 				filtered_pipeline.emplace(p.pipeline.handle, shader_def_opt.value());
+				
 				log_filtered_added(p.pipeline.handle);
 			}
-
-			/*
-			auto shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
-			if (shader_def_opt.has_value())
-			{
-				newShader = &shader_def_opt.value();
-			}
-			clone_pipeline(g_shared_state->device, p->layout, static_cast<uint32_t>(p->subobjects.size()), p->subobjects.data(), p->pipeline_handle, newShader);
-			log_filtered_added(p->pipeline_handle.handle);
-			*/
 		}
 	}
+	/*
+	std::stringstream s;
+	s << "*** delete pipeline handle =" << std::hex << last_handle << "; ";
+	reshade::log::message(reshade::log::level::info, s.str().c_str());
+
+	device->destroy_pipeline(cloned_pipeline_list[last_handle]);
+
+	reshade::log::message(reshade::log::level::info, "*** pipeline deleted");
+	*/
 
 	return true;
 }

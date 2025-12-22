@@ -55,6 +55,7 @@ using namespace reshade::api;
 extern SharedState g_shared_state;
 
 extern void delete_all_saved_pipelines();
+extern void delete_persistant_objects();
 
 // Signatures of function exported by the addon !!! is including shared structure  !!!
 typedef void (*InitFunc)(
@@ -65,7 +66,7 @@ typedef void (*InitFunc)(
     SharedState*
     );
 
-typedef void (*CleanupFunc)(reshade::api::device*, PersistentPipelineData*);
+typedef void (*CleanupFunc)(PersistentPipelineData*);
 
 //*********************************************************************************************
 // function mapping defintion (!!! they should also be handled in VREMHotReloader for a working mapping !!!)
@@ -226,7 +227,7 @@ private:
         if (!addon_module) return;
 
         if (funcs.cleanup) {
-            funcs.cleanup(cached_device, &persistent_data);
+            funcs.cleanup(&persistent_data);
         }
 
 
@@ -241,13 +242,6 @@ private:
             }
         }
         catch (...) {}
-
-        // free memory of addon persistant unordered_map => may be no more needed
-        std::unordered_map<uint32_t, PipeLine_Definition>().swap(g_shared_state.VREM_pipelines.pipeline_by_hash);
-        std::unordered_map<uint64_t, PipeLine_Definition>().swap(g_shared_state.VREM_pipelines.pipeline_by_handle);
-
-        // delete saved pipelines
-        delete_all_saved_pipelines();
 
         // reshade::log::message(reshade::log::level::info,"DCS VREM: Addon decharge");
         log_unloaded();

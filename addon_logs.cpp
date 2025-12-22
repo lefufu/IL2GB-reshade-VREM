@@ -113,7 +113,7 @@ void log_filtered_added(uint64_t handle) {
 		std::stringstream s;
 		//filtered_pipeline
 
-		s << "addon - on_present : added filtered pipeline, handle = " << std::hex << handle  << "; ";
+		s << "addon - added filtered pipeline, handle = " << std::hex << handle  << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 
@@ -123,7 +123,7 @@ void log_shader_code_readed(const wchar_t filename[], uint32_t hash, size_t code
 	if (g_shared_state->debug)
 	{
 		std::stringstream s;
-		s << "addon - load_shader_code() - Shader " << to_string(filename)  << "hash =" << std::hex << hash  << " readed, size = " << code_size << ")";
+		s << "addon - load_shader_code() - Shader " << to_string(filename)  << ", hash =" << std::hex << hash  << ", size = " << code_size << ")";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
@@ -132,7 +132,7 @@ void log_shader_code_error(const wchar_t filename[], uint32_t hash)
 {
 
 	std::stringstream s;
-	s << "ERROR : addon - load_shader_code() - Shader " << to_string(filename) << "hash =" << std::hex << hash << " file not found";
+	s << "ERROR : addon - load_shader_code() - Shader " << to_string(filename) << ", hash =" << std::hex << hash << " file not found";
 	reshade::log::message(reshade::log::level::error, s.str().c_str());
 }
 
@@ -161,7 +161,7 @@ void  log_pipeline_clone_OK(uint64_t orig_handle, uint64_t cloned_handle) {
 	if (g_shared_state->debug)
 	{
 		std::stringstream s;
-		s << "addon - pipeline  cloned  ("
+		s << "addon - pipeline  cloned"
 			<< ", orig pipeline handle: " << std::hex << orig_handle
 			<< ", cloned pipeline handle: " << std::hex << cloned_handle
 			<< ")";
@@ -216,6 +216,28 @@ void log_shader(reshade::api::pipeline pipeline, Shader_Definition shader_def, b
 		std::stringstream s;
 		s << "addon - shader identified in pipeline: " << std::hex << pipeline.handle << ", " << to_string(shader_def) << ", active : " << status << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+void log_device_null() {
+	reshade::log::message(reshade::log::level::error, "ERROR : addon - device is null");
+}
+
+
+void log_delete_cloned_pipeline(uint64_t handle) {
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+		s << "addon - delete cloned pipeline : " << std::hex << handle << "; ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+void log_cleanup_shader_code(){
+
+	if (g_shared_state->debug)
+	{
+		reshade::log::message(reshade::log::level::info, "addon - cleanup shader code cache");
 	}
 }
 

@@ -64,5 +64,7 @@ extern void log_pipeline_clone_error(uint64_t orig_handle);
 extern void log_saved_pipelines_value(save_pipeline saved_pipeline);
 extern void log_error_code_for_hash();
 extern void log_shader(reshade::api::pipeline pipeline, Shader_Definition shader_def, bool status);
-
+extern void log_device_null();
+extern void log_delete_cloned_pipeline(uint64_t handle);
+extern void log_cleanup_shader_code();
 // extern void log_shader_by_hash();
