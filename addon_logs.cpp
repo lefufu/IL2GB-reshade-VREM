@@ -241,6 +241,30 @@ void log_cleanup_shader_code(){
 	}
 }
 
+void log_end_capture_frame() {
+	if (g_shared_state->debug)
+	{
+		reshade::log::message(reshade::log::level::info, "addon - onpresent :  -- End Frame -- ;");
+	}
+}
+
+void log_start_capture_frame() {
+	if (g_shared_state->debug)
+	{
+		reshade::log::message(reshade::log::level::info, "addon - onpresent :  -- Start Frame -- ;");
+	}
+}
+
+void log_shader_binded(uint64_t handle, Shader_Definition shader_def) {
+	if (g_shared_state->debug && flag_capture)
+	{
+		std::stringstream s;
+		s << "addon - shader binded : " << std::hex << handle << ", shader :" << to_string(shader_def) << "; ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+
 /*
 void shader_by_hash() {
 	if (g_shared_state->debug)

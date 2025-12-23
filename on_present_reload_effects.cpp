@@ -67,7 +67,7 @@ extern "C" {
 
         }
 
-		g_shared_state->device = device;
+        g_shared_state->device = device;
         /*
         // fps limiter function
         // if (g_shared_state->s_fps_limit <= 0)
@@ -83,14 +83,53 @@ extern "C" {
         g_shared_state->s_last_time_point = next_time_point;
         */
 
-		// generate filtered shader list and clone pipelines if needed
+        // generate filtered shader list and clone pipelines if needed
         if (g_shared_state->filtered_pipeline_to_setup) {
 
-          	g_shared_state->filtered_pipeline_to_setup = false;
-			setup_filtered_pipelines(g_shared_state->device);
- 
-		}
+            g_shared_state->filtered_pipeline_to_setup = false;
+            setup_filtered_pipelines(g_shared_state->device);
+
+        }
+
+        /*
+        // frame capture by button on GUI
+        
+        if (flag_capture)
+        {
+            flag_capture = false;
+            log_end_capture_frame();
+        }
+        else
+        {
+            if (g_shared_state->button_capture)
+            {
+                flag_capture = true;
+                log_start_capture_frame();
+
+            }
+        } */
+
+        
+        // Fin de capture seulement si une frame réelle a commencé
+        if (flag_capture && frame_started)
+        {
+            flag_capture = false;
+            frame_started = false;
+            log_end_capture_frame();
+        }
+
+        // Détection front bouton
+        static bool last_button = false;
+        bool button = g_shared_state->button_capture;
+
+        if (button && !last_button)
+        {
+            request_capture = true;
+        }
+        last_button = button;
+        
     }
+
 
     //*******************************************************************************
     _declspec(dllexport) void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)

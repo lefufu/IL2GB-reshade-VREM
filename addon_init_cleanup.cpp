@@ -56,6 +56,10 @@
 SharedState* g_shared_state = nullptr;
 bool addon_init = false;
 
+bool request_capture = false;   // demande utilisateur
+bool flag_capture = false;      // capture ACTIVE (ex-capturing)
+bool frame_started = false;     // au moins un bind_pipeline vu
+
 std::unordered_map<std::string, int> settings_mapping = {
 	{"fps_limit", FPS_LIMIT},
 	{"flag_fps", DUMMY}

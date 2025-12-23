@@ -5,7 +5,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-// addon logs function reference 
+//  on bind pipeline : do all actions when binding a pipeline
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -40,34 +40,56 @@
 // * ShortFuse https://github.com/clshortfuse/renodx
 // 
 /////////////////////////////////////////////////////////////////////////
-#pragma once
 
 #include <reshade.hpp>
+#include <unordered_map>
+
+
 #include "loader_addon_shared.h"
+#include "addon_functions.h"
 #include "addon_objects.h"
+#include "VREM_settings.h"
+#include "addon_logs.h"
+
+#include "to_string.hpp"
+
 
 using namespace reshade::api;
 
-extern void log_addon_init();
-extern void log_addon_cleanup_cloned();
-extern void log_addon_cleanup_filtered();
-extern void log_error_array_uniform(std::string effect_name, std::string uniform_name, uint32_t out_array_length);
-extern void log_uniform(std::string effect_name, std::string uniform_name, float uniform_value);
-extern void log_effect_reloaded();
-extern void log_pipeline_init(PipeLine_Definition pipeline);
-extern void log_filtered_added(uint64_t handle);
-extern void log_shader_code_readed(const wchar_t filename[], uint32_t hash, size_t code_size);
-extern void log_shader_code_error(const wchar_t filename[], uint32_t hash);
-extern void log_cloning_pipeline(reshade::api::pipeline pipeline, reshade::api::pipeline_layout layout, Shader_Definition* newShader, uint32_t subobjectCount);
-extern void log_pipeline_clone_OK(uint64_t orig_handle, uint64_t cloned_handle);
-extern void log_pipeline_clone_error(uint64_t orig_handle);
-extern void log_saved_pipelines_value(save_pipeline saved_pipeline);
-extern void log_error_code_for_hash();
-extern void log_shader(reshade::api::pipeline pipeline, Shader_Definition shader_def, bool status);
-extern void log_device_null();
-extern void log_delete_cloned_pipeline(uint64_t handle);
-extern void log_cleanup_shader_code();
-extern void log_end_capture_frame();
-extern void log_start_capture_frame();
-extern void log_shader_binded(uint64_t handle, Shader_Definition shader_def);
-// extern void log_shader_by_hash();
+
+extern "C" {
+	//*******************************************************************************
+	__declspec(dllexport) void vrem_on_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle) 
+	{
+		
+		// for frame capture, to ensure there is at least one bind_pipeline in the frame => need to be moved to another event sooner than bind_pipeline !
+		if (request_capture)
+		{
+			request_capture = false;
+			flag_capture = true;
+			frame_started = true;
+			log_start_capture_frame();
+		}
+		
+		
+		
+		// identify if the pipeline is to be processed
+		auto it = filtered_pipeline.find(pipelineHandle.handle);
+
+		if (it != filtered_pipeline.end())
+		{
+			
+			
+
+			//shader is found in the filtered pipeline list
+			Shader_Definition& shader = it->second;
+			
+			log_shader_binded(pipelineHandle.handle, shader);
+
+			// use shader
+			uint32_t action = shader.action;
+			auto& pipeline = shader.substitute_pipeline;
+		}
+
+	}
+}

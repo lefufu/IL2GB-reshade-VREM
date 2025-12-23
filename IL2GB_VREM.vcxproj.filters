@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="IL2GB_VREM\get_settings_from_uniforms.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="addon_init_cleanup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -43,6 +40,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="clone_pipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="on_bind_pipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="get_settings_from_uniforms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

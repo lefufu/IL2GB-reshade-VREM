@@ -148,3 +148,7 @@ struct Shader_Definition {
 extern std::unordered_map<uint32_t, Shader_Definition> shader_by_hash;
 extern std::unordered_map<uint64_t, Shader_Definition> filtered_pipeline;
 extern std::unordered_map<uint64_t, reshade::api::pipeline> cloned_pipeline_list;
+
+extern bool request_capture;   // demande utilisateur
+extern bool flag_capture;      // capture ACTIVE (ex-capturing)
+extern bool frame_started;     // au moins un bind_pipeline vu
