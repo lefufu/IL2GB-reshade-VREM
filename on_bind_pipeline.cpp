@@ -92,53 +92,7 @@ extern "C" {
 			if (it->second.action & action_replace_bind )
 			{
 
-				if (g_shared_state->debug && flag_capture)
-				{
-					
-					reshade::log::message(reshade::log::level::info, "** update_buffer_region **");
-				}
-				
-				a_shared.cb_inject_values.testFlag = 2.0f;
-				
-				// Vérifier que le buffer existe
-				/*
-				if (a_shared.res_CB13.handle != 0)
-				{
-					commandList->get_device()->update_buffer_region(
-						&a_shared.cb_inject_values,
-						a_shared.res_CB13,
-						0,
-						CBSIZE
-					);
-
-					// Créer le descriptor update pour CB13
-					reshade::api::descriptor_table_update update = {};
-					update.table = {};  // Pas utilisé avec push_descriptors
-					update.binding = 13;  // CB13
-					update.array_offset = 0;
-					update.count = 1;
-					update.type = reshade::api::descriptor_type::constant_buffer;
-					update.descriptors = &a_shared.res_CB13;
-
-					if (g_shared_state->debug && flag_capture)
-					{
-
-						reshade::log::message(reshade::log::level::info, "** push_descriptors **");
-					}
-
-					// Push le descriptor
-					commandList->push_descriptors(
-						shader_stage::all,
-						g_shared_state->DX11_layout,
-						2,  // layout_param pour constant_buffers (d'après les logs RenoDX)
-						update
-					);
-				}
-				*/
-						
-				a_shared.cb_test_values[0] = 1.0f;
-				a_shared.cb_test_values[1] = 1.0f;
-
+				// TODO : add optimization to avoid pushing CB13 if not needed
 				{
 					// use push constant() to push the mod parameter in CB13,a sit is assumed a replaced shader will need mod parameters
 					// pipeline_layout for CB initialized in init_pipeline() once for all
@@ -148,27 +102,13 @@ extern "C" {
 						a_shared.saved_pipeline_layout_CB[SETTINGS_CB_NB],
 						0,
 						0,
-						//CBSIZE,
-						4,
-						//&a_shared.VREM_setting
-						&a_shared.cb_test_values
+						CBSIZE,
+						&a_shared.cb_inject_values
 					);
-					log_CB_injected("VREM CB");
-					
+					log_CB_injected("VREM CB");	
 				}
-
 				// shader is to be replaced by the new one created in on_Init_Pipeline
 				commandList->bind_pipeline(stages, it->second.substitute_pipeline);
-				
-
-
-				if (g_shared_state->debug && flag_capture)
-				{
-					std::stringstream s;
-					s << "*** g_shared_state->VREM_pipelines layout : " << std::hex << g_shared_state->VREM_pipelines.saved_pipelines[0].layout.handle << "; ";
-					reshade::log::message(reshade::log::level::info, s.str().c_str());
-				}
-
 				// log infos
 				log_pipeline_replaced(pipelineHandle.handle, it->second.substitute_pipeline.handle);
 			}

@@ -324,6 +324,7 @@ void log_CB_injected(std::string CBName)
 	{
 		std::stringstream s;
 		s << " -> on_bind_pipeline: CB injected :" << CBName << " ;";
+		s << "  a_shared.cb_inject_values.testFlag = " << a_shared.cb_inject_values.testFlag << ";";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }

@@ -163,10 +163,13 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
             {
                 a_shared.VREM_setting[settings_mapping[uniform_name]] = uniform_value;
             }
-            else
+            //else
             {
 				// uniform value should be a value to be injected in shaders
-                if ( uniform_name == "cb_test_color") a_shared.cb_inject_values.testFlag = uniform_value;
+                if (uniform_name == "cb_test_color")
+                {
+                    a_shared.cb_inject_values.testFlag = uniform_value;
+                }
                 else if ( uniform_name == "var_rotor") a_shared.cb_inject_values.rotorFlag = uniform_value;
         
             }
