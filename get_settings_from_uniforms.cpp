@@ -5,8 +5,9 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-//  read VREM settings from uniforms of VREM settings technique and store them in a float 
-//  array VREM_setting
+//  read VREM settings from uniforms of VREM settings technique and 
+//   * store them in a float array VREM_setting to handle shader to process
+//   * fill the struct used to share data with shader using constant buffer
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -64,7 +65,7 @@ static std::chrono::high_resolution_clock::time_point s_last_time_point;
 //*******************************************************************************
 // do map uniform name/value in a array an index to make usage of settings faster 
 // mapping values are in VREM_settings.h
-float VREM_setting[PARAMS_NB] = { 0 };
+// float VREM_setting[CB_SETTINGS_SIZE] = { 0 };
 
 using namespace reshade::api;
 
@@ -156,11 +157,18 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
             }
 
             // log_uniform(effect_name, uniform_name, uniform_value);
-
-            // update vrem settings
+            
+            // update vrem settings if name is defined in settings_mapping
             if (settings_mapping.count(uniform_name) > 0)
             {
-                VREM_setting[settings_mapping[uniform_name]] = uniform_value;
+                a_shared.VREM_setting[settings_mapping[uniform_name]] = uniform_value;
+            }
+            else
+            {
+				// uniform value should be a value to be injected in shaders
+                if ( uniform_name == "cb_test_color") a_shared.cb_inject_values.testFlag = uniform_value;
+                else if ( uniform_name == "var_rotor") a_shared.cb_inject_values.rotorFlag = uniform_value;
+        
             }
         });
 }

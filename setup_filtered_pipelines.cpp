@@ -62,7 +62,7 @@ bool check_if_active_option(Shader_Definition shader_def)
 	bool result = false;
 	for (uint32_t option : shader_def.VREM_options)
 	{
-		if (VREM_setting[option])
+		if (a_shared.VREM_setting[option])
 		{
 			result = true;
 		}
@@ -126,16 +126,6 @@ bool setup_filtered_pipelines(reshade::api::device* device)
 			}
 		}
 	}
-	/*
-	std::stringstream s;
-	s << "*** delete pipeline handle =" << std::hex << last_handle << "; ";
-	reshade::log::message(reshade::log::level::info, s.str().c_str());
-
-	device->destroy_pipeline(cloned_pipeline_list[last_handle]);
-
-	reshade::log::message(reshade::log::level::info, "*** pipeline deleted");
-	*/
-
 	return true;
 }
 

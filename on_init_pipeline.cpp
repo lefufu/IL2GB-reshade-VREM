@@ -58,6 +58,39 @@ using namespace reshade::api;
 static thread_local std::vector<std::vector<uint8_t>> shader_code;
 
 extern "C" {
+
+	/* void create_vrem_cb(reshade::api::device* device)
+	{
+		if (a_shared.res_CB13.handle != 0)
+			return;  // Déjà créé
+
+		reshade::api::resource_desc desc = {};
+		desc.type = reshade::api::resource_type::buffer;
+		desc.buffer.size = CBSIZE;
+		desc.usage = reshade::api::resource_usage::copy_dest;
+		desc.heap = reshade::api::memory_heap::gpu_to_cpu;
+
+		bool result = device->create_resource(
+			desc,
+			nullptr,
+			reshade::api::resource_usage::constant_buffer,
+			&a_shared.res_CB13
+		);
+
+		if (result) {
+			if (g_shared_state->debug)
+			{
+				std::stringstream s;
+				s << "*** creation of cb13 resource " << std::hex << a_shared.res_CB13.handle;
+				reshade::log::message(reshade::log::level::info, s.str().c_str());
+			}
+		}
+		else {
+			reshade::log::message(reshade::log::level::error, "Error in CB13 resource creation ");
+		}
+	}
+	*/
+
 	//*******************************************************************************
 	__declspec(dllexport) void vrem_on_init_pipeline(device* device, pipeline_layout layout, uint32_t subobjectCount, const pipeline_subobject* subobjects, pipeline pipelineHandle)
 	{
@@ -65,6 +98,22 @@ extern "C" {
 		// save needed pipelines as init_pipeline is called once per game launch
 		// only shader types defined in ALLOWED_SHADERS are saved
 		save_pipeline_in_list(device, layout, subobjectCount, subobjects, pipelineHandle);
+
+
+		//
+		// create_vrem_cb(device);
+
+		//if (param.push_descriptors.type == descriptor_type::constant_buffer)
+		{
+
+			// create pipeline layout for injecting VREM settings/parameters in CB CBINDEX
+			// create_modified_CB_layout(dev, CBINDEX, "VREM settings Cbuffer", SETTINGS_CB_NB);
+
+			g_shared_state->DX11_layout = layout;
+
+			// create pipeline layout for injecting CperFrame parameters in CB CPERFRAME_INDEX
+			// create_modified_CB_layout(dev, CPERFRAME_INDEX, "CperFrame", CPERFRAME_CB_NB);
+		}
 
 	}
 }

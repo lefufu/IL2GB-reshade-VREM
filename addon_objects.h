@@ -46,6 +46,8 @@
 #include <reshade.hpp>
 #include <unordered_map>
 
+#include "addon_injection.h"
+
 #define MAXNAMECHAR 30
 
 
@@ -145,9 +147,36 @@ struct Shader_Definition {
 
 };
 
+// a class to host all global variables shared between reshade on_* functions. 
+// 
+
+// size of the table containing all mod settings to be read from uniforms and define which shader are active
+static const int SETTINGS_SIZE = 10;
+
+struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
+{
+	// DX11 pipeline_layout for VREM CB (only used if thet need to be modified)
+	reshade::api::pipeline_layout saved_pipeline_layout_CB[NUMBER_OF_MODIFIED_CB];
+
+	// VREM settings values to be used to select shaders to be processed
+	float VREM_setting[SETTINGS_SIZE] = { 0 };
+
+	// VREM injection values to be used to inject in shaders
+	struct ShaderInjectData cb_inject_values;
+
+	float cb_test_values[4] = { 0, 0, 0, 0 };
+
+	reshade::api::resource res_CB13; // CB to inject in shaders (DX11 only for the moment)
+
+};
+
+extern struct addon_shared a_shared;
+
 extern std::unordered_map<uint32_t, Shader_Definition> shader_by_hash;
 extern std::unordered_map<uint64_t, Shader_Definition> filtered_pipeline;
 extern std::unordered_map<uint64_t, reshade::api::pipeline> cloned_pipeline_list;
+
+
 
 extern bool request_capture;   // demande utilisateur
 extern bool flag_capture;      // capture ACTIVE (ex-capturing)

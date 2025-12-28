@@ -21,11 +21,13 @@
   <ItemGroup>
     <ClCompile Include="clone_pipeline.cpp" />
     <ClCompile Include="addon_init_cleanup.cpp" />
+    <ClCompile Include="constant_buffer.cpp" />
     <ClCompile Include="get_settings_from_uniforms.cpp" />
     <ClCompile Include="load_shader_code.cpp" />
     <ClCompile Include="misc.cpp" />
     <ClCompile Include="on_bind_pipeline.cpp" />
     <ClCompile Include="on_init_pipeline.cpp" />
+    <ClCompile Include="on_init_pipeline_layout.cpp" />
     <ClCompile Include="on_present_reload_effects.cpp" />
     <ClCompile Include="addon_logs.cpp" />
     <ClCompile Include="save_pipelines.cpp" />
@@ -35,6 +37,7 @@
     <ClInclude Include="addon_functions.h" />
     <ClInclude Include="addon_logs.h" />
     <ClInclude Include="addon_objects.h" />
+    <ClInclude Include="addon_injection.h" />
     <ClInclude Include="to_string.hpp" />
     <ClInclude Include="VREM_settings.h" />
   </ItemGroup>
@@ -92,11 +95,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>H:\utils\Repos\IL2GB_VREM\Include_from_reshade;$(IncludePath)</IncludePath>
-    <OutDir>G:\jeux\DCS World OpenBeta\bin-mt</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>H:\utils\Repos\IL2GB_VREM\Include_from_reshade;$(IncludePath)</IncludePath>
-    <OutDir>G:\jeux\DCS World OpenBeta\bin-mt</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

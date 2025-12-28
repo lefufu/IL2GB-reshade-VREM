@@ -40,15 +40,18 @@
 // * ShortFuse https://github.com/clshortfuse/renodx
 // 
 /////////////////////////////////////////////////////////////////////////
-
+#pragma once
 
 #include <unordered_map>
 #include <string>
 
 #include "loader_addon_shared.h"
+#include "addon_injection.h"
 
+
+// storage of mod settings
 extern bool addon_init;
-extern float VREM_setting[];
+// extern float VREM_setting[];
 extern std::unordered_map<std::string, int> settings_mapping;
 
 extern SharedState* g_shared_state;
@@ -56,21 +59,17 @@ extern SharedState* g_shared_state;
 // mod setting
 #define VREM_SETTINGS_NAME "VREM_settings.fx"
 
-// settings will be in a table, to use numbers instead of string to get parameters values
 // mapping value are in get_settings_from_uniforms
 
-constexpr uint8_t PARAMS_NB = 10;
-
-
-constexpr uint8_t DUMMY = 1;
-constexpr uint8_t DEFAULT = 0;
-constexpr uint8_t ROTOR = 1;
-constexpr uint8_t IHADSS = 2;
-constexpr uint8_t COLOR = 3;
-constexpr uint8_t LABEL = 4;
-constexpr uint8_t NS430 = 5;
-constexpr uint8_t REFLECT = 6;
-constexpr uint8_t NVG = 7;
-constexpr uint8_t EFFECTS = 8;
-constexpr uint8_t FPS_LIMIT = 9;
+constexpr uint8_t SET_DUMMY = 1;
+constexpr uint8_t SET_DEFAULT = 0;
+constexpr uint8_t SET_ROTOR = 1;
+constexpr uint8_t SET_IHADSS = 2;
+constexpr uint8_t SET_COLOR = 3;
+constexpr uint8_t SET_LABEL = 4;
+constexpr uint8_t SET_NS430 = 5;
+constexpr uint8_t SET_REFLECT = 6;
+constexpr uint8_t SET_NVG = 7;
+constexpr uint8_t SET_EFFECTS = 8;
+constexpr uint8_t SET_FPS_LIMIT = 9;
 

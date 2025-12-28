@@ -264,21 +264,78 @@ void log_shader_binded(uint64_t handle, Shader_Definition shader_def) {
 	}
 }
 
+void log_pipeline_replaced(uint64_t pipelineHandle, uint64_t cloned) {
 
-/*
-void shader_by_hash() {
-	if (g_shared_state->debug)
+	if (g_shared_state->debug && flag_capture)
 	{
-
-		//filtered_pipeline
-		for (const auto& [hash, shader] : shader_by_hash) {
-			std::stringstream s;
-
-			s << "on_init_pipeline : added filtered pipeline, handle = " << std::hex << handle << ", hash = " << std::hex << filtered_pipeline[handle].hash;
-			s << ", action = " << to_string(filtered_pipeline[handle].action) << ", feature = " << to_string(filtered_pipeline[handle].feature);
-			s << ", replace_filename = " << to_string(filtered_pipeline[handle].replace_filename) << "; ";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-		}
+		std::stringstream s;
+		s << "addon - bind pipeline, replaced pipeline : " << std::hex << pipelineHandle << ", by cloned pipeline :" << std::hex << cloned << "; ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
-*/
+
+void log_init_pipeline_layout(const uint32_t paramCount, const reshade::api::pipeline_layout_param* params, reshade::api::pipeline_layout layout)
+{
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+		s << " addon - init_pipeline_layout  = " << std::hex << layout.handle << ";";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+void log_init_pipeline_params(const uint32_t paramCount, const reshade::api::pipeline_layout_param* params, reshade::api::pipeline_layout layout, uint32_t paramIndex, reshade::api::pipeline_layout_param param)
+{
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+		s << "    looping on  paramCount : param = " << to_string(paramIndex) << ", param.type = " << to_string(param.type) << ", param.push_descriptors.type = " << to_string(param.push_descriptors.type);
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+		s.str("");
+		s.clear();
+	}
+}
+
+void log_create_CBlayout(std::string CBName, int CB_number)
+{
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+		s << "addon - new pipeline layout created, hash =" << reinterpret_cast<void*>(&a_shared.saved_pipeline_layout_CB[CB_number].handle) << " ).  for CB " << CBName << " injection, ";
+		s << "  dx_register_index=" << CBINDEX << "; ";
+		reshade::log::message(reshade::log::level::error, s.str().c_str());
+	}
+}
+
+
+void log_error_creating_CBlayout(std::string CBName, int CB_number)
+{
+	std::stringstream s;
+
+	s << "addon - pipeline_layout(" << reinterpret_cast<void*>(&a_shared.saved_pipeline_layout_CB[CB_number].handle) << " ). !!! Error in creating DX11 layout for CB " << CBName << "!!!;";
+	reshade::log::message(reshade::log::level::error, s.str().c_str());
+	s.str("");
+	s.clear();
+}
+
+void log_CB_injected(std::string CBName)
+{
+	if (g_shared_state->debug && flag_capture)
+	{
+		std::stringstream s;
+		s << " -> on_bind_pipeline: CB injected :" << CBName << " ;";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+
+void log_destroy_CBlayout(uint64_t layout_handle)
+
+{
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+		s << "addon - destroy pipeline layout for CB injection,  hash =" << std::hex << layout_handle  <<  ";";
+		reshade::log::message(reshade::log::level::error, s.str().c_str());
+	}
+}

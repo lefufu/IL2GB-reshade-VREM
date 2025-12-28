@@ -91,28 +91,28 @@ pipeline clone_pipeline(
         //CachedShader* cache;
 
         auto it = shader_code_cache.find(hash[i]);
-        if (it == shader_code_cache.end())
+		//if hash found in cache replace code in the cloned desc
+        if (!(it == shader_code_cache.end()))
         {
-            // Log error: shader not found in cache
-            return pipelineClone; // Retourne un pipeline invalide
+
+            const std::vector<uint8_t>& shader_code = it->second;
+
+            //original Desc
+            shader_desc desc = *static_cast<shader_desc*>(subobjects[i].data);
+
+            // Clone desc
+            reshade::api::shader_desc clonedDesc;
+            memcpy(&clonedDesc, &desc, sizeof(reshade::api::shader_desc));
+
+            // Point to cloned desc
+            clonedSubObject->data = &clonedDesc;
+
+            // change code source to use the new one 
+            // clone ReplaceshaderCode
+            clonedDesc.code = shader_code.data();
+            clonedDesc.code_size = shader_code.size();
         }
-
-        const std::vector<uint8_t>& shader_code = it->second;
-
-        //original Desc
-        shader_desc desc = *static_cast<shader_desc*>(subobjects[i].data);
-
-        // Clone desc
-        reshade::api::shader_desc clonedDesc;
-        memcpy(&clonedDesc, &desc, sizeof(reshade::api::shader_desc));
-
-        // Point to cloned desc
-        clonedSubObject->data = &clonedDesc;
-
-        // change code source to use the new one 
-        // clone ReplaceshaderCode
-        clonedDesc.code = shader_code.data();
-        clonedDesc.code_size = shader_code.size();
+        //else keep original code
 
     }
 

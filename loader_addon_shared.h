@@ -125,11 +125,15 @@ struct SharedState {
     bool overlay_is_open = false;
     // debug flag
     bool debug = true;
+    // capture button
+    bool button_capture = false;
 
 	// flag to setup generation of filtered pipeline list and cloning
 	bool filtered_pipeline_to_setup = true;
 
     PersistentPipelineData VREM_pipelines;
+
+    reshade::api::pipeline_layout DX11_layout = {};
 };
 
 

@@ -83,12 +83,14 @@ extern "C" {
         g_shared_state->s_last_time_point = next_time_point;
         */
 
+        // create all pipeline_layouts for pushing dedicated CB
+        create_all_modified_CB_layout(device);
+
         // generate filtered shader list and clone pipelines if needed
         if (g_shared_state->filtered_pipeline_to_setup) {
 
             g_shared_state->filtered_pipeline_to_setup = false;
             setup_filtered_pipelines(g_shared_state->device);
-
         }
 
         /*

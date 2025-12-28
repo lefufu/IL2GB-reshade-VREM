@@ -5,7 +5,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-//  references of functions of VREM mod, including messages
+//  data shared between the mod and the shaders using CB 
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -40,31 +40,67 @@
 // * ShortFuse https://github.com/clshortfuse/renodx
 // 
 /////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-#include <reshade.hpp>
-#include "addon_objects.h"
-#include <optional>
+// CB number to be injected in the shaders
+static const int CBINDEX = 13;
 
-extern void get_settings_from_uniforms(reshade::api::effect_runtime* runtime);
-// extern uint32_t calculateShaderHash(void* shaderData);
-extern uint32_t calculateShaderHash(const reshade::api::shader_desc& desc);
-extern std::optional<Shader_Definition> is_in_mod_hash(uint32_t hash[], uint32_t subobject_count);
-extern bool load_shader_code(std::unordered_map<uint32_t, std::vector<uint8_t>>& shader_cache, uint32_t hash, const wchar_t filename[]);
-extern reshade::api::pipeline clone_pipeline(reshade::api::device* device, reshade::api::pipeline_layout layout, uint32_t subobjectCount, const reshade::api::pipeline_subobject* subobjects, reshade::api::pipeline pipeline, uint32_t hash[]);
-extern void save_pipeline_in_list(reshade::api::device* device, reshade::api::pipeline_layout layout, uint32_t subobject_count, const reshade::api::pipeline_subobject* subobjects, reshade::api::pipeline pipeline);
-extern save_pipeline* find__pipeline_per_handle(uint64_t handle);
-extern std::vector<save_pipeline*> find__pipelines_per_hash(uint32_t hash);
-extern size_t number_of_saved_pipeline();
-extern void delete_saved_pipeline(save_pipeline& p);
-extern void delete_all_saved_pipelines();
-// extern bool hasMatch(const std::vector<uint32_t>& list, const uint32_t* array, size_t array_size);
-extern bool setup_filtered_pipelines(reshade::api::device* device);
-extern void read_all_shader_code();
-extern void delete_cloned_pipelines(reshade::api::device* dev);
-extern void create_modified_CB_layout(reshade::api::device* device, int cbindex, std::string CB_name, int layout_number);
-extern void create_all_modified_CB_layout(reshade::api::device* device);
+// number of CB modified by VREM (used for an array allocation)
+static const int NUMBER_OF_MODIFIED_CB = 2;
 
+// CB index in saved layout for VREM settings
+static const int SETTINGS_CB_NB = 0;
 
+// size of the constant buffer containing all mod parameters, to be injected in shaders
+static const int CBSIZE = 44;
 
+// maximum size of all CB
+static const int MAX_CBSIZE = 152;
+
+// Must be 32bit aligned
+struct ShaderInjectData {
+	float testFlag; //0.x
+	float rotorFlag; //0.y
+	float testGlobal; //0.z
+	float disable_video_IHADSS; //0.w
+	float count_display; //1.x
+	float mapMode; //1.y
+	float VRMode; //1.z
+	float maskLabels; //1.w
+	float hazeReduction; //2.x => used in asm !
+	float noReflect; //2.y
+	float cockpitSat; //2.z
+	float cockpitMul; //2.w
+	float cockpitAdd; //3.x
+	float extSat; //3.y
+	float extMul; //3.z
+	float extAdd; //3.w
+	float colorFlag; //4.x
+	float fSharpenIntensity; //4.y
+	float lumaFactor; //4.z
+	float sharpenFlag; //4.w
+	float debandFlag; //5.x
+	float Threshold; //5.y
+	float Range; //5.z
+	float Iterations; //5.w
+	float Grain; //6.x
+	float frame_counter; //6.y
+	float AAxFactor; //6.z => to be injected in shaders, contain all super and under sampling values, at the opposite of MSAAxfactor only for technique and only for MSAA
+	float AAyFactor; //6.w => to be injected in shaders, at the opposite of MSAAyfactor only for technique, at the opposite of MSAAxfactor only for technique and only for MSAA
+	float IHADSSxOffset; //7.x
+	float IHADSSBoresight; //7.y
+	float IHADSSNoLeft; //7.z
+	float NS430Flag; //7.w
+	float NS430Xpos; //8.x
+	float NS430Ypos; //8.y
+	float NS430Scale; //8.z
+	float NS430Convergence; //8.w
+	float NVGSize; //9.x
+	float GUIYScale; //9.y
+	float GUItodraw; //9.z
+	float NVGYPos; //9.w
+	float TADSNight; //10.x
+	float TADSDay; //10.y
+	float gCockpitIBL; //10.z
+	float dunmmy2; //10.w
+};
