@@ -6,7 +6,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-//  on_init_pipeline_layout : called once per game session, initialize pipeline layout
+//  draw* : reset tracking flags and skip draw if needed
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -57,64 +57,79 @@
 
 using namespace reshade::api;
 
+//*******************************************************************************************************
+// clear tracking flags to avoid tracking resources if push_descriptor did not detect it...
+
+static void clear_tracking_flags()
+{
+
+	// if (a_shared.track_for_depthStencil || a_shared.track_for_NS430 || a_shared.do_not_draw)
+	if (a_shared.track_for_depthStencil || a_shared.do_not_draw)
+	{
+		log_reset_tracking();
+		a_shared.track_for_depthStencil = false;
+		//a_shared.track_for_NS430 = false;
+		a_shared.do_not_draw = false;
+	}
+
+	// shared_data.track_for_CB[DEF_UNIFORMS_CB_NB] = false;
+
+	a_shared.draw_passed = true;
+}
 
 
 extern "C" {
 
 	// *******************************************************************************************************
-	/// create_CB_layout()
-	///  create a CB layout for CB created or modified by VREM 
-	
+	// On draw* : skip draw
+	//
+	__declspec(dllexport) bool vrem_on_draw(command_list* commandList, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
+	{
 
-	//*******************************************************************************
-	__declspec(dllexport) void vrem_on_init_pipeline_layout(device* dev, uint32_t paramCount, const pipeline_layout_param* params, pipeline_layout layout) {
+		bool skip = false;
+		if (a_shared.do_not_draw) skip = true;
 
-		log_init_pipeline_layout(paramCount, params, layout);
-		// generate data for constant_buffer or shader_resource_view
-		for (uint32_t paramIndex = 0; paramIndex < paramCount; ++paramIndex) {
-			// auto param = params[paramIndex];
-			reshade::api::pipeline_layout_param param = params[paramIndex];
+		// log
+		log_ondraw(vertex_count, instance_count, first_vertex,first_instance);
 
+		// clear tracking flags
+		clear_tracking_flags();
 
-			//log infos
-			// log_init_pipeline_params(paramCount, params, layout, paramIndex, param);
-		}
-		/*
-			if (param.push_descriptors.type == descriptor_type::constant_buffer)
-			{
+		return skip;
+	}
 
-				// create pipeline layout for injecting VREM settings/parameters in CB CBINDEX
-				create_modified_CB_layout(dev, CBINDEX, "VREM settings Cbuffer", SETTINGS_CB_NB);
+	// *******************************************************************************************************
+	// On draw* : skip draw
+	__declspec(dllexport) bool vrem_on_draw_indexed(command_list* commandList, uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
+	{
 
-				g_shared_state->DX11_layout = layout;
+		bool skip = false;
+		if (a_shared.do_not_draw) skip = true;
 
-				// create pipeline layout for injecting CperFrame parameters in CB CPERFRAME_INDEX
-				// create_modified_CB_layout(dev, CPERFRAME_INDEX, "CperFrame", CPERFRAME_CB_NB);
-			}
+		// log
+		log_on_draw_indexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 
-			
-			else if (param.push_descriptors.type == descriptor_type::shader_resource_view)
-			{
+		// clear trackign flags
+		clear_tracking_flags();
 
-				// create a new pipeline_layout for just 1 rsource view to be updated by push_constant(), RV number defined in RVINDEX
-				reshade::api::descriptor_range srv_range;
-				srv_range.dx_register_index = RVINDEX;
-				srv_range.count = UINT32_MAX;
-				srv_range.visibility = reshade::api::shader_stage::pixel;
-				srv_range.type = reshade::api::descriptor_type::shader_resource_view;
+		return skip;
+	}
 
-				const reshade::api::pipeline_layout_param params[] = {
-					srv_range,
-				};
+	// *******************************************************************************************************
+	// On draw* : skip draw
+	__declspec(dllexport) bool vrem_on_drawOrDispatch_indirect(command_list* commandList, indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride)
+	{
 
-				bool  result = dev->create_pipeline_layout(std::size(params), params, &shared_data.saved_pipeline_layout_RV);
+		bool skip = false;
+		if (a_shared.do_not_draw) skip = true;
 
-				if (result)  log_create_RVlayout();
-				else log_error_creating_RVlayout();
-			}
-			*/
-	
+		// log
+		log_on_drawOrDispatch_indirect(type, buffer, offset, draw_count, stride);
+
+		// clear trackign flags
+		clear_tracking_flags();
+
+		return skip;
+
 	}
 }
-
-

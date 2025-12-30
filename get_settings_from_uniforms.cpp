@@ -171,7 +171,8 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
                     a_shared.cb_inject_values.testFlag = uniform_value;
                 }
                 else if ( uniform_name == "var_rotor") a_shared.cb_inject_values.rotorFlag = uniform_value;
-        
+                else if (uniform_name == "set_label") a_shared.cb_inject_values.maskLabels = uniform_value;
+                else if (uniform_name == "flag_fps") a_shared.cb_inject_values.testGlobal = uniform_value;
             }
         });
 }

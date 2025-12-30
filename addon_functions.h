@@ -60,11 +60,14 @@ extern size_t number_of_saved_pipeline();
 extern void delete_saved_pipeline(save_pipeline& p);
 extern void delete_all_saved_pipelines();
 // extern bool hasMatch(const std::vector<uint32_t>& list, const uint32_t* array, size_t array_size);
-extern bool setup_filtered_pipelines(reshade::api::device* device);
+extern bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect_runtime* runtime);
 extern void read_all_shader_code();
 extern void delete_cloned_pipelines(reshade::api::device* dev);
 extern void create_modified_CB_layout(reshade::api::device* device, int cbindex, std::string CB_name, int layout_number);
 extern void create_all_modified_CB_layout(reshade::api::device* device);
+extern bool copy_depthStencil(reshade::api::command_list* cmd_list, reshade::api::shader_stage stages, reshade::api::pipeline_layout layout, uint32_t param_index, const reshade::api::descriptor_table_update& update);
+extern void delete_texture_resources(reshade::api::device* device);
+extern void create_RV_pipeline_layout(reshade::api::device* device);
 
 
 

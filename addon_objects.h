@@ -47,6 +47,7 @@
 #include <unordered_map>
 
 #include "addon_injection.h"
+#include "VREM_settings.h"
 
 #define MAXNAMECHAR 30
 
@@ -150,8 +151,25 @@ struct Shader_Definition {
 // a class to host all global variables shared between reshade on_* functions. 
 // 
 
+// for resource handling
+struct resource_trace {
+	bool created = false;
+	bool copied = false;
+	reshade::api::resource texresource;
+};
+
+struct resourceview_trace {
+	bool created = false;
+	bool compiled = false;
+	reshade::api::resource_view texresource_view;
+	uint32_t width;
+	uint32_t height;
+	// bool depth_exported_for_technique;
+};
+
 // size of the table containing all mod settings to be read from uniforms and define which shader are active
-static const int SETTINGS_SIZE = 10;
+//static const int SETTINGS_SIZE = 10;
+#define MAXVIEWSPERDRAW 6
 
 struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 {
@@ -164,9 +182,55 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	// VREM injection values to be used to inject in shaders
 	struct ShaderInjectData cb_inject_values;
 
-	float cb_test_values[4] = { 0, 0, 0, 0 };
+	// to avoid "holes" in count_display, as the PS used to increment can be called 2 time consecutivelly
+	Feature last_feature = Feature::Null;
 
-	reshade::api::resource res_CB13; // CB to inject in shaders (DX11 only for the moment)
+
+	// counter for the current display (eye + quad view)
+	short int count_display = 0;
+
+	// to skip draw call if some shader are to be skipped
+	bool do_not_draw = false;
+
+	// copy render target for technique
+	//resourceview_trace render_target_view[MAXVIEWSPERDRAW];
+	// flag for drawing or not
+	bool track_for_render_target = false;
+	bool render_effect = false;
+	bool draw_passed = false;
+	uint32_t count_draw = 0;
+
+	// to flag PS shader is used for 2D mirror of VR and not VR rendering
+	int mirror_VR = -1;
+
+	// to copy texture
+	// DX11 pipeline_layout for ressource view
+	reshade::api::pipeline_layout saved_pipeline_layout_RV;
+	reshade::api::descriptor_table_update update;
+	// depth Stencil texture
+	resource_trace depthStencil_res[MAXVIEWSPERDRAW];
+	resourceview_trace stencil_view[MAXVIEWSPERDRAW];
+	resourceview_trace depth_view[MAXVIEWSPERDRAW];
+	
+
+	//test resource for depthStencil copy
+	reshade::api::resource depthStencil_resource = {};
+	reshade::api::resource_view src_resource_view_depth = {};
+	reshade::api::resource_view src_resource_view_stencil = {};
+
+	bool depthStencil_copy_started;
+	// for logging shader_resource_view in push_descriptors() to get depthStencil 
+	bool track_for_depthStencil = false;
+
+	bool track_for_NS430 = false;
+
+	// to compute super/down sampling factor
+	float renderTargetX = -1.0;
+	float SSfactor = 1.0;
+
+	// to avoid doing things before 3D rendering started
+	bool cockpit_rendering_started = false;
+
 
 };
 

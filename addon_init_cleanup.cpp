@@ -66,7 +66,9 @@ bool frame_started = false;     // au moins un bind_pipeline vu
 
 std::unordered_map<std::string, int> settings_mapping = {
 	{"fps_limit", SET_FPS_LIMIT},
-	{"flag_fps", SET_DUMMY}
+	{"flag_fps", SET_DUMMY},
+	{"set_label", SET_LABEL},
+	{"set_default", SET_DEFAULT},
 };
 
 
@@ -84,14 +86,14 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// ** label masking and color/sharpen/deband **
 	// to start spying texture for depthStencil (Vs associated with global illumination PS)
 	// and inject modified CB CperFrame
-	{ 0x4DDC4917, Shader_Definition(action_log | action_injectCB, Feature::GetStencil, L"", 0, {SET_COLOR, SET_LABEL}) },
-	{ 0x57D037A0, Shader_Definition(action_injectCB, Feature::Sky, L"", 0, {SET_COLOR, SET_LABEL}) },
+	{ 0x4DDC4917, Shader_Definition(action_log | action_injectCB, Feature::GetStencil, L"", 0, {SET_DEFAULT}) },
+	{ 0x57D037A0, Shader_Definition(action_injectCB, Feature::Sky, L"", 0, {SET_DEFAULT}) },
 	// { 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0) },
 	// global PS for all changes
-	//{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText | action_log, Feature::Global, L"global_PS_2.cso", 0) },
 	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_LABEL}) },
+	// { 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_LABEL}) },
 	//TODO VS associated with global PS 2 for draw increase : 8DB626CD
-	{ 0x8DB626CD, Shader_Definition(action_log , Feature::VS_global2, L"", 0, {SET_COLOR, SET_LABEL}) },
+	{ 0x8DB626CD, Shader_Definition(action_log , Feature::VS_global2, L"", 0, {SET_DEFAULT}) },
 	// Label PS 
 	{ 0x6CEA1C47, Shader_Definition(action_replace | action_injectText, Feature::Label , L"labels_PS.cso", 0, {SET_LABEL}) },
 	// ** NS430 **
@@ -171,10 +173,20 @@ extern "C" {
 		}
 
         //TODO : init mod params
-		a_shared.VREM_setting[SET_DEFAULT] = 1.0f;
+
+		for (int i = 0; i < MAXVIEWSPERDRAW; i++)
+		{
+			a_shared.depthStencil_res[i].created = false;
+			a_shared.depth_view[i].created = false;
+			a_shared.stencil_view[i].created = false;
+		}
+
+		// to avoid doing things before 3D rendering started
+		bool cockpit_rendering_started = false;
 
 		//display the shader list
 		// display_shader_by_hash();
+
 
 
         // reshade::log::message(reshade::log::level::info,"DCS VREM: register done...");
@@ -208,6 +220,9 @@ extern "C" {
 
 			// to reload filtered and cloned
 			g_shared_state->filtered_pipeline_to_setup = true;
+
+			// delete texture resources created for mod
+			delete_texture_resources(g_shared_state->device);
 		}
 
 

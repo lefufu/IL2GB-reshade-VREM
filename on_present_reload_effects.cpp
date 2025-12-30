@@ -51,6 +51,37 @@
 
 using namespace reshade::api;
 
+// *******************************************************************************************************
+// Initialize counters 
+//
+void intialize_counters()
+{
+    // to know the current display : 2D, VR standard: left/right, VR quad view : left eye outer + inner + right eye outer+inner
+    a_shared.count_display = 0;
+
+    a_shared.cb_inject_values.mapMode = 1.0;
+    a_shared.depthStencil_copy_started = false;
+    a_shared.do_not_draw = false;
+    a_shared.cb_inject_values.GUItodraw = 0.0;
+
+    a_shared.render_effect = false;
+    a_shared.track_for_render_target = false;
+
+    a_shared.last_feature = Feature::Null;
+
+    // a_shared.CB_copied[CPERFRAME_CB_NB] = false;
+
+    // initialize flags for copy
+    for (int i = 0; i < MAXVIEWSPERDRAW; i++)
+    {
+        a_shared.depthStencil_res[i].copied = false;
+        //a_shared.NS430_res[i].copied = false;
+        // a_shared.render_target_view[i].created = false;
+    }
+
+}
+
+
 extern "C" {
     //*******************************************************************************
     _declspec(dllexport) void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
@@ -58,40 +89,40 @@ extern "C" {
 
         // not used, 
         reshade::api::device* device = runtime->get_device();
+        g_shared_state->device = device;
 
-        // to get VREM settings => read from uniform values
+        // initialize counter to identfiy what to do when in the next frame
+        intialize_counters();
+
+		// to get VREM settings => read from uniform values (if overlay is open or at first init)
         if (g_shared_state->overlay_is_open || addon_init == true) {
-            // Récupérer l'état actuel des uniforms
             get_settings_from_uniforms(runtime);
             addon_init = false;
-
         }
 
-        g_shared_state->device = device;
-        /*
-        // fps limiter function
-        // if (g_shared_state->s_fps_limit <= 0)
-        if (VREM_setting[DUMMY] == 0)
-            return;
-
-        const auto time_per_frame = std::chrono::high_resolution_clock::duration(std::chrono::seconds(1)) / int(VREM_setting[FPS_LIMIT]);
-        const auto next_time_point = g_shared_state->s_last_time_point + time_per_frame;
-
-        while (next_time_point > std::chrono::high_resolution_clock::now())
-            std::this_thread::sleep_for(std::chrono::high_resolution_clock::duration(std::chrono::milliseconds(1)));
-
-        g_shared_state->s_last_time_point = next_time_point;
-        */
-
-        // create all pipeline_layouts for pushing dedicated CB
+        // create all pipeline_layouts for pushing dedicated CB (if not created)
         create_all_modified_CB_layout(device);
+
+		// create all pipelines layput for pushing dedicated RV (if not created)
+        create_RV_pipeline_layout(device);
 
         // generate filtered shader list and clone pipelines if needed
         if (g_shared_state->filtered_pipeline_to_setup) {
 
-            g_shared_state->filtered_pipeline_to_setup = false;
-            setup_filtered_pipelines(g_shared_state->device);
+            g_shared_state->filtered_pipeline_to_setup = setup_filtered_pipelines(g_shared_state->device, runtime);
+
+			//TODO remove as not coherent 
+            for (int i = 0; i < MAXVIEWSPERDRAW; i++)
+            {
+                a_shared.depthStencil_res[i].created = false;
+                a_shared.depth_view[i].created = false;
+                a_shared.stencil_view[i].created = false;
+            }
+
+
         }
+
+
 
         /*
         // frame capture by button on GUI
@@ -130,6 +161,8 @@ extern "C" {
         }
         last_button = button;
         
+		//force capture for testing
+        // flag_capture = true;
     }
 
 

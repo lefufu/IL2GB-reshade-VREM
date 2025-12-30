@@ -59,15 +59,33 @@
 
 bool check_if_active_option(Shader_Definition shader_def)
 {
+	/*std::stringstream s;
+	
 	bool result = false;
 	for (uint32_t option : shader_def.VREM_options)
 	{
-		if (a_shared.VREM_setting[option])
+		
+		
+		s << "a_shared.VREM_setting[" << option << "]  = " << a_shared.VREM_setting[option];
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+		s.str("");
+		s.clear();
+		
+		if (a_shared.VREM_setting[option] > 0)
 		{
 			result = true;
 		}
 	}
 	return result;
+	*/
+	for (uint32_t index : shader_def.VREM_options)
+	{
+		if (a_shared.VREM_setting[index] != 0)
+		{
+			return 1;
+		}
+	}
+	return 0;
 }
 
 // *******************************************************************************************************
@@ -75,7 +93,7 @@ bool check_if_active_option(Shader_Definition shader_def)
 /// setup filetered pipelines regarding mod settings
 /// </summary>
 
-bool setup_filtered_pipelines(reshade::api::device* device)
+bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect_runtime* runtime)
 {
 
 	// parse the shader list to load all shader codes and store codes in shader_code_cache
@@ -83,50 +101,66 @@ bool setup_filtered_pipelines(reshade::api::device* device)
 	
 	uint64_t last_handle;
 
-	// parse the list of saved pipelines to identify which one to keep regarding mod settings
-	for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines)
+	// ensure settings are updated from uniforms to be sure shader will be loaded regarding current mod settings
+	get_settings_from_uniforms(runtime);
+
+	// ensure the hidden "set_default" uniform has been read
+	if (a_shared.VREM_setting[SET_DEFAULT] == 1)
 	{
-		// is this pipeline to be processed regarding mod settings ?
-		bool to_be_filtered = false;
-		// check if the shader hash is in the mod list
-		
-		auto shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
-		if (shader_def_opt.has_value())
+		log_display_settings();
+
+		// parse the list of saved pipelines to identify which one to keep regarding mod settings
+		for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines)
 		{
-			
-			bool active = check_if_active_option(shader_def_opt.value());
-			log_shader(p.pipeline, shader_def_opt.value(), active);
-			
-			// if the shader is active, add it to the filtered pipeline list for later processing
-			if (active)
+			// is this pipeline to be processed regarding mod settings ?
+			bool to_be_filtered = false;
+			// check if the shader hash is in the mod list
+
+			auto shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
+			if (shader_def_opt.has_value())
 			{
-				// cloned pipeline if needed
-				if ((shader_def_opt.value().action & action_replace_bind) || (shader_def_opt.value().action & action_replace))
+
+				bool active = check_if_active_option(shader_def_opt.value());
+				log_shader(p.pipeline, shader_def_opt.value(), active);
+
+				// if the shader is active, add it to the filtered pipeline list for later processing
+				if (active)
 				{
-
-					//clone the pipeline with the new shader code
-					pipeline cloned_pipeline = clone_pipeline(p.device,p.layout,p.subobject_count,p.subobjects.data(),p.pipeline,p.hash);
-					if (cloned_pipeline.handle == 0)
+					// cloned pipeline if needed
+					if ((shader_def_opt.value().action & action_replace_bind) || (shader_def_opt.value().action & action_replace))
 					{
-						log_pipeline_clone_error(p.pipeline.handle);
 
-					} else
-					{
-						// store the cloned & modified pipeline for later usage in bind_pipeline
-						shader_def_opt.value().substitute_pipeline = cloned_pipeline;
-						//add cloned pipeline in cloned_pipeline to suppress them if addon is reloaded
-						cloned_pipeline_list.emplace(cloned_pipeline.handle, cloned_pipeline);
-						last_handle = cloned_pipeline.handle;
+						//clone the pipeline with the new shader code
+						pipeline cloned_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, p.hash);
+						if (cloned_pipeline.handle == 0)
+						{
+							log_pipeline_clone_error(p.pipeline.handle);
+
+						}
+						else
+						{
+							// store the cloned & modified pipeline for later usage in bind_pipeline
+							shader_def_opt.value().substitute_pipeline = cloned_pipeline;
+							//add cloned pipeline in cloned_pipeline to suppress them if addon is reloaded
+							cloned_pipeline_list.emplace(cloned_pipeline.handle, cloned_pipeline);
+							last_handle = cloned_pipeline.handle;
+						}
+
 					}
+					filtered_pipeline.emplace(p.pipeline.handle, shader_def_opt.value());
 
+					log_filtered_added(p.pipeline.handle);
 				}
-				filtered_pipeline.emplace(p.pipeline.handle, shader_def_opt.value());
-				
-				log_filtered_added(p.pipeline.handle);
 			}
 		}
+		return false;
 	}
-	return true;
+	else
+	{
+		log_waiting_setting();
+		return true;
+	}
+	
 }
 
 

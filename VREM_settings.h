@@ -61,7 +61,8 @@ extern SharedState* g_shared_state;
 
 // mapping value are in get_settings_from_uniforms
 
-constexpr uint8_t SET_DUMMY = 1;
+static const int SETTINGS_SIZE = 11;
+
 constexpr uint8_t SET_DEFAULT = 0;
 constexpr uint8_t SET_ROTOR = 1;
 constexpr uint8_t SET_IHADSS = 2;
@@ -72,4 +73,5 @@ constexpr uint8_t SET_REFLECT = 6;
 constexpr uint8_t SET_NVG = 7;
 constexpr uint8_t SET_EFFECTS = 8;
 constexpr uint8_t SET_FPS_LIMIT = 9;
+constexpr uint8_t SET_DUMMY = 10;
 
