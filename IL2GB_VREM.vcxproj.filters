@@ -57,7 +57,7 @@
     <ClCompile Include="on_push_descriptors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="copy_texture.cpp">
+    <ClCompile Include="texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="on_draw.cpp">

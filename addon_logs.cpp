@@ -71,6 +71,13 @@ void log_addon_cleanup_filtered() {
 	}
 }
 
+void log_cleanup_texture() {
+	if (g_shared_state->debug)
+	{
+		reshade::log::message(reshade::log::level::info, "addon - cleaning up texture resources and view");
+	}
+}
+
 void log_error_array_uniform(std::string effect_name, std::string uniform_name, uint32_t out_array_length) {
 	if (g_shared_state->debug)
 	{
@@ -422,19 +429,15 @@ void log_creation_start(std::string texture_name)
 }
 
 
-void log_resource_view_created(std::string texture_name, device* dev, resource_desc check_new_res, uint64_t handle)
+void log_resource_created(std::string texture_name, device* dev, resource_desc check_new_res, uint64_t handle)
 {
 
-	// if ((debug_flag && flag_capture) || FORCE_LOG)
-	// if (g_shared_state->debug)
-	if (g_shared_state->debug && flag_capture)
+	if (g_shared_state->debug)
 	{
 
 		// display resource info
-
 		std::stringstream s;
-		// s << " => copy_depthStencil: for draw " << shared_data.count_display << ": create stencil/depth resource, type: " << to_string(check_new_res.type);
-		s << " => copy_" << texture_name << ": for draw " << a_shared.count_display << ": create stencil/depth resource view, type: " << to_string(check_new_res.type) << ", handle =" << std::hex << handle;
+		s << "addon - create resource for " << texture_name  << ":, type: " << to_string(check_new_res.type) << ", src handle =" << std::hex << handle << ", draw =" << a_shared.count_display;
 
 		switch (check_new_res.type) {
 		default:
@@ -458,75 +461,57 @@ void log_resource_view_created(std::string texture_name, device* dev, resource_d
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
-
-		//display resource view infos
-		resource_view_desc check_new_res2 = dev->get_resource_view_desc(a_shared.depth_view[a_shared.count_display].texresource_view);
-		// resource_view_desc check_new_res2 = dev->get_resource_view_desc(a_shared.src_resource_view_depth);
-		s << " => copy_" << texture_name << ": create depth resource view , type: " << to_string(check_new_res2.type);
-
-		switch (check_new_res2.type) {
-		default:
-		case reshade::api::resource_view_type::unknown:
-			s << "!!! error: resource_type not texture* !!!";
-			break;
-
-		case reshade::api::resource_view_type::texture_1d:
-		case reshade::api::resource_view_type::texture_2d:
-		case reshade::api::resource_view_type::texture_3d:
-		case reshade::api::resource_view_type::texture_2d_multisample:
-			s << ", view format: " << to_string(check_new_res2.format);
-			break;
-		}
-		s << ";";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-		s.str("");
-		s.clear();
-
-		// check_new_res2 = dev->get_resource_view_desc(a_shared.stencil_view[a_shared.count_display].texresource_view);
-		//check_new_res2 = dev->get_resource_view_desc(a_shared.src_resource_view_stencil);
-		s << " => copy_depthStencil: create depth resource view , type: " << to_string(check_new_res2.type);
-		s << " => copy_" << texture_name << ": create stencil resource view , type: " << to_string(check_new_res2.type);
-
-		switch (check_new_res2.type) {
-		default:
-		case reshade::api::resource_view_type::unknown:
-			s << "!!! error: resource_type not texture* !!!";
-			break;
-
-		case reshade::api::resource_view_type::texture_1d:
-		case reshade::api::resource_view_type::texture_2d:
-		case reshade::api::resource_view_type::texture_3d:
-		case reshade::api::resource_view_type::texture_2d_multisample:
-			s << ", view format: " << to_string(check_new_res2.format);
-			break;
-		}
-		s << ";";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-		s.str("");
-		s.clear();
-
 	}
 }
 
-void log_copy_texture(std::string texture_name)
+void log_resource_view_created(std::string texture_name, device* dev, resource_view res_view, uint64_t handle)
+{
+	if (g_shared_state->debug)
+	{
+
+		resource_view_desc res_desc = dev->get_resource_view_desc(res_view);
+		// display resource view infos
+		std::stringstream s;
+		s << "addon - create resource view for " << texture_name << ":, type: " << to_string(res_desc.type) << ", src handle =" << std::hex << handle << ", draw =" << a_shared.count_display;
+
+
+		switch (res_desc.type) {
+		default:
+		case reshade::api::resource_view_type::unknown:
+			s << "!!! error: resource_type not texture* !!!";
+			break;
+
+		case reshade::api::resource_view_type::texture_1d:
+		case reshade::api::resource_view_type::texture_2d:
+		case reshade::api::resource_view_type::texture_3d:
+		case reshade::api::resource_view_type::texture_2d_multisample:
+			s << ", res. view format: " << to_string(res_desc.format);
+			break;
+		}
+		s << ";";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+void log_copy_texture(std::string texture_name, uint64_t handle)
 {
 	// if (debug_flag && shared_data.s_do_capture)
 	if (g_shared_state->debug && flag_capture)
 	{
 		std::stringstream s;
-		s << " = > copy_" << texture_name << ": for draw (" << a_shared.count_display << ") : resource copied";
+		s << " = >  resource and view(s) copied for" << texture_name << ", src res.hande = " << std::hex << handle << ", for draw (" << a_shared.count_display << ");";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 
 	}
 }
 
-void log_texture_injected(std::string texture_name, int count_displayVS)
+void log_texture_injected(std::string texture_name, uint64_t handle, int drawindex)
 {
 	if (g_shared_state->debug && flag_capture)
 	{
 		std::stringstream s;
-		s << " => on_bind_pipeline : " << texture_name << " textures injected for draw index : ";
-		s << count_displayVS << ";";
+		s << " => on_bind_pipeline : " << texture_name << ", src text. handle = " << std::hex << handle << ", textures injected for draw index : ";
+		s << drawindex << ";";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }

@@ -141,29 +141,32 @@ extern "C" {
 			{
 				// inject texture using push_descriptor() if things has been initialized => draw index is > -1
 
-				if ((it->second.feature == Feature::Global || it->second.feature == Feature::Label) && count_displayVS > -1 && a_shared.depthStencil_copy_started)
+				//check if the current depthStencil is declared
+				auto it_ds = a_shared.saved_DS.find(a_shared.current_DS_handle);
+				if (it_ds != a_shared.saved_DS.end())
 				{
-
-
-					//if (it->second.feature == Feature::Label) count_displayVS++;
-
 					// stencil depth textures in shaders for color change and label masking 
-					if (a_shared.depth_view[count_displayVS].created && a_shared.stencil_view[count_displayVS].created)
+					if ((it->second.feature == Feature::Global || it->second.feature == Feature::Label) && count_displayVS > -1 && a_shared.saved_DS[a_shared.current_DS_handle].copied)
 					{
+						reshade::api::descriptor_table_update update;
+
+						//common
+						update.count = 1;
+						update.type = reshade::api::descriptor_type::shader_resource_view;
 
 						// push the texture for depth and stencil, descriptor initialized in copy_texture()
 						//depth
-						a_shared.update.binding = 0;
-						a_shared.update.descriptors = &a_shared.depth_view[count_displayVS].texresource_view;
-						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, a_shared.update);
+						update.binding = 0; // t3 as 3 is defined in pipeline_layout
+						update.descriptors = &a_shared.saved_DS[a_shared.current_DS_handle].texresource_view_depth;
+						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
 
 						//stencil
-						a_shared.update.binding = 1; // t4 as 3 is defined in pipeline_layout
-						a_shared.update.descriptors = &a_shared.stencil_view[count_displayVS].texresource_view;;
-						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, a_shared.update);
+						update.binding = 1; // t4 as 3 is defined in pipeline_layout
+						update.descriptors = &a_shared.saved_DS[a_shared.current_DS_handle].texresource_view_stencil;
+						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
 
 						// log infos
-						log_texture_injected("depthStencil", count_displayVS);
+						log_texture_injected("depthStencil", a_shared.current_DS_handle, count_displayVS);
 					}
 				}
 			} 

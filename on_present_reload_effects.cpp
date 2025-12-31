@@ -71,13 +71,12 @@ void intialize_counters()
 
     // a_shared.CB_copied[CPERFRAME_CB_NB] = false;
 
-    // initialize flags for copy
-    for (int i = 0; i < MAXVIEWSPERDRAW; i++)
-    {
-        a_shared.depthStencil_res[i].copied = false;
-        //a_shared.NS430_res[i].copied = false;
-        // a_shared.render_target_view[i].created = false;
+    // initialize flags for texture copy
+    a_shared.current_DS_handle = 0;
+    for (auto& [handle, ds_copy] : a_shared.saved_DS) {
+        ds_copy.copied = false;
     }
+
 
 }
 
@@ -111,18 +110,7 @@ extern "C" {
 
             g_shared_state->filtered_pipeline_to_setup = setup_filtered_pipelines(g_shared_state->device, runtime);
 
-			//TODO remove as not coherent 
-            for (int i = 0; i < MAXVIEWSPERDRAW; i++)
-            {
-                a_shared.depthStencil_res[i].created = false;
-                a_shared.depth_view[i].created = false;
-                a_shared.stencil_view[i].created = false;
-            }
-
-
         }
-
-
 
         /*
         // frame capture by button on GUI

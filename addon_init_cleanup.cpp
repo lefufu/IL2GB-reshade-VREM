@@ -90,8 +90,8 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{ 0x57D037A0, Shader_Definition(action_injectCB, Feature::Sky, L"", 0, {SET_DEFAULT}) },
 	// { 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0) },
 	// global PS for all changes
-	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_LABEL}) },
-	// { 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_LABEL}) },
+	//{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_LABEL}) },
+	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_LABEL}) },
 	//TODO VS associated with global PS 2 for draw increase : 8DB626CD
 	{ 0x8DB626CD, Shader_Definition(action_log , Feature::VS_global2, L"", 0, {SET_DEFAULT}) },
 	// Label PS 
@@ -174,13 +174,6 @@ extern "C" {
 
         //TODO : init mod params
 
-		for (int i = 0; i < MAXVIEWSPERDRAW; i++)
-		{
-			a_shared.depthStencil_res[i].created = false;
-			a_shared.depth_view[i].created = false;
-			a_shared.stencil_view[i].created = false;
-		}
-
 		// to avoid doing things before 3D rendering started
 		bool cockpit_rendering_started = false;
 
@@ -222,10 +215,12 @@ extern "C" {
 			g_shared_state->filtered_pipeline_to_setup = true;
 
 			// delete texture resources created for mod
+			log_cleanup_texture();
 			delete_texture_resources(g_shared_state->device);
+
+
 		}
-
-
+		a_shared.saved_DS.clear();
 
         // Nettoyer uniquement les données temporaires
         // shader_code.clear();

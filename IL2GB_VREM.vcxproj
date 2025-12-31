@@ -22,7 +22,7 @@
     <ClCompile Include="clone_pipeline.cpp" />
     <ClCompile Include="addon_init_cleanup.cpp" />
     <ClCompile Include="constant_buffer.cpp" />
-    <ClCompile Include="copy_texture.cpp" />
+    <ClCompile Include="texture.cpp" />
     <ClCompile Include="get_settings_from_uniforms.cpp" />
     <ClCompile Include="load_shader_code.cpp" />
     <ClCompile Include="misc.cpp" />

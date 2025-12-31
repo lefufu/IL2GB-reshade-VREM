@@ -167,6 +167,14 @@ struct resourceview_trace {
 	// bool depth_exported_for_technique;
 };
 
+//test resource for depthStencil copy
+struct resource_DS_copy {
+	bool copied = false;
+	reshade::api::resource texresource = {};
+	reshade::api::resource_view texresource_view_depth = {};
+	reshade::api::resource_view texresource_view_stencil = {};
+};
+
 // size of the table containing all mod settings to be read from uniforms and define which shader are active
 //static const int SETTINGS_SIZE = 10;
 #define MAXVIEWSPERDRAW 6
@@ -205,15 +213,18 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 
 	// to copy texture
 	// DX11 pipeline_layout for ressource view
-	reshade::api::pipeline_layout saved_pipeline_layout_RV;
-	reshade::api::descriptor_table_update update;
-	// depth Stencil texture
-	resource_trace depthStencil_res[MAXVIEWSPERDRAW];
-	resourceview_trace stencil_view[MAXVIEWSPERDRAW];
-	resourceview_trace depth_view[MAXVIEWSPERDRAW];
-	
+	reshade::api::pipeline_layout saved_pipeline_layout_RV = {};
+	// reshade::api::descriptor_table_update update;
 
-	//test resource for depthStencil copy
+	// obsolete : depth Stencil texture
+	// resource_trace depthStencil_res[MAXVIEWSPERDRAW];
+	// resourceview_trace stencil_view[MAXVIEWSPERDRAW];
+	// resourceview_trace depth_view[MAXVIEWSPERDRAW];
+	
+	//resource for depthStencil copy
+	std::unordered_map<uint64_t, resource_DS_copy> saved_DS = {};
+	uint64_t current_DS_handle = 0;
+
 	reshade::api::resource depthStencil_resource = {};
 	reshade::api::resource_view src_resource_view_depth = {};
 	reshade::api::resource_view src_resource_view_stencil = {};

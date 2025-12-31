@@ -71,14 +71,14 @@ extern "C" {
 
 		log_init_pipeline_layout(paramCount, params, layout);
 		// generate data for constant_buffer or shader_resource_view
-		for (uint32_t paramIndex = 0; paramIndex < paramCount; ++paramIndex) {
+		// for (uint32_t paramIndex = 0; paramIndex < paramCount; ++paramIndex) {
 			// auto param = params[paramIndex];
-			reshade::api::pipeline_layout_param param = params[paramIndex];
+			// reshade::api::pipeline_layout_param param = params[paramIndex];
 
 
 			//log infos
 			// log_init_pipeline_params(paramCount, params, layout, paramIndex, param);
-		}
+		//}
 		/*
 			if (param.push_descriptors.type == descriptor_type::constant_buffer)
 			{
