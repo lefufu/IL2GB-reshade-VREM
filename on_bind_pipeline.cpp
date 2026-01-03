@@ -74,9 +74,10 @@ extern "C" {
 		// identify if the pipeline is to be processed
 		auto it = filtered_pipeline.find(pipelineHandle.handle);
 
-		if (it != filtered_pipeline.end())
+		if (it == filtered_pipeline.end()) [[likely]] return;
+		// if (it != filtered_pipeline.end())
 		{
-
+		
 			//shader is found in the filtered pipeline list
 			Shader_Definition& shader = it->second;
 
@@ -209,6 +210,9 @@ extern "C" {
 					// engage tracking shader_resource_view in push_descriptors() to get depthStencil 
 					a_shared.track_for_depthStencil = true;
 
+					// global tracking flag to filter on_draw* and on_push call, whatever the tracking.
+					g_shared_state->global_tracking = true;
+
 					// log infos
 					log_start_monitor("Depth Stencil");
 				}
@@ -264,19 +268,6 @@ extern "C" {
 					// set up draw flag to avoid push_constant() doing effect before draw (it will be overwritten by the PS)
 					a_shared.draw_passed = false;
 				}
-			}
-
-			// ----------------------------------------
-			// setup variables regarding the action
-			if (it->second.action & action_identify)
-			{
-				// setup some global variables according to the feature (if not possible to do it on init_pipeline)
-
-				if (it->second.feature == Feature::mapMode)
-				{
-					a_shared.cb_inject_values.mapMode = 0.0;
-					a_shared.cockpit_rendering_started = true;
-				}
 
 				// PS for mirror view : setup VR mode
 				if (it->second.feature == Feature::VRMode)
@@ -290,8 +281,27 @@ extern "C" {
 					if (a_shared.count_display == 2) a_shared.mirror_VR = 1;
 					log_mirror_view();
 				}
+			}
+
+			// ----------------------------------------
+			// setup variables regarding the action
+			if (it->second.action & action_identify)
+			{
+				// setup some global variables according to the feature (if not possible to do it on init_pipeline)
+				if (a_shared.last_feature != it->second.feature)
+				{
+
+					if (it->second.feature == Feature::mapMode)
+					{
+						a_shared.cb_inject_values.mapMode = 0.0;
+						a_shared.cockpit_rendering_started = true;
+					}
+
+				}
 
 			}
+
+			// trace current feature for next call
 			a_shared.last_feature = it->second.feature;
 		}
 

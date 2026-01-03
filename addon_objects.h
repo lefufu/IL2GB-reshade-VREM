@@ -242,7 +242,6 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	// to avoid doing things before 3D rendering started
 	bool cockpit_rendering_started = false;
 
-
 };
 
 extern struct addon_shared a_shared;

@@ -75,6 +75,9 @@ static void clear_tracking_flags()
 	// shared_data.track_for_CB[DEF_UNIFORMS_CB_NB] = false;
 
 	a_shared.draw_passed = true;
+
+	//clear tracking for on_draw and on_push
+	g_shared_state->global_tracking = false;
 }
 
 

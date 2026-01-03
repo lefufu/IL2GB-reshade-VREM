@@ -75,6 +75,7 @@ std::unordered_map<std::string, int> settings_mapping = {
 // definition of action triggered by shaders/pipeline
 std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 {
+	
 	// ** fix for rotor **
 	{ 0xC0CC8D69, Shader_Definition(action_replace, Feature::Rotor, L"AH64_rotorPS.cso", 0, {SET_ROTOR}) },
 	{ 0x349A1054, Shader_Definition(action_replace, Feature::Rotor, L"AH64_rotor2PS.cso", 0, {SET_ROTOR}) },
@@ -88,7 +89,7 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// and inject modified CB CperFrame
 	{ 0x4DDC4917, Shader_Definition(action_log | action_injectCB, Feature::GetStencil, L"", 0, {SET_DEFAULT}) },
 	{ 0x57D037A0, Shader_Definition(action_injectCB, Feature::Sky, L"", 0, {SET_DEFAULT}) },
-	// { 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0) },
+	{ 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0) },
 	// global PS for all changes
 	//{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_LABEL}) },
 	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_LABEL}) },
@@ -111,7 +112,7 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{ 0x55288581, Shader_Definition(action_log, Feature::GUI, L"", 0, {SET_DEFAULT}) },
 	//  ** identify game config **
 	// to define if VR is active or not (2D mirror view of VR )
-	{ 0x886E31F2, Shader_Definition(action_identify | action_log, Feature::VRMode, L"", 0, {SET_DEFAULT}) },
+	{ 0x886E31F2, Shader_Definition(action_log, Feature::VRMode, L"", 0, {SET_DEFAULT}) },
 	// VS drawing cockpit parts to define if view is in welcome screen or map
 	{ 0xA337E177, Shader_Definition(action_identify, Feature::mapMode, L"", 0, {SET_DEFAULT}) },
 	//  ** reflection on instrument, done by GCOCKPITIBL of CperFrame **
@@ -126,7 +127,7 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{ 0x936B2B6A, Shader_Definition(action_log , Feature::Effects , L"", 0, {SET_EFFECTS}) },
 	// **test constant color shader for debug**
 	{ 0xCFB718E2, Shader_Definition(action_replace_bind , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
-
+	
 };
 
 //

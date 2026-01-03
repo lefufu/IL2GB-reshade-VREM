@@ -62,7 +62,7 @@ extern "C" {
 		short int display_to_use = a_shared.count_display - 1;
 
 		// TODO : render effect part
-
+		if (!g_shared_state->global_tracking) return;
 
 		//handle only shader_resource_view when needed
 		// handle depthStencil

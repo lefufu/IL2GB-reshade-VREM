@@ -55,12 +55,15 @@
 
 #define MAX_OBJ_PER_PIPELINE 5
 
-// handled pipeline types
-static const std::set<reshade::api::pipeline_subobject_type> ALLOWED_SHADERS = {
-    reshade::api::pipeline_subobject_type::vertex_shader,
-    reshade::api::pipeline_subobject_type::pixel_shader
-};
+using namespace reshade::api;
 
+// handled pipeline types
+
+constexpr  reshade::api::pipeline_stage ALLOWED_STAGES = pipeline_stage::pixel_shader | pipeline_stage::vertex_shader;
+static const std::set<pipeline_subobject_type> ALLOWED_SHADERS = {
+    pipeline_subobject_type::vertex_shader,
+    pipeline_subobject_type::pixel_shader
+};
 
 // Structure to store all pipeline infos
 struct save_pipeline {
@@ -134,6 +137,7 @@ struct SharedState {
     PersistentPipelineData VREM_pipelines;
 
     reshade::api::pipeline_layout DX11_layout = {};
+
+    // to limit on_draw*, on_push*,.. call
+    bool global_tracking = false;
 };
-
-

@@ -111,10 +111,10 @@ void save_pipeline_in_list(
         temp_pipe.hash[i] = 0;
 
         // if (std::find(ALLOWED_SHADERS.begin(), ALLOWED_SHADERS.end(), type) != ALLOWED_SHADERS.end())
+        
         if (ALLOWED_SHADERS.count(sub.type) > 0)
         {
 
-            
             to_store = true;
 
             switch (sub.type) {

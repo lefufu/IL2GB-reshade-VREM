@@ -156,7 +156,7 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
                 }
             }
 
-            // log_uniform(effect_name, uniform_name, uniform_value);
+            //log_uniform(effect_name, uniform_name, uniform_value);
             
             // update vrem settings if name is defined in settings_mapping
             if (settings_mapping.count(uniform_name) > 0)
@@ -176,3 +176,4 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
             }
         });
 }
+
