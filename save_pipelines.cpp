@@ -301,7 +301,8 @@ void save_pipeline_in_list(
             g_shared_state->VREM_pipelines.saved_pipelines.push_back(std::move(temp_pipe));
 
             const auto& last_pipe = g_shared_state->VREM_pipelines.saved_pipelines.back();
-            // **** log_saved_pipelines_value(last_pipe);
+            // too verbose !
+            log_saved_pipelines_value(last_pipe);
         }
     }
 }

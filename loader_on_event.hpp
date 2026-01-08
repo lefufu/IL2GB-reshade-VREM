@@ -182,7 +182,7 @@ private:
         funcs.on_push_descriptors = GetProcAddress(addon_module, "vrem_on_push_descriptors");
         funcs.on_create_pipeline = GetProcAddress(addon_module, "vrem_on_create_pipeline");
         funcs.on_after_create_pipeline = GetProcAddress(addon_module, "vrem_on_after_create_pipeline");
-        funcs.on_bind_render_targets = GetProcAddress(addon_module, "vrem_on_bind_render_targets");
+        funcs.on_bind_render_targets = GetProcAddress(addon_module, "vrem_on_bind_render_targets_and_depth_stencil");
         funcs.on_reshade_overlay = GetProcAddress(addon_module, "vrem_on_reshade_overlay");
         funcs.on_reshade_set_technique_state = GetProcAddress(addon_module, "vrem_on_reshade_set_technique_state");
         funcs.on_destroy_pipeline = GetProcAddress(addon_module, "vrem_on_destroy_pipeline");
@@ -300,11 +300,6 @@ static void on_init_pipeline(device* dev, pipeline_layout layout, uint32_t count
 
 static void on_bind_pipeline(command_list* cmd, pipeline_stage stages, pipeline pipe) {
 
-    // optimize performance by reducing processing to ALLOWED_STAGES
-    if ((static_cast<uint32_t>(stages) &
-        static_cast<uint32_t>(ALLOWED_STAGES)) == 0)
-        return;
-
     #if USE_HOT_RELOAD
         if (g_reloader && g_reloader->get_functions().on_bind_pipeline) {
             typedef void (*Func)(command_list*, pipeline_stage, pipeline);
@@ -330,8 +325,6 @@ static void on_init_pipeline_layout(device* dev, uint32_t count,
 }
 
 static bool on_draw(command_list* cmd, uint32_t v, uint32_t i, uint32_t fv, uint32_t fi) {
-    // to limit processing only when a tracing is setup
-    if (!g_shared_state_l.global_tracking) return false;
 
 #if USE_HOT_RELOAD
     if (g_reloader && g_reloader->get_functions().on_draw) {
@@ -345,9 +338,6 @@ static bool on_draw(command_list* cmd, uint32_t v, uint32_t i, uint32_t fv, uint
 
 static bool on_draw_indexed(command_list* cmd, uint32_t ic, uint32_t ins,
     uint32_t fi, int32_t vo, uint32_t fii) {
-
-    // to limit processing only when a tracing is setup
-    if (!g_shared_state_l.global_tracking) return false;
 
 #if USE_HOT_RELOAD
     if (g_reloader && g_reloader->get_functions().on_draw_indexed) {
@@ -364,8 +354,6 @@ static bool on_draw_indexed(command_list* cmd, uint32_t ic, uint32_t ins,
 static bool on_draw_indirect(command_list* cmd, indirect_command type, resource buf,
     uint64_t off, uint32_t cnt, uint32_t stride) {
 
-    // to limit processing only when a tracing is setup
-    if (!g_shared_state_l.global_tracking) return false;
 #if USE_HOT_RELOAD
 
     if (g_reloader && g_reloader->get_functions().on_draw_indirect) {
@@ -380,9 +368,6 @@ static bool on_draw_indirect(command_list* cmd, indirect_command type, resource 
 
 static void on_push_descriptors(command_list* cmd, shader_stage stages, pipeline_layout layout,
     uint32_t idx, const descriptor_table_update& upd) {
-
-    // to limit processing only when a tracing is setup
-    if (!g_shared_state_l.global_tracking) return;
 
 #if USE_HOT_RELOAD
     if (g_reloader && g_reloader->get_functions().on_push_descriptors) {
@@ -431,7 +416,7 @@ static void on_bind_render_targets(command_list* cmd, uint32_t count,
     }
 
 #else
-    vrem_on_bind_render_targets(cmd, count, rtvs, dsv);
+    vrem_on_bind_render_targets_and_depth_stencil(cmd, count, rtvs, dsv);
 #endif
 }
 
@@ -471,3 +456,16 @@ static void on_destroy_pipeline(device* dev, pipeline pipe) {
         vrem_on_destroy_pipeline)(dev, pipe);
 #endif
 }
+
+
+static void on_reshade_overlay(effect_runtime* runtime) {
+
+#if USE_HOT_RELOAD
+        if (g_reloader && g_reloader->get_functions().on_reshade_overlay) {
+            typedef void (*Func)(effect_runtime*);
+            ((Func)g_reloader->get_functions().on_reshade_overlay)(runtime);
+        }
+#else
+        vrem_on_reshade_overlay(effect_runtime * runtime);
+#endif
+    }

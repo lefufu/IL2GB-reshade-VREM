@@ -120,6 +120,7 @@ struct PersistentPipelineData {
 // Structure to hold shared variables
 struct SharedState {
     reshade::api::device* device = {};
+    reshade::api::effect_runtime* runtime = nullptr;
     
     // for fps used to test the logic
     float last_fps_limit = 0;
@@ -138,6 +139,4 @@ struct SharedState {
 
     reshade::api::pipeline_layout DX11_layout = {};
 
-    // to limit on_draw*, on_push*,.. call
-    bool global_tracking = false;
 };

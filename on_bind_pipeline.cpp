@@ -62,6 +62,9 @@ extern "C" {
 	__declspec(dllexport) void vrem_on_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle)
 	{
 
+		// optimize performance by reducing processing to ALLOWED_STAGES
+		if ((static_cast<uint32_t>(stages) & static_cast<uint32_t>(ALLOWED_STAGES)) == 0) return;
+		
 		// for frame capture, to ensure there is at least one bind_pipeline in the frame => need to be moved to another event sooner than bind_pipeline !
 		if (request_capture)
 		{
@@ -91,63 +94,16 @@ extern "C" {
 
 			// ----------------------------------------
 			// inject texture
-
-			/*
-			if (it->second.action & action_injectText)
-			{
-				// inject texture using push_descriptor() if things has been initialized => draw index is > -1
-
-				// if ((it->second.feature == Feature::Global || it->second.feature == Feature::Label) && count_displayVS > -1 && a_shared.depthStencil_copy_started)
-				if ((it->second.feature == Feature::Global || it->second.feature == Feature::Label) && count_displayVS > -1 && a_shared.depthStencil_resource.handle != 0)
-				{
-
-
-					if (it->second.feature == Feature::Label) count_displayVS++;
-
-					if (g_shared_state->debug && flag_capture)
-					{
-						std::stringstream s;
-						s << "action_injectText, feature = " << to_string(it->second.feature) << ", count_displayVS =" << count_displayVS;
-						s << "  a_shared.depthStencil_resource.handle =" << std::hex << a_shared.depthStencil_resource.handle << "; ";
-						reshade::log::message(reshade::log::level::warning, s.str().c_str());
-					}
-
-
-					// stencil depth textures in shaders for color change and label masking
-					// if (a_shared.depth_view[count_displayVS].created && a_shared.stencil_view[count_displayVS].created)
-					if (a_shared.depthStencil_resource.handle != 0 && a_shared.src_resource_view_depth.handle != 0 && a_shared.src_resource_view_stencil.handle != 0)
-					{
-
-						// push the texture for depth and stencil, descriptor initialized in copy_texture()
-						//depth
-						a_shared.update.descriptors = &a_shared.src_resource_view_depth;
-						a_shared.update.binding = 0; // t3 as 3 is defined in pipeline_layout
-						a_shared.update.count = 1;
-						a_shared.update.type = reshade::api::descriptor_type::shader_resource_view;
-
-						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, a_shared.update);
-
-						//stencil
-						a_shared.update.binding = 1; // t4 as 3 is defined in pipeline_layout
-						a_shared.update.descriptors = &a_shared.src_resource_view_stencil;
-						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, a_shared.update);
-
-						// log infos
-						log_texture_injected("depthStencil", count_displayVS);
-					}
-				}
-			} */
-
 			if (it->second.action & action_injectText)
 			{
 				// inject texture using push_descriptor() if things has been initialized => draw index is > -1
 
 				//check if the current depthStencil is declared
-				auto it_ds = a_shared.saved_DS.find(a_shared.current_DS_handle);
+				auto it_ds = a_shared.saved_DS.find(current_DS_handle);
 				if (it_ds != a_shared.saved_DS.end())
 				{
 					// stencil depth textures in shaders for color change and label masking 
-					if ((it->second.feature == Feature::Global || it->second.feature == Feature::Label) && count_displayVS > -1 && a_shared.saved_DS[a_shared.current_DS_handle].copied)
+					if ((it->second.feature == Feature::Global || it->second.feature == Feature::Label) && count_displayVS > -1 && a_shared.saved_DS[current_DS_handle].copied)
 					{
 						reshade::api::descriptor_table_update update;
 
@@ -158,16 +114,16 @@ extern "C" {
 						// push the texture for depth and stencil, descriptor initialized in copy_texture()
 						//depth
 						update.binding = 0; // t3 as 3 is defined in pipeline_layout
-						update.descriptors = &a_shared.saved_DS[a_shared.current_DS_handle].texresource_view_depth;
+						update.descriptors = &a_shared.saved_DS[current_DS_handle].texresource_view_depth;
 						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
 
 						//stencil
 						update.binding = 1; // t4 as 3 is defined in pipeline_layout
-						update.descriptors = &a_shared.saved_DS[a_shared.current_DS_handle].texresource_view_stencil;
+						update.descriptors = &a_shared.saved_DS[current_DS_handle].texresource_view_stencil;
 						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
 
 						// log infos
-						log_texture_injected("depthStencil", a_shared.current_DS_handle, count_displayVS);
+						log_texture_injected("depthStencil", current_DS_handle, count_displayVS);
 					}
 				}
 			} 
@@ -208,10 +164,7 @@ extern "C" {
 				if (it->second.feature == Feature::GetStencil)
 				{
 					// engage tracking shader_resource_view in push_descriptors() to get depthStencil 
-					a_shared.track_for_depthStencil = true;
-
-					// global tracking flag to filter on_draw* and on_push call, whatever the tracking.
-					g_shared_state->global_tracking = true;
+					track_for_depthStencil = true;
 
 					// log infos
 					log_start_monitor("Depth Stencil");
@@ -245,18 +198,15 @@ extern "C" {
 							// log infos
 							log_increase_count_display();
 
-
-							/*
-							if (a_shared.effects_feature)
+							if (a_shared.VREM_setting[SET_EFFECTS])
 							{
 								// handle effects : setup flag for draw
 								a_shared.render_effect = true;
-								a_shared.track_for_render_target = false;
+								track_for_render_target = false;
 
 								// log infos
 								log_effect_requested();
 							}
-							*/
 						}
 						/* else
 						{
@@ -267,6 +217,16 @@ extern "C" {
 
 					// set up draw flag to avoid push_constant() doing effect before draw (it will be overwritten by the PS)
 					a_shared.draw_passed = false;
+				}
+
+				// set flag for tracking render target if feature enabled and not in 2D
+				// if (it->second.feature == Feature::Effects && shared_data.effects_feature && shared_data.count_draw > 1)
+				// TODO test to make it work in 2D
+				if (it->second.feature == Feature::Effects)
+				{
+					track_for_render_target = true;
+					// log infos
+					log_start_monitor("Render target");
 				}
 
 				// PS for mirror view : setup VR mode
@@ -288,7 +248,7 @@ extern "C" {
 			if (it->second.action & action_identify)
 			{
 				// setup some global variables according to the feature (if not possible to do it on init_pipeline)
-				if (a_shared.last_feature != it->second.feature)
+				//if (a_shared.last_feature != it->second.feature)
 				{
 
 					if (it->second.feature == Feature::mapMode)

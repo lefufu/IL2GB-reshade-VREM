@@ -146,10 +146,10 @@ bool copy_depthStencil(command_list* cmd_list, shader_stage stages, pipeline_lay
 		cmd_list->barrier(a_shared.saved_DS[scr_resource.handle].texresource, resource_usage::copy_dest, resource_usage::shader_resource);
 
 		// to retrieve infos for pushing texture in bind_pipeline
-		a_shared.current_DS_handle = scr_resource.handle;
+		current_DS_handle = scr_resource.handle;
 
 		//log copy done
-		log_copy_texture("depthStencil", a_shared.current_DS_handle);
+		log_copy_texture("depthStencil", current_DS_handle);
 	}
 	return true;
 }

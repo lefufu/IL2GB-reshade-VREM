@@ -64,11 +64,27 @@ bool request_capture = false;   // demande utilisateur
 bool flag_capture = false;      // capture ACTIVE (ex-capturing)
 bool frame_started = false;     // au moins un bind_pipeline vu
 
+
+// for logging shader_resource_view in push_descriptors() to get depthStencil 
+bool track_for_depthStencil = false;
+bool depthStencil_copy_started = false;
+// current Depth Stencil handle
+uint64_t current_DS_handle = 0;
+
+// track render target
+bool track_for_render_target = false;
+uint64_t current_RTV_handle;
+saved_RenderTargetView last_RTV_saved;
+
+// to skip draw call if some shader are to be skipped
+bool do_not_draw = false;
+
 std::unordered_map<std::string, int> settings_mapping = {
 	{"fps_limit", SET_FPS_LIMIT},
 	{"flag_fps", SET_DUMMY},
 	{"set_label", SET_LABEL},
 	{"set_default", SET_DEFAULT},
+	{"set_effects", SET_EFFECTS}
 };
 
 
@@ -93,7 +109,7 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// global PS for all changes
 	//{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_LABEL}) },
 	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_LABEL}) },
-	//TODO VS associated with global PS 2 for draw increase : 8DB626CD
+	// VS associated with global PS 2, trigger draw increase and end spying for render target
 	{ 0x8DB626CD, Shader_Definition(action_log , Feature::VS_global2, L"", 0, {SET_DEFAULT}) },
 	// Label PS 
 	{ 0x6CEA1C47, Shader_Definition(action_replace | action_injectText, Feature::Label , L"labels_PS.cso", 0, {SET_LABEL}) },
@@ -126,7 +142,7 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	//  ** identify render target ** (VS associated with first global PS)
 	{ 0x936B2B6A, Shader_Definition(action_log , Feature::Effects , L"", 0, {SET_EFFECTS}) },
 	// **test constant color shader for debug**
-	{ 0xCFB718E2, Shader_Definition(action_replace_bind , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
+	// { 0xCFB718E2, Shader_Definition(action_replace_bind , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
 	
 };
 
@@ -222,6 +238,7 @@ extern "C" {
 
 		}
 		a_shared.saved_DS.clear();
+		a_shared.technique_vector.clear();
 
         // Nettoyer uniquement les données temporaires
         // shader_code.clear();

@@ -68,6 +68,8 @@ extern void create_all_modified_CB_layout(reshade::api::device* device);
 extern bool copy_depthStencil(reshade::api::command_list* cmd_list, reshade::api::shader_stage stages, reshade::api::pipeline_layout layout, uint32_t param_index, const reshade::api::descriptor_table_update& update);
 extern void delete_texture_resources(reshade::api::device* device);
 extern void create_RV_pipeline_layout(reshade::api::device* device);
-
+extern void init_preprocess(effect_runtime* runtime);
+extern void enumerateTechniques(effect_runtime* runtime);
+extern void render_effect(short int display_to_use, command_list* cmd_list);
 
 

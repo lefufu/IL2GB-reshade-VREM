@@ -97,3 +97,10 @@ extern void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, u
 extern void log_on_drawOrDispatch_indirect(indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride);
 extern void log_display_settings();
 extern void log_waiting_setting();
+extern void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_view dsv, command_list* cmd_list, uint64_t RTV_handle);
+extern void log_effect_requested();
+extern void log_preprocessor(std::string name, float targetValue, bool update, bool status, float readedValue, bool inFrame, uint16_t step, short int display_to_use);
+extern void log_technique_info(effect_runtime* runtime, effect_technique technique, std::string& name, std::string& eff_name, bool technique_status, int QV_target, bool has_texture);
+extern void log_export_texture(short int display_to_use);
+extern void log_effect(technique_trace tech, command_list* cmd_list, resource_view rv);
+extern void log_texture_view(reshade::api::device* dev, std::string name, reshade::api::resource_view rview);

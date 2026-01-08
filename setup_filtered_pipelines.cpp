@@ -153,6 +153,14 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 				}
 			}
 		}
+
+		reshade::log::message(reshade::log::level::info, "addon -  *************************************************************");
+		reshade::log::message(reshade::log::level::info, "addon -  ***************** filtered list closed **********************");
+
+		// read technique list
+		enumerateTechniques(runtime);
+
+
 		return false;
 	}
 	else

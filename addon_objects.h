@@ -49,8 +49,17 @@
 #include "addon_injection.h"
 #include "VREM_settings.h"
 
+// for techniques
 #define MAXNAMECHAR 30
-
+#define DEPTH_NAME "DepthBufferTex"
+#define STENCIL_NAME "StencilBufferTex"
+#define QV_TARGET_NAME "VREMQuadViewTarget"
+#define VR_ONLY_NAME "VREM_technique_in_VR_only"
+#define VR_ONLY_EFFECT "VRONLY_VREM.fx"
+#define QVALL 0
+#define QVOUTER 1
+#define QVINNER 2
+constexpr size_t CHAR_BUFFER_SIZE = 256;
 
 //mod actions (not as a class for easier use of &)
 // 
@@ -175,9 +184,26 @@ struct resource_DS_copy {
 	reshade::api::resource_view texresource_view_stencil = {};
 };
 
+struct saved_RenderTargetView {
+	bool copied = false;
+	resource_view RV = {};
+	uint32_t width = 0;
+	uint32_t height = 0;
+};
+
+// for technique settings
+struct technique_trace {
+	effect_technique technique;
+	std::string name;
+	std::string eff_name;
+	bool technique_status;
+	int quad_view_target; // 0 : all, 1 Outer, 2 Innner
+};
+
+
 // size of the table containing all mod settings to be read from uniforms and define which shader are active
 //static const int SETTINGS_SIZE = 10;
-#define MAXVIEWSPERDRAW 6
+// #define MAXVIEWSPERDRAW 6
 
 struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 {
@@ -197,13 +223,11 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	// counter for the current display (eye + quad view)
 	short int count_display = 0;
 
-	// to skip draw call if some shader are to be skipped
-	bool do_not_draw = false;
 
 	// copy render target for technique
 	//resourceview_trace render_target_view[MAXVIEWSPERDRAW];
 	// flag for drawing or not
-	bool track_for_render_target = false;
+
 	bool render_effect = false;
 	bool draw_passed = false;
 	uint32_t count_draw = 0;
@@ -216,32 +240,49 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	reshade::api::pipeline_layout saved_pipeline_layout_RV = {};
 	// reshade::api::descriptor_table_update update;
 
-	// obsolete : depth Stencil texture
-	// resource_trace depthStencil_res[MAXVIEWSPERDRAW];
-	// resourceview_trace stencil_view[MAXVIEWSPERDRAW];
-	// resourceview_trace depth_view[MAXVIEWSPERDRAW];
-	
 	//resource for depthStencil copy
 	std::unordered_map<uint64_t, resource_DS_copy> saved_DS = {};
-	uint64_t current_DS_handle = 0;
 
-	reshade::api::resource depthStencil_resource = {};
+	/*reshade::api::resource depthStencil_resource = {};
 	reshade::api::resource_view src_resource_view_depth = {};
-	reshade::api::resource_view src_resource_view_stencil = {};
+	reshade::api::resource_view src_resource_view_stencil = {};*/
 
-	bool depthStencil_copy_started;
-	// for logging shader_resource_view in push_descriptors() to get depthStencil 
-	bool track_for_depthStencil = false;
 
 	bool track_for_NS430 = false;
-
-	// to compute super/down sampling factor
-	float renderTargetX = -1.0;
-	float SSfactor = 1.0;
 
 	// to avoid doing things before 3D rendering started
 	bool cockpit_rendering_started = false;
 
+	// render target for technique 
+	// store resource_views
+	// std::unordered_map<uint64_t, saved_RenderTargetView> saved_RenderTargetViews = {};
+
+	// flag to ensure preprocessor variables will be setup once
+	bool init_preprocessor = false;
+
+	//for techniques
+	//map of technique selected 
+	std::vector<technique_trace> technique_vector;
+	// to share uniform / texture only if needed
+	bool uniform_needed = false;
+	bool texture_needed = false;
+	effect_technique VR_only_technique_handle;
+	// for MSAA management (no way to detect it by resolution)
+	float MSAAxfactor = 1.0;
+	float MSAAyfactor = 1.0;
+	// to compute super/down sampling factor
+	float renderTargetX = -1.0;
+	float SSfactor = 1.0;
+
+	bool flag_re_enabled = false;
+
+	// render target (all(0)/outer(1)/inner(2)) for effect
+	int effect_target_QV = 0;
+	// for technique refresh
+	bool button_technique = false;
+	bool VRonly_technique = false;
+	bool init_VRonly_technique = false;
+	bool button_preprocess = false;
 };
 
 extern struct addon_shared a_shared;
@@ -251,7 +292,23 @@ extern std::unordered_map<uint64_t, Shader_Definition> filtered_pipeline;
 extern std::unordered_map<uint64_t, reshade::api::pipeline> cloned_pipeline_list;
 
 
-
+// not in a_shared in order to try to avoid issue if multi threaded...not sure it would work
 extern bool request_capture;   // demande utilisateur
 extern bool flag_capture;      // capture ACTIVE (ex-capturing)
 extern bool frame_started;     // au moins un bind_pipeline vu
+
+// for logging shader_resource_view in push_descriptors() to get depthStencil 
+extern bool track_for_depthStencil;
+// current depth Stencil handle
+extern uint64_t current_DS_handle;
+
+// track render target
+extern bool track_for_render_target; 
+// current render target view handle
+extern saved_RenderTargetView last_RTV_saved;
+extern uint64_t current_RTV_handle;
+
+// to skip draw call if some shader are to be skipped
+extern bool do_not_draw;
+
+extern bool depthStencil_copy_started;

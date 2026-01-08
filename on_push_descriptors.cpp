@@ -58,15 +58,29 @@ extern "C" {
 	__declspec(dllexport) void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 	{
 
+		if (g_shared_state->debug && flag_capture)
+		{
+			std::stringstream s;
+			s << "addon - vrem_on_push_descriptors : a_shared.render_effect : " << a_shared.render_effect << ", track_for_render_target : " << track_for_render_target << ", a_shared.cb_inject_values.mapMode : " << a_shared.cb_inject_values.mapMode << "; ";
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+		}
+
+		// to limit processing only when a tracing is setup
+		if (!a_shared.render_effect && !track_for_depthStencil) return;
+		
 		// display_to_use = 0 => outer left, 1 = outer right, 2 = Inner left, 3 = inner right.
 		short int display_to_use = a_shared.count_display - 1;
 
-		// TODO : render effect part
-		if (!g_shared_state->global_tracking) return;
+		// render effect part
+		// do not engage effect if option not selected and not in cockpit
+		if (a_shared.render_effect && a_shared.VREM_setting[SET_EFFECTS] && !a_shared.cb_inject_values.mapMode && a_shared.draw_passed)
+		{
+			render_effect(display_to_use, cmd_list);
+		}
 
 		//handle only shader_resource_view when needed
 		// handle depthStencil
-		if (a_shared.track_for_depthStencil && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel && update.count == 6)
+		if (track_for_depthStencil && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel && update.count == 6)
 		{
 
 			// in some case the resource view handle is null, skip these cases

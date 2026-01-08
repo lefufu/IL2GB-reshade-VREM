@@ -191,13 +191,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::push_descriptors>(on_push_descriptors);
         reshade::register_event<reshade::addon_event::create_pipeline>(on_create_pipeline);
         // // reshade::register_event<reshade::addon_event::init_pipeline>(on_after_create_pipeline);
-        // // reshade::register_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
+        reshade::register_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
         // reshade::register_event<reshade::addon_event::reshade_present>(on_reshade_present);
-        // reshade::register_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
-        // // reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
+        reshade::register_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
+        reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
         //reshade::register_event<reshade::addon_event::reshade_set_technique_state>(on_reshade_set_technique_state);
         reshade::register_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline);
-        //reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
       
         break;
     }
@@ -222,8 +221,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::init_pipeline>(on_after_create_pipeline);
         reshade::unregister_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
         // reshade::unregister_event<reshade::addon_event::reshade_present>(on_reshade_present);
-        // reshade::unregister_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
-        // reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
+        reshade::unregister_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
+        reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
         //reshade::unregister_event<reshade::addon_event::reshade_set_technique_state>(on_reshade_set_technique_state);
         reshade::unregister_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline);
 
