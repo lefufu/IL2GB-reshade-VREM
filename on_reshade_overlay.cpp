@@ -59,6 +59,7 @@ extern "C" {
 	__declspec(dllexport) void vrem_on_reshade_overlay(effect_runtime* runtime)
 	{
 
+
 		//initialize pre process variable (if needed)
 		init_preprocess(runtime);
 

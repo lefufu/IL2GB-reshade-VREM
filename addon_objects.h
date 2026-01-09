@@ -232,6 +232,12 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	bool draw_passed = false;
 	uint32_t count_draw = 0;
 
+	//to flag import of .cso
+	bool cso_imported = false;
+
+	//to flag technique compiled
+	bool technique_compiled = false;
+
 	// to flag PS shader is used for 2D mirror of VR and not VR rendering
 	int mirror_VR = -1;
 

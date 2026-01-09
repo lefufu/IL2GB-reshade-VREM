@@ -198,13 +198,6 @@ bool read_technique_status_from_file(std::string name)
 void enumerateTechniques(effect_runtime* runtime)
 {
     
-    if (g_shared_state->debug)
-    {
-        std::stringstream s;
-        s << " *******  enumerateTechniques ******; ";
-        reshade::log::message(reshade::log::level::info, s.str().c_str());
-    }
-    
     if (a_shared.VREM_setting[SET_EFFECTS])
     {
         //extern CDataFile technique_iniFile;

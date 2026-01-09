@@ -93,7 +93,7 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 {
 	
 	// ** fix for rotor **
-	{ 0xC0CC8D69, Shader_Definition(action_replace, Feature::Rotor, L"AH64_rotorPS.cso", 0, {SET_ROTOR}) },
+	{0xC0CC8D69, Shader_Definition(action_replace, Feature::Rotor, L"AH64_rotorPS.cso", 0, {SET_ROTOR})},
 	{ 0x349A1054, Shader_Definition(action_replace, Feature::Rotor, L"AH64_rotor2PS.cso", 0, {SET_ROTOR}) },
 	{ 0xD3E172D4, Shader_Definition(action_replace, Feature::Rotor, L"UH1_rotorPS.cso", 0, {SET_ROTOR}) },
 	// ** fix for IHADSS **
@@ -142,8 +142,7 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	//  ** identify render target ** (VS associated with first global PS)
 	{ 0x936B2B6A, Shader_Definition(action_log , Feature::Effects , L"", 0, {SET_EFFECTS}) },
 	// **test constant color shader for debug**
-	// { 0xCFB718E2, Shader_Definition(action_replace_bind , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
-	
+	{ 0xCFB718E2, Shader_Definition(action_replace_bind , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
 };
 
 //
@@ -196,8 +195,17 @@ extern "C" {
 
 		//display the shader list
 		// display_shader_by_hash();
+		
+		// to request import of .cso
+		a_shared.cso_imported = false;
 
+		// to request generation of filtered pipelines
+		g_shared_state->filtered_pipeline_to_setup = true;
 
+		//to trace compilation of technique
+		a_shared.technique_compiled = false;
+
+		a_shared.VREM_setting[SET_DEFAULT] = 0;
 
         // reshade::log::message(reshade::log::level::info,"DCS VREM: register done...");
     }

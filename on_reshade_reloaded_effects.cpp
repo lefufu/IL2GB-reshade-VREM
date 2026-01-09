@@ -53,10 +53,36 @@
 
 using namespace reshade::api;
 
+// *******************************************************************************************************
+// read  techniques if uniform are available
+bool  get_uniform_and_techniques(effect_runtime* runtime) {
+
+	bool result = false;
+		
+	// reload all uniforms
+	get_settings_from_uniforms(runtime);
+
+	if (a_shared.VREM_setting[SET_DEFAULT])
+	{
+		log_display_settings();
+		// read techniques activated to use them later for technique rendering in VR
+		if (a_shared.VREM_setting[SET_EFFECTS])
+		{
+			enumerateTechniques(runtime);
+			log_effect_reloaded();
+			a_shared.technique_compiled = true;
+		}
+		result = true;
+	}
+	
+	return result;
+}
+
+
 extern "C" {
 	// *******************************************************************************************************
-	// on_push_descriptors() : to be monitored in order to copy texture and engage effect
-	// called a lot !
+	// vrem_on_reshade_reloaded_effects() : to call when effects are reloaded, should not do aything before real effect compilation (another call from on_present)
+	// called a lot !n
 	__declspec(dllexport) void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)
 	{
 
@@ -65,16 +91,7 @@ extern "C" {
 			reshade::log::message(reshade::log::level::info, "***** vrem_on_reshade_reloaded_effects");
 		}
 
-		log_effect_reloaded();
-
-		// reload all uniforms
-		get_settings_from_uniforms(runtime);
-
-		// read techniques activated to use them later for technique rendering in VR
-		if (a_shared.VREM_setting[SET_EFFECTS])
-		{
-			enumerateTechniques(runtime);
-		}
-
+		// should work only for reload
+		bool status = get_uniform_and_techniques(runtime);
 	}
 }

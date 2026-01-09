@@ -71,5 +71,6 @@ extern void create_RV_pipeline_layout(reshade::api::device* device);
 extern void init_preprocess(effect_runtime* runtime);
 extern void enumerateTechniques(effect_runtime* runtime);
 extern void render_effect(short int display_to_use, command_list* cmd_list);
+extern bool  get_uniform_and_techniques(effect_runtime* runtime);
 
 

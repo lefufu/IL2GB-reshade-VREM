@@ -95,19 +95,28 @@ bool check_if_active_option(Shader_Definition shader_def)
 
 bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect_runtime* runtime)
 {
-
+	/*
 	// parse the shader list to load all shader codes and store codes in shader_code_cache
 	read_all_shader_code();
 	
-	uint64_t last_handle;
-
 	// ensure settings are updated from uniforms to be sure shader will be loaded regarding current mod settings
 	get_settings_from_uniforms(runtime);
+	*/
+
+	uint64_t last_handle;
 
 	// ensure the hidden "set_default" uniform has been read
-	if (a_shared.VREM_setting[SET_DEFAULT] == 1)
+	// if (a_shared.VREM_setting[SET_DEFAULT] == 1)
+	// {
+	//	log_display_settings();
+
+	if (g_shared_state->debug)
 	{
-		log_display_settings();
+		std::stringstream s;
+		s << "*** creating filtered list **** ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+
 
 		// parse the list of saved pipelines to identify which one to keep regarding mod settings
 		for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines)
@@ -154,22 +163,18 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 			}
 		}
 
-		reshade::log::message(reshade::log::level::info, "addon -  *************************************************************");
-		reshade::log::message(reshade::log::level::info, "addon -  ***************** filtered list closed **********************");
-
 		// read technique list
-		enumerateTechniques(runtime);
-
+		// enumerateTechniques(runtime);
 
 		return false;
 	}
-	else
+	/* else
 	{
 		log_waiting_setting();
 		return true;
-	}
+	} */
 	
-}
+//}
 
 
 

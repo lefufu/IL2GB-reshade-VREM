@@ -86,6 +86,7 @@ extern "C" {
     _declspec(dllexport) void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
     {
 
+        
         // not used, 
         reshade::api::device* device = runtime->get_device();
         g_shared_state->device = device;
@@ -105,12 +106,22 @@ extern "C" {
 		// create all pipelines layput for pushing dedicated RV (if not created)
         create_RV_pipeline_layout(device);
 
-        // generate filtered shader list and clone pipelines if needed
-        if (g_shared_state->filtered_pipeline_to_setup) {
-
-            g_shared_state->filtered_pipeline_to_setup = setup_filtered_pipelines(g_shared_state->device, runtime);
-
+        // parse the shader list to load all shader codes and store codes in shader_code_cache (if not done)
+        read_all_shader_code();
+  
+        if (a_shared.VREM_setting[SET_DEFAULT])
+        { 
+            // wait as much as possible to generate filtered shader list and clone pipelines if needed
+            if (g_shared_state->filtered_pipeline_to_setup) {
+                g_shared_state->filtered_pipeline_to_setup = setup_filtered_pipelines(g_shared_state->device, runtime);
+            }
         }
+        else
+        {
+            log_waiting_setting();
+            // bool techniques_ok = get_uniform_and_techniques(runtime);
+        }
+
 
         /*
         // frame capture by button on GUI

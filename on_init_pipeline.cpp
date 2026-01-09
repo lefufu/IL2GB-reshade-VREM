@@ -95,10 +95,15 @@ extern "C" {
 	__declspec(dllexport) void vrem_on_init_pipeline(device* device, pipeline_layout layout, uint32_t subobjectCount, const pipeline_subobject* subobjects, pipeline pipelineHandle)
 	{
 
+
 		// save needed pipelines as init_pipeline is called once per game launch
 		// only shader types defined in ALLOWED_SHADERS are saved
 		save_pipeline_in_list(device, layout, subobjectCount, subobjects, pipelineHandle);
 
+		// if init_pipeline after creation of filtered pipeline list, request an update
+		if (!g_shared_state->filtered_pipeline_to_setup  && a_shared.VREM_setting[SET_DEFAULT]) {
+			g_shared_state->filtered_pipeline_to_setup = true;
+		}
 
 		//
 		// create_vrem_cb(device);

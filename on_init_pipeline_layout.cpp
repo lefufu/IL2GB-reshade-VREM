@@ -69,6 +69,7 @@ extern "C" {
 	//*******************************************************************************
 	__declspec(dllexport) void vrem_on_init_pipeline_layout(device* dev, uint32_t paramCount, const pipeline_layout_param* params, pipeline_layout layout) {
 
+
 		log_init_pipeline_layout(paramCount, params, layout);
 		// generate data for constant_buffer or shader_resource_view
 		// for (uint32_t paramIndex = 0; paramIndex < paramCount; ++paramIndex) {

@@ -331,6 +331,9 @@ static bool on_draw(command_list* cmd, uint32_t v, uint32_t i, uint32_t fv, uint
         typedef bool (*Func)(command_list*, uint32_t, uint32_t, uint32_t, uint32_t);
         return ((Func)g_reloader->get_functions().on_draw)(cmd, v, i, fv, fi);
     }
+    else {
+        return false;
+    }
 #else
     return  vrem_on_draw(cmd, v, i, fv, fi);
 #endif
@@ -343,6 +346,9 @@ static bool on_draw_indexed(command_list* cmd, uint32_t ic, uint32_t ins,
     if (g_reloader && g_reloader->get_functions().on_draw_indexed) {
         typedef bool (*Func)(command_list*, uint32_t, uint32_t, uint32_t, int32_t, uint32_t);
         return ((Func)g_reloader->get_functions().on_draw_indexed)(cmd, ic, ins, fi, vo, fii);
+    }
+    else {
+        return false;
     }
 
 #else
@@ -359,6 +365,9 @@ static bool on_draw_indirect(command_list* cmd, indirect_command type, resource 
     if (g_reloader && g_reloader->get_functions().on_draw_indirect) {
         typedef bool (*Func)(command_list*, indirect_command, resource, uint64_t, uint32_t, uint32_t);
         return ((Func)g_reloader->get_functions().on_draw_indirect)(cmd, type, buf, off, cnt, stride);
+    }
+    else {
+        return false;
     }
 
 #else

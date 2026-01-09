@@ -108,17 +108,22 @@ bool load_shader_code(std::unordered_map<uint32_t, std::vector<uint8_t>>& shader
 
 void read_all_shader_code()
 {
-	for (const auto& [hash, shader_def] : shader_by_hash)
-	{
-		// read code only for replace options
-		if (shader_def.action & action_replace || shader_def.action & action_replace_bind)
-		{
-			// check if a replacement filename is specified
-			if (shader_def.replace_filename[0] != L'\0')
-			{
-				// Vos actions ici
-                load_shader_code(shader_code_cache, hash, shader_def.replace_filename);
-			}
-		}
-	}
+	// to be done once per dll load
+    if (!a_shared.cso_imported)
+    {
+        for (const auto& [hash, shader_def] : shader_by_hash)
+        {
+            // read code only for replace options
+            if (shader_def.action & action_replace || shader_def.action & action_replace_bind)
+            {
+                // check if a replacement filename is specified
+                if (shader_def.replace_filename[0] != L'\0')
+                {
+                    // Vos actions ici
+                    load_shader_code(shader_code_cache, hash, shader_def.replace_filename);
+                }
+            }
+        }
+        a_shared.cso_imported = true;
+    }
 }
