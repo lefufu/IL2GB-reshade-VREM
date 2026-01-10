@@ -628,7 +628,7 @@ void log_waiting_setting()
 
 void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_view dsv, command_list* cmd_list, uint64_t RTV_handle)
 {
-	if (g_shared_state->debug && flag_capture && track_for_render_target)
+	if (g_shared_state->debug && flag_capture && a_shared.track_for_render_target)
 	{
 		std::stringstream s;
 
@@ -657,7 +657,7 @@ void log_effect_requested()
 	if (g_shared_state->debug && flag_capture)
 	{
 		std::stringstream s;
-		s << "addon - on_bind_pipeline(): set flag for engaging rendering at next draw, ";
+		s << "addon - on_bind_pipeline(): set flag for engaging rendering request at next draw, ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }

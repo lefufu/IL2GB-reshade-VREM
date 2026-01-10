@@ -65,7 +65,7 @@ void intialize_counters()
     a_shared.cb_inject_values.GUItodraw = 0.0;
 
     a_shared.render_effect = false;
-    track_for_render_target = false;
+    a_shared.track_for_render_target = false;
 
     a_shared.last_feature = Feature::Null;
 

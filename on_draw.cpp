@@ -87,8 +87,6 @@ extern "C" {
 	__declspec(dllexport) bool vrem_on_draw(command_list* commandList, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 	{
 
-		return false;
-
 		if (!track_for_depthStencil && !do_not_draw && !a_shared.render_effect) return false;
 		
 		bool skip = false;
@@ -107,8 +105,6 @@ extern "C" {
 	// On draw* : skip draw
 	__declspec(dllexport) bool vrem_on_draw_indexed(command_list* commandList, uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 	{
-
-		return false;
 
 		if (!track_for_depthStencil && !do_not_draw && !a_shared.render_effect) return false;
 
@@ -129,7 +125,6 @@ extern "C" {
 	__declspec(dllexport) bool vrem_on_drawOrDispatch_indirect(command_list* commandList, indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride)
 	{
 
-	
 		if (!track_for_depthStencil && !do_not_draw && !a_shared.render_effect) return false;
 		
 		bool skip = false;

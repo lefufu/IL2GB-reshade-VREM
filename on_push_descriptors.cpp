@@ -58,10 +58,10 @@ extern "C" {
 	__declspec(dllexport) void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 	{
 
-		if (g_shared_state->debug && flag_capture)
+		if (g_shared_state->debug && flag_capture && a_shared.render_effect)
 		{
 			std::stringstream s;
-			s << "addon - vrem_on_push_descriptors : a_shared.render_effect : " << a_shared.render_effect << ", track_for_render_target : " << track_for_render_target << ", a_shared.cb_inject_values.mapMode : " << a_shared.cb_inject_values.mapMode << "; ";
+			s << "addon - vrem_on_push_descriptors : a_shared.render_effect : " << a_shared.render_effect << ", a_shared.VREM_setting[SET_EFFECTS] : " << a_shared.VREM_setting[SET_EFFECTS] << ", a_shared.cb_inject_values.mapMode : " << a_shared.cb_inject_values.mapMode << ", a_shared.draw_passed : " << a_shared.draw_passed << "; ";
 			reshade::log::message(reshade::log::level::info, s.str().c_str());
 		}
 

@@ -361,6 +361,13 @@ void reEnableAllTechnique(bool save_flag) {
 void render_effect(short int display_to_use, command_list* cmd_list) {
 
     // do not engage effect if render target view is not identified 
+    if (g_shared_state->debug && flag_capture)
+    {
+        std::stringstream s;
+        s << "addon - render_effect(): engage effect, last_RTV_saved.copied =  " << last_RTV_saved.copied << ";";
+        reshade::log::message(reshade::log::level::info, s.str().c_str());
+    }
+
 
     if (last_RTV_saved.copied)
     {
@@ -412,13 +419,15 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
                             check += default_preprocessor(g_shared_state->runtime, "MSAAX", a_shared.MSAAxfactor, true, display_to_use);
                             check += default_preprocessor(g_shared_state->runtime, "MSAAY", a_shared.MSAAyfactor, true, display_to_use);
 
-                            // if (display_to_use <= 1)
+                            /*
+                            //if (display_to_use <= 1)
                             {
                                 check += default_preprocessor(g_shared_state->runtime, "BUFFER_WIDTH", last_RTV_saved.width, true, display_to_use);
                                 check += default_preprocessor(g_shared_state->runtime, "BUFFER_HEIGHT", last_RTV_saved.height, true, display_to_use);
                                 check += default_preprocessor(g_shared_state->runtime, "BUFFER_RCP_WIDTH", 1.0 / last_RTV_saved.width, true, display_to_use);
                                 check += default_preprocessor(g_shared_state->runtime, "BUFFER_RCP_HEIGHT", 1.0 / last_RTV_saved.height, true, display_to_use);
                             }
+                            */
 
                         }
                     }

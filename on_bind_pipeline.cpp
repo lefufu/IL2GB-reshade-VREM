@@ -182,7 +182,7 @@ extern "C" {
 				if (it->second.feature == Feature::VS_global2)
 				{
 					// handle the case where the Ps is called 2 time consecutivelly because of mirror view
-					if (a_shared.last_feature != Feature::Global)
+					if (a_shared.last_feature != Feature::Global && !a_shared.cb_inject_values.mapMode)
 					{
 
 						// if texure has been copied previously, increase draw count, otherwise do nothing, to avoid counting shader calls for MFD rendering
@@ -195,14 +195,16 @@ extern "C" {
 							// it's stupid but I'm too lazy to change code now..
 							a_shared.cb_inject_values.count_display = a_shared.count_display;
 
+							a_shared.track_for_render_target = false;
+
 							// log infos
 							log_increase_count_display();
 
-							if (a_shared.VREM_setting[SET_EFFECTS])
+							if (a_shared.VREM_setting[SET_EFFECTS] && !a_shared.cb_inject_values.mapMode)
 							{
 								// handle effects : setup flag for draw
 								a_shared.render_effect = true;
-								track_for_render_target = false;
+								//a_shared.track_for_render_target = false;
 
 								// log infos
 								log_effect_requested();
@@ -222,9 +224,9 @@ extern "C" {
 				// set flag for tracking render target if feature enabled and not in 2D
 				// if (it->second.feature == Feature::Effects && shared_data.effects_feature && shared_data.count_draw > 1)
 				// TODO test to make it work in 2D
-				if (it->second.feature == Feature::Effects)
+				if (it->second.feature == Feature::Effects && a_shared.VREM_setting[SET_EFFECTS])
 				{
-					track_for_render_target = true;
+					a_shared.track_for_render_target = true;
 					// log infos
 					log_start_monitor("Render target");
 				}

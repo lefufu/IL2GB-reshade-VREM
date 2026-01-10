@@ -63,20 +63,20 @@ extern "C" {
 	__declspec(dllexport) void vrem_on_bind_render_targets_and_depth_stencil(command_list* cmd_list, uint32_t count, const resource_view* rtvs, resource_view dsv)
 	{
 
-		if (g_shared_state->debug && flag_capture)
+		/*if (g_shared_state->debug && flag_capture && (a_shared.render_effect || a_shared.track_for_render_target && a_shared.VREM_setting[SET_EFFECTS]))
 		{
 			std::stringstream s;
-			s << "addon - vrem_on_bind_render_targets_and_depth_stencil : track_for_render_target=" << track_for_render_target << ", a_shared.count_display = " << a_shared.count_display << ", a_shared.cb_inject_values.mapMode= " << a_shared.cb_inject_values.mapMode << ", a_shared.VREM_setting[SET_EFFECTS]= " << a_shared.VREM_setting[SET_EFFECTS] <<"; ";
+			s << "addon - vrem_on_bind_render_targets_and_depth_stencil : track_for_render_target=" << a_shared.track_for_render_target << ", a_shared.count_display = " << a_shared.count_display << ", a_shared.cb_inject_values.mapMode= " << a_shared.cb_inject_values.mapMode << ", a_shared.VREM_setting[SET_EFFECTS]= " << a_shared.VREM_setting[SET_EFFECTS] <<"; ";
 			reshade::log::message(reshade::log::level::info, s.str().c_str());
 		}
+		*/
 		
 		
 		// copy render target if tracking
 	// BUG: using this line with openknweeboard is blocking game !!!!
 	// 	if (shared_data.track_for_render_target && shared_data.count_display > -1 && !shared_data.cb_inject_values.mapMode && count > 0 && (shared_data.effects_feature || shared_data.texture_needed))
 		
-		track_for_render_target = 1, a_shared.count_display = 0, a_shared.cb_inject_values.mapMode = 1, a_shared.VREM_setting[SET_EFFECTS] = 1;
-		if (track_for_render_target && a_shared.count_display > -1 && !a_shared.cb_inject_values.mapMode && count > 0 && (a_shared.VREM_setting[SET_EFFECTS]))
+		if (a_shared.track_for_render_target && a_shared.count_display > -1 && !a_shared.cb_inject_values.mapMode && count > 0 && (a_shared.VREM_setting[SET_EFFECTS]))
 		{
 
 			saved_RenderTargetView RTView;

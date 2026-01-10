@@ -72,7 +72,7 @@ bool depthStencil_copy_started = false;
 uint64_t current_DS_handle = 0;
 
 // track render target
-bool track_for_render_target = false;
+// bool track_for_render_target = false;
 uint64_t current_RTV_handle;
 saved_RenderTargetView last_RTV_saved;
 
@@ -105,10 +105,10 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// and inject modified CB CperFrame
 	{ 0x4DDC4917, Shader_Definition(action_log | action_injectCB, Feature::GetStencil, L"", 0, {SET_DEFAULT}) },
 	{ 0x57D037A0, Shader_Definition(action_injectCB, Feature::Sky, L"", 0, {SET_DEFAULT}) },
-	{ 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0) },
+	{ 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0, {SET_COLOR, SET_LABEL, SET_EFFECTS}) },
 	// global PS for all changes
 	//{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_LABEL}) },
-	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_LABEL}) },
+	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_LABEL, SET_EFFECTS}) },
 	// VS associated with global PS 2, trigger draw increase and end spying for render target
 	{ 0x8DB626CD, Shader_Definition(action_log , Feature::VS_global2, L"", 0, {SET_DEFAULT}) },
 	// Label PS 
@@ -142,7 +142,7 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	//  ** identify render target ** (VS associated with first global PS)
 	{ 0x936B2B6A, Shader_Definition(action_log , Feature::Effects , L"", 0, {SET_EFFECTS}) },
 	// **test constant color shader for debug**
-	{ 0xCFB718E2, Shader_Definition(action_replace_bind , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
+	// { 0xCFB718E2, Shader_Definition(action_replace_bind , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
 };
 
 //

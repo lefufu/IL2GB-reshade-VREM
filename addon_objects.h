@@ -228,6 +228,8 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	//resourceview_trace render_target_view[MAXVIEWSPERDRAW];
 	// flag for drawing or not
 
+	bool track_for_render_target = false;
+
 	bool render_effect = false;
 	bool draw_passed = false;
 	uint32_t count_draw = 0;
@@ -309,7 +311,7 @@ extern bool track_for_depthStencil;
 extern uint64_t current_DS_handle;
 
 // track render target
-extern bool track_for_render_target; 
+// extern bool track_for_render_target; 
 // current render target view handle
 extern saved_RenderTargetView last_RTV_saved;
 extern uint64_t current_RTV_handle;
