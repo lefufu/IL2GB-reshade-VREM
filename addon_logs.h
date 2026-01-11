@@ -104,3 +104,7 @@ extern void log_technique_info(effect_runtime* runtime, effect_technique techniq
 extern void log_export_texture(short int display_to_use);
 extern void log_effect(technique_trace tech, command_list* cmd_list, resource_view rv);
 extern void log_texture_view(reshade::api::device* dev, std::string name, reshade::api::resource_view rview);
+extern void log_cbuffer_info(std::string CB_name, reshade::api::buffer_range cbuffer);
+extern void log_constant_buffer_copy(std::string CB_name, float* dest_array, int buffer_size);
+extern void log_constant_buffer_mapping_error(std::string CB_name);
+extern void log_pipeline_filtered_skipped(uint64_t handle);

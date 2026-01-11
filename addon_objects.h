@@ -49,6 +49,43 @@
 #include "addon_injection.h"
 #include "VREM_settings.h"
 
+// number of CB modified by VREM (used for an array allocation)
+static const int NUMBER_OF_MODIFIED_CB = 2;
+
+// number value that can be modified in a CB (for backup)
+static const int MAX_OF_MODIFIED_VALUES = 3;
+
+// to use for all tables related to CB (pipeline_layout,...)
+static const int MOD_CB_NB = 0;
+static const int CPERFRAME_CB_NB = 1;
+
+// CB index in saved layout for VREM settings
+static const int SETTINGS_CB_NB = 0;
+
+// size of the constant buffer containing all mod parameters, to be injected in shaders
+static const int CBSIZE = 44;
+
+// maximum size of all CB
+static const int MAX_CBSIZE = 152;
+
+// index of values to change in CB
+// index of gAtmIntensity in the float array mapped for cPerFrame (cb6) 
+#define FOG_INDEX 11 // c2.w => 2*4 + 3 = 11
+// #define OPACITY_INDEX 55 // 13.z => 13*4+3 = 55
+#define GCOCKPITIBL_INDEX_X 30*4
+#define GCOCKPITIBL_INDEX_Y 30*4+1
+
+// size of CB
+#define CPERFRAME_SIZE 152 //in float
+// #define DEF_UNIFORM_SIZE 68 //in float
+
+// only one value to save for CPerFrame
+static const int  GATMINTENSITY_SAVE = 0;
+static const int  GCOCKPITIBL_X_SAVE = 1;
+static const int  GCOCKPITIBL_Y_SAVE = 1;
+
+
+
 // for techniques
 #define MAXNAMECHAR 30
 #define DEPTH_NAME "DepthBufferTex"
@@ -223,9 +260,6 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	// counter for the current display (eye + quad view)
 	short int count_display = 0;
 
-
-	// copy render target for technique
-	//resourceview_trace render_target_view[MAXVIEWSPERDRAW];
 	// flag for drawing or not
 
 	bool track_for_render_target = false;
@@ -251,10 +285,11 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	//resource for depthStencil copy
 	std::unordered_map<uint64_t, resource_DS_copy> saved_DS = {};
 
-	/*reshade::api::resource depthStencil_resource = {};
-	reshade::api::resource_view src_resource_view_depth = {};
-	reshade::api::resource_view src_resource_view_stencil = {};*/
-
+	// for constant buffer modification
+	float dest_CB_array[NUMBER_OF_MODIFIED_CB][MAX_CBSIZE];
+	bool CB_copied[NUMBER_OF_MODIFIED_CB];
+	float orig_values[NUMBER_OF_MODIFIED_CB][MAX_OF_MODIFIED_VALUES];
+	bool track_for_CB[NUMBER_OF_MODIFIED_CB];
 
 	bool track_for_NS430 = false;
 

@@ -82,9 +82,9 @@ bool do_not_draw = false;
 std::unordered_map<std::string, int> settings_mapping = {
 	{"fps_limit", SET_FPS_LIMIT},
 	{"flag_fps", SET_DUMMY},
-	{"set_label", SET_LABEL},
 	{"set_default", SET_DEFAULT},
-	{"set_effects", SET_EFFECTS}
+	{"set_effects", SET_EFFECTS},
+	{"set_misc", SET_MISC}
 };
 
 
@@ -105,14 +105,14 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// and inject modified CB CperFrame
 	{ 0x4DDC4917, Shader_Definition(action_log | action_injectCB, Feature::GetStencil, L"", 0, {SET_DEFAULT}) },
 	{ 0x57D037A0, Shader_Definition(action_injectCB, Feature::Sky, L"", 0, {SET_DEFAULT}) },
-	{ 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0, {SET_COLOR, SET_LABEL, SET_EFFECTS}) },
+	{ 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0, {SET_COLOR, SET_EFFECTS, SET_MISC}) },
 	// global PS for all changes
-	//{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_LABEL}) },
-	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_LABEL, SET_EFFECTS}) },
+	//{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_MISC}) },
+	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_EFFECTS, SET_MISC}) },
 	// VS associated with global PS 2, trigger draw increase and end spying for render target
 	{ 0x8DB626CD, Shader_Definition(action_log , Feature::VS_global2, L"", 0, {SET_DEFAULT}) },
 	// Label PS 
-	{ 0x6CEA1C47, Shader_Definition(action_replace | action_injectText, Feature::Label , L"labels_PS.cso", 0, {SET_LABEL}) },
+	{ 0x6CEA1C47, Shader_Definition(action_replace | action_injectText, Feature::Label , L"labels_PS.cso", 0, {SET_MISC}) },
 	// ** NS430 **
 	// to start spying texture for screen texture and disable frame (Vs associated with NS430 screen PS below)
 	{ 0x52C97365, Shader_Definition(action_replace, Feature::NS430, L"VR_GUI_MFD_VS.cso", 0, {SET_NS430}) },

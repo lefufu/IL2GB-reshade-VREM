@@ -159,6 +159,14 @@ extern "C" {
             request_capture = true;
         }
         last_button = button;
+
+        if (request_capture)
+        {
+            request_capture = false;
+            flag_capture = true;
+            frame_started = true;
+            log_start_capture_frame();
+        } 
         
 		//force capture for testing
         // flag_capture = true;

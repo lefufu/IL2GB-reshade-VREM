@@ -414,10 +414,9 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
                         {
                             // push render target resol for shader re compilation 
                             int check = 0;
-                            // check += default_preprocessor(shared_data.runtime, "MSAAX", shared_data.cb_inject_values.AAxFactor, true, display_to_use);
-                            // check += default_preprocessor(shared_data.runtime, "MSAAY", shared_data.cb_inject_values.AAyFactor, true, display_to_use);
                             check += default_preprocessor(g_shared_state->runtime, "MSAAX", a_shared.MSAAxfactor, true, display_to_use);
                             check += default_preprocessor(g_shared_state->runtime, "MSAAY", a_shared.MSAAyfactor, true, display_to_use);
+                            buffer_exported = true;
 
                             /*
                             //if (display_to_use <= 1)

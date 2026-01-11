@@ -120,7 +120,19 @@ void log_filtered_added(uint64_t handle) {
 		std::stringstream s;
 		//filtered_pipeline
 
-		s << "addon - added filtered pipeline, handle = " << std::hex << handle  << "; ";
+		s << "addon - added filtered pipeline, handle = " << std::hex << handle  << ", hash =" << std::hex << filtered_pipeline[handle].hash << ", action =" << to_string(filtered_pipeline[handle].action) << ", feature =" << to_string(filtered_pipeline[handle].feature) << ", filename =" << to_string(filtered_pipeline[handle].replace_filename) << "; ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+
+}
+
+void log_pipeline_filtered_skipped(uint64_t handle) {
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+		//filtered_pipeline
+
+		s << "addon - filtered pipeline already added, handle = " << std::hex << handle << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 
@@ -684,7 +696,8 @@ void log_preprocessor(std::string name, float targetValue, bool update, bool sta
 	}
 
 
-	if (g_shared_state->debug && ((inFrame && flag_capture) || !inFrame)) 
+	// if (g_shared_state->debug && ((inFrame && flag_capture) || !inFrame)) 
+	if (g_shared_state->debug && flag_capture)
 	{
 		std::stringstream s;
 		s << stepName << " default_preprocessor, name = '" << name << "', target value = " << targetValue << ", exists = " << status << ", readed value = " << readedValue << " display = " << display_to_use << ";";
@@ -770,5 +783,42 @@ void log_effect(technique_trace tech, command_list* cmd_list, resource_view rv)
 			s << "!!! resource view not catched for " << a_shared.count_display - 1 << "!!!";
 			reshade::log::message(reshade::log::level::info, s.str().c_str());
 		}
+	}
+}
+
+void log_cbuffer_info(std::string CB_name, reshade::api::buffer_range cbuffer)
+{
+
+	if (g_shared_state->debug && flag_capture)
+	{
+		std::stringstream s;
+		s << "--> cbuffer " << CB_name << " handle = " << std::hex << cbuffer.buffer.handle << ", size = " << cbuffer.size << "; ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+
+}
+
+void log_constant_buffer_copy(std::string CB_name, float* dest_array, int buffer_size)
+{
+	if (g_shared_state->debug && flag_capture)
+	{
+		std::stringstream s;
+		for (int i = 0; i < buffer_size + 1; i++)
+		{
+			s << "--> cbuffer " << CB_name << "[" << i << "] = " << dest_array[i] << ";";
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+			s.str("");
+			s.clear();
+		}
+	}
+}
+
+void log_constant_buffer_mapping_error(std::string CB_name)
+{
+	if (g_shared_state->debug && flag_capture)
+	{
+		std::stringstream s;
+		s << "**** map_buffer_region KO for " << CB_name << " !!! ***";
+		reshade::log::message(reshade::log::level::error, s.str().c_str());
 	}
 }

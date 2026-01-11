@@ -58,15 +58,8 @@ extern "C" {
 	__declspec(dllexport) void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 	{
 
-		if (g_shared_state->debug && flag_capture && a_shared.render_effect)
-		{
-			std::stringstream s;
-			s << "addon - vrem_on_push_descriptors : a_shared.render_effect : " << a_shared.render_effect << ", a_shared.VREM_setting[SET_EFFECTS] : " << a_shared.VREM_setting[SET_EFFECTS] << ", a_shared.cb_inject_values.mapMode : " << a_shared.cb_inject_values.mapMode << ", a_shared.draw_passed : " << a_shared.draw_passed << "; ";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-		}
-
 		// to limit processing only when a tracing is setup
-		if (!a_shared.render_effect && !track_for_depthStencil) return;
+		if (!a_shared.render_effect && !track_for_depthStencil && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
 		
 		// display_to_use = 0 => outer left, 1 = outer right, 2 = Inner left, 3 = inner right.
 		short int display_to_use = a_shared.count_display - 1;
@@ -122,35 +115,40 @@ extern "C" {
 		}
 		*/
 
-		/*
-		//handle CB
+
+		if (g_shared_state->debug && flag_capture && a_shared.render_effect)
+		{
+			std::stringstream s;
+			s << "addon - vrem_on_push_descriptors : a_shared.render_effect : " << a_shared.render_effect << ", a_shared.VREM_setting[SET_EFFECTS] : " << a_shared.VREM_setting[SET_EFFECTS] << ", a_shared.cb_inject_values.mapMode : " << a_shared.cb_inject_values.mapMode << ", a_shared.draw_passed : " << a_shared.draw_passed << "; ";
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+		}
+		
+		//handle CB modification
 		// CB cPerFrame is generated once at the beginning of the frame, it is not needed to use a dedicated shader to track the push_descriptor command
-		if ((shared_data.cb_inject_values.hazeReduction != 1.0 || shared_data.cb_inject_values.gCockpitIBL != 1.0) && shared_data.misc_feature)
+		if ((a_shared.cb_inject_values.hazeReduction != 1.0 || a_shared.cb_inject_values.gCockpitIBL != 1.0) && a_shared.VREM_setting[SET_MISC])
 		{
 
 
 			if (update.type == descriptor_type::constant_buffer && update.binding == CPERFRAME_INDEX && update.count == 1 && stages == shader_stage::pixel)
 			{
 
-				bool error = read_constant_buffer(cmd_list, update, "CPerFrame", 0, shared_data.dest_CB_array[CPERFRAME_CB_NB], CPERFRAME_SIZE);
+				bool error = read_constant_buffer(cmd_list, update, "CPerFrame", 0, a_shared.dest_CB_array[CPERFRAME_CB_NB], CPERFRAME_SIZE);
 				if (!error)
 				{
 
 					// copy original value for gAtmIntensity
-					shared_data.orig_values[CPERFRAME_CB_NB][GATMINTENSITY_SAVE] = shared_data.dest_CB_array[CPERFRAME_CB_NB][FOG_INDEX];
+					a_shared.orig_values[CPERFRAME_CB_NB][GATMINTENSITY_SAVE] = a_shared.dest_CB_array[CPERFRAME_CB_NB][FOG_INDEX];
 
 					// copy original value for gCockpitIBL.xy
-					shared_data.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_X_SAVE] = shared_data.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_X];
-					shared_data.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_Y_SAVE] = shared_data.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_Y];
+					a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_X_SAVE] = a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_X];
+					a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_Y_SAVE] = a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_Y];
 
 
-					shared_data.CB_copied[CPERFRAME_CB_NB] = true;
+					a_shared.CB_copied[CPERFRAME_CB_NB] = true;
 				}
 
 			}
 		}
-		*/
-
 	}
 }
 

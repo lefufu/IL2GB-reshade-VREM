@@ -72,5 +72,6 @@ extern void init_preprocess(effect_runtime* runtime);
 extern void enumerateTechniques(effect_runtime* runtime);
 extern void render_effect(short int display_to_use, command_list* cmd_list);
 extern bool  get_uniform_and_techniques(effect_runtime* runtime);
+extern bool read_constant_buffer(command_list* cmd_list, const descriptor_table_update& update, std::string CB_name, int descriptors_index, float* dest_array, int buffer_size);
 
 

@@ -66,13 +66,14 @@ extern "C" {
 		if ((static_cast<uint32_t>(stages) & static_cast<uint32_t>(ALLOWED_STAGES)) == 0) return;
 		
 		// for frame capture, to ensure there is at least one bind_pipeline in the frame => need to be moved to another event sooner than bind_pipeline !
+		/* *************************************************************************************************
 		if (request_capture)
 		{
 			request_capture = false;
 			flag_capture = true;
 			frame_started = true;
 			log_start_capture_frame();
-		}
+		} */
 
 		// identify if the pipeline is to be processed
 		auto it = filtered_pipeline.find(pipelineHandle.handle);
@@ -259,6 +260,92 @@ extern "C" {
 						a_shared.cockpit_rendering_started = true;
 					}
 
+				}
+
+			}
+
+			// ----------------------------------------
+			// inject modified CB (modifed or restored version)
+			if (it->second.action & action_injectCB)
+			{
+				// inject constant buffer other than the one containing VREM setting
+
+				//CPERFRAME/haze for global illumination :  need to modify value for haze but set orgi. value for reflection
+				if (it->second.feature == Feature::GetStencil && a_shared.CB_copied[CPERFRAME_CB_NB])
+				{
+
+					//modify value for Haze
+					a_shared.dest_CB_array[CPERFRAME_CB_NB][FOG_INDEX] = a_shared.orig_values[CPERFRAME_CB_NB][GATMINTENSITY_SAVE] * a_shared.cb_inject_values.hazeReduction;
+					// other value
+					a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_X] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_X_SAVE];
+					a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_Y] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_Y_SAVE];
+					// use push constant() to push CPerFrame 
+					// pipeline_layout for CB initialized in init_pipeline() once for all
+					commandList->push_constants(
+						shader_stage::all,
+						a_shared.saved_pipeline_layout_CB[CPERFRAME_CB_NB],
+						0,
+						0, // can not injecting only the haze value to be updated (so first = FOG_INDEX) because it is making the game crash...
+						CPERFRAME_SIZE,
+						&a_shared.dest_CB_array[CPERFRAME_CB_NB]
+					);
+
+					log_CB_injected("CPerFrame updated for fog, GCOCKPITIBL default");
+
+					// last_replaced_shader = pipelineHandle.handle;
+					a_shared.last_feature = it->second.feature;
+				}
+
+				//CPERFRAME/haze for other shaders :  need to keep orig. value
+				if (it->second.feature == Feature::Sky && a_shared.CB_copied[CPERFRAME_CB_NB])
+				{
+
+					//modify value for Haze
+					a_shared.dest_CB_array[CPERFRAME_CB_NB][FOG_INDEX] = a_shared.orig_values[CPERFRAME_CB_NB][GATMINTENSITY_SAVE];
+					//other value
+					a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_X] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_X_SAVE];
+					a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_Y] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_Y_SAVE];
+
+					// use push constant() to push CPerFrame 
+					// pipeline_layout for CB initialized in init_pipeline() once for all
+					commandList->push_constants(
+						shader_stage::all,
+						a_shared.saved_pipeline_layout_CB[CPERFRAME_CB_NB],
+						0,
+						0,
+						CPERFRAME_SIZE,
+						&a_shared.dest_CB_array[CPERFRAME_CB_NB]
+					);
+
+					log_CB_injected("CPerFrame original");
+
+					// last_replaced_shader = pipelineHandle.handle;
+					a_shared.last_feature = it->second.feature;
+
+				}
+
+				//CPERFRAME/reflect for instrument
+				if (it->second.feature == Feature::NoReflect && a_shared.CB_copied[CPERFRAME_CB_NB])
+				{
+
+					//modify value
+					a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_X] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_X_SAVE] * a_shared.cb_inject_values.gCockpitIBL;
+					a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_Y] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_Y_SAVE] * a_shared.cb_inject_values.gCockpitIBL;
+
+					// use push constant() to push CPerFrame 
+					// pipeline_layout for CB initialized in init_pipeline() once for all
+					commandList->push_constants(
+						shader_stage::all,
+						a_shared.saved_pipeline_layout_CB[CPERFRAME_CB_NB],
+						0,
+						0,
+						CPERFRAME_SIZE,
+						&a_shared.dest_CB_array[CPERFRAME_CB_NB]
+					);
+					log_CB_injected("CPerFrame for GCOCKPITIBL");
+
+					// last_replaced_shader = pipelineHandle.handle;
+					a_shared.last_feature = it->second.feature;
 				}
 
 			}

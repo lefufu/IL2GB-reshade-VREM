@@ -44,21 +44,10 @@
 
 // CB number to be injected in the shaders
 static const int CBINDEX = 13;
+static const int CPERFRAME_INDEX = 6;
 
 // texture number to be injected in the shaders for depth/stencil
 static const int RVINDEX = 3;
-
-// number of CB modified by VREM (used for an array allocation)
-static const int NUMBER_OF_MODIFIED_CB = 2;
-
-// CB index in saved layout for VREM settings
-static const int SETTINGS_CB_NB = 0;
-
-// size of the constant buffer containing all mod parameters, to be injected in shaders
-static const int CBSIZE = 44;
-
-// maximum size of all CB
-static const int MAX_CBSIZE = 152;
 
 // Must be 32bit aligned
 struct ShaderInjectData {

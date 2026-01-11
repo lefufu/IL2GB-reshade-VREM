@@ -110,14 +110,6 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 	// {
 	//	log_display_settings();
 
-	if (g_shared_state->debug)
-	{
-		std::stringstream s;
-		s << "*** creating filtered list **** ";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-	}
-
-
 		// parse the list of saved pipelines to identify which one to keep regarding mod settings
 		for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines)
 		{
@@ -125,40 +117,55 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 			bool to_be_filtered = false;
 			// check if the shader hash is in the mod list
 
-			auto shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
-			if (shader_def_opt.has_value())
-			{
+			// check if not already added
+			auto filtered_pipe = filtered_pipeline.find(p.pipeline.handle);
+			if (filtered_pipe != filtered_pipeline.end()) {
+				// pipeline is already in the list, do nothing
+				// ***************************************************************                   
+				// removed because too verbose !
+				// log_pipeline_filtered_skipped(p.pipeline.handle);
+			}
+			else {
+				// add pipeline in the filtered list
 
-				bool active = check_if_active_option(shader_def_opt.value());
-				log_shader(p.pipeline, shader_def_opt.value(), active);
-
-				// if the shader is active, add it to the filtered pipeline list for later processing
-				if (active)
+				auto shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
+				if (shader_def_opt.has_value())
 				{
-					// cloned pipeline if needed
-					if ((shader_def_opt.value().action & action_replace_bind) || (shader_def_opt.value().action & action_replace))
+
+					bool active = check_if_active_option(shader_def_opt.value());
+					// ***************************************************************                   
+					// removed because too verbose !
+					// log_shader(p.pipeline, shader_def_opt.value(), active);
+
+					// if the shader is active, add it to the filtered pipeline list for later processing
+					if (active)
 					{
-
-						//clone the pipeline with the new shader code
-						pipeline cloned_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, p.hash);
-						if (cloned_pipeline.handle == 0)
+						// cloned pipeline if needed
+						if ((shader_def_opt.value().action & action_replace_bind) || (shader_def_opt.value().action & action_replace))
 						{
-							log_pipeline_clone_error(p.pipeline.handle);
+
+							//clone the pipeline with the new shader code
+							pipeline cloned_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, p.hash);
+							if (cloned_pipeline.handle == 0)
+							{
+								log_pipeline_clone_error(p.pipeline.handle);
+
+							}
+							else
+							{
+								// store the cloned & modified pipeline for later usage in bind_pipeline
+								shader_def_opt.value().substitute_pipeline = cloned_pipeline;
+								//add cloned pipeline in cloned_pipeline to suppress them if addon is reloaded
+								cloned_pipeline_list.emplace(cloned_pipeline.handle, cloned_pipeline);
+								last_handle = cloned_pipeline.handle;
+							}
 
 						}
-						else
-						{
-							// store the cloned & modified pipeline for later usage in bind_pipeline
-							shader_def_opt.value().substitute_pipeline = cloned_pipeline;
-							//add cloned pipeline in cloned_pipeline to suppress them if addon is reloaded
-							cloned_pipeline_list.emplace(cloned_pipeline.handle, cloned_pipeline);
-							last_handle = cloned_pipeline.handle;
-						}
-
+						filtered_pipeline.emplace(p.pipeline.handle, shader_def_opt.value());
+						// ***************************************************************                   
+						// removed because too verbose !
+						log_filtered_added(p.pipeline.handle);
 					}
-					filtered_pipeline.emplace(p.pipeline.handle, shader_def_opt.value());
-
-					log_filtered_added(p.pipeline.handle);
 				}
 			}
 		}
