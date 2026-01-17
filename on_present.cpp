@@ -107,7 +107,7 @@ extern "C" {
         create_RV_pipeline_layout(device);
 
         // parse the shader list to load all shader codes and store codes in shader_code_cache (if not done)
-        read_all_shader_code();
+        //read_all_shader_code();
   
         if (a_shared.VREM_setting[SET_DEFAULT])
         { 
@@ -145,32 +145,12 @@ extern "C" {
             flag_capture = true;
             frame_started = true;
             log_start_capture_frame();
+            log_shader_def_list();
 
 			// if shader hunter mode : clean list of PS
 			if (g_shared_state->shader_hunter)  g_shared_state->PSshader_list.clear();
         } 
-        
-        /*
-		// handle shader + / - / mark keys
-        if (g_shared_state->shader_hunter)
-        {
-            if (runtime->is_key_pressed(VK_UP))
-            {
-                g_shared_state->PSshader_index++;
-                if (g_shared_state->PSshader_index > g_shared_state->PSshader_list.size() - 1) g_shared_state->PSshader_index = 0;
-            }
-            if (runtime->is_key_pressed(VK_DOWN))
-            {
-                g_shared_state->PSshader_index--;
-                if (g_shared_state->PSshader_index < 0)  g_shared_state->PSshader_index = g_shared_state->PSshader_list.size() - 1;
-            }
 
-            if (runtime->is_key_pressed(VK_RIGHT))
-            {
-                log_shader_marked();
-            }
-        }
-        */
 		//force capture for testing
         // flag_capture = true;
     }

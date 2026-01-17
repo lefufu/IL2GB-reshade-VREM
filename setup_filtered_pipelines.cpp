@@ -59,25 +59,6 @@
 
 bool check_if_active_option(Shader_Definition shader_def)
 {
-	/*std::stringstream s;
-	
-	bool result = false;
-	for (uint32_t option : shader_def.VREM_options)
-	{
-		
-		
-		s << "a_shared.VREM_setting[" << option << "]  = " << a_shared.VREM_setting[option];
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-		s.str("");
-		s.clear();
-		
-		if (a_shared.VREM_setting[option] > 0)
-		{
-			result = true;
-		}
-	}
-	return result;
-	*/
 	for (uint32_t index : shader_def.VREM_options)
 	{
 		if (a_shared.VREM_setting[index] != 0)
@@ -160,7 +141,7 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 					filtered_pipeline.emplace(p.pipeline.handle, shader_def_opt.value());
 					// ***************************************************************                   
 					// removed because too verbose !
-					log_filtered_added(p.pipeline.handle);
+					// log_filtered_added(p.pipeline.handle);
 				}
 			}
 		}

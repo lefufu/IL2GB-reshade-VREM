@@ -131,7 +131,7 @@ extern "C" {
 			// ----------------------------------------
 			// replace pipelines during bind
 			if (it->second.action & action_replace_bind || it->second.action & action_replace)
-			//if (it->second.action & action_replace_bind)
+				//if (it->second.action & action_replace_bind)
 			{
 
 				// TODO : add optimization to avoid pushing CB13 if not needed
@@ -149,10 +149,13 @@ extern "C" {
 					);
 					log_CB_injected("VREM CB");
 				}
-				// shader is to be replaced by the new one created in on_Init_Pipeline
-				commandList->bind_pipeline(stages, it->second.substitute_pipeline);
-				// log infos
-				log_pipeline_replaced(pipelineHandle.handle, it->second.substitute_pipeline.handle);
+				if (it->second.action & action_replace_bind || ((it->second.action & action_replace) && g_shared_state->debug))
+				{
+					// shader is to be replaced by the new one created in on_Init_Pipeline
+					commandList->bind_pipeline(stages, it->second.substitute_pipeline);
+					// log infos
+					log_pipeline_replaced(pipelineHandle.handle, it->second.substitute_pipeline.handle);
+				}
 			}
 
 			// ----------------------------------------

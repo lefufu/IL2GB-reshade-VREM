@@ -93,13 +93,13 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 {
 	
 	// ** fix for rotor **
-	{0xC0CC8D69, Shader_Definition(action_replace, Feature::Rotor, L"AH64_rotorPS.cso", 0, {SET_ROTOR})},
-	{ 0x349A1054, Shader_Definition(action_replace, Feature::Rotor, L"AH64_rotor2PS.cso", 0, {SET_ROTOR}) },
-	{ 0xD3E172D4, Shader_Definition(action_replace, Feature::Rotor, L"UH1_rotorPS.cso", 0, {SET_ROTOR}) },
+	{0xC0CC8D69, Shader_Definition(action_replace_bind, Feature::Rotor, L"AH64_rotorPS.cso", 0, {SET_ROTOR})},
+	{ 0x349A1054, Shader_Definition(action_replace_bind, Feature::Rotor, L"AH64_rotor2PS.cso", 0, {SET_ROTOR}) },
+	{ 0xD3E172D4, Shader_Definition(action_replace_bind, Feature::Rotor, L"UH1_rotorPS.cso", 0, {SET_ROTOR}) },
 	// ** fix for IHADSS **
-	{ 0x2D713734, Shader_Definition(action_replace, Feature::IHADSS, L"IHADSS_PNVS_PS.cso", 0, {SET_IHADSS}) },
-	{ 0xDF141A84, Shader_Definition(action_replace, Feature::IHADSS, L"IHADSS_PS.cso", 0, {SET_IHADSS}) },
-	{ 0x45E221A9, Shader_Definition(action_replace, Feature::IHADSS, L"IHADSS_VS.cso", 0, {SET_IHADSS}) },
+	{ 0x2D713734, Shader_Definition(action_replace_bind, Feature::IHADSS, L"IHADSS_PNVS_PS.cso", 0, {SET_IHADSS}) },
+	{ 0xDF141A84, Shader_Definition(action_replace_bind, Feature::IHADSS, L"IHADSS_PS.cso", 0, {SET_IHADSS}) },
+	{ 0x45E221A9, Shader_Definition(action_replace_bind, Feature::IHADSS, L"IHADSS_VS.cso", 0, {SET_IHADSS}) },
 	// ** label masking and color/sharpen/deband **
 	// to start spying texture for depthStencil (Vs associated with global illumination PS)
 	// and inject modified CB CperFrame
@@ -108,22 +108,22 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{ 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0, {SET_COLOR, SET_EFFECTS, SET_MISC}) },
 	// global PS for all changes
 	//{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_MISC}) },
-	{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_EFFECTS, SET_MISC}) },
+	{ 0xBAF1E52F, Shader_Definition(action_replace_bind | action_injectText, Feature::Global, L"test_mask.cso", 0, {SET_COLOR, SET_EFFECTS, SET_MISC}) },
 	// VS associated with global PS 2, trigger draw increase and end spying for render target
 	{ 0x8DB626CD, Shader_Definition(action_log , Feature::VS_global2, L"", 0, {SET_DEFAULT}) },
 	// Label PS 
-	{ 0x6CEA1C47, Shader_Definition(action_replace | action_injectText, Feature::Label , L"labels_PS.cso", 0, {SET_MISC}) },
+	{ 0x6CEA1C47, Shader_Definition(action_replace_bind | action_injectText, Feature::Label , L"labels_PS.cso", 0, {SET_MISC}) },
 	// ** NS430 **
 	// to start spying texture for screen texture and disable frame (Vs associated with NS430 screen PS below)
-	{ 0x52C97365, Shader_Definition(action_replace, Feature::NS430, L"VR_GUI_MFD_VS.cso", 0, {SET_NS430}) },
+	{ 0x52C97365, Shader_Definition(action_replace_bind, Feature::NS430, L"VR_GUI_MFD_VS.cso", 0, {SET_NS430}) },
 	// to start spying texture for screen texture (Vs associated with NS430 screen EDF9F8DD for su25T&UH1, not same res. texture !)
 	{ 0x8439C716, Shader_Definition(action_log, Feature::NS430, L"", 0, {SET_NS430}) },
 	// inject texture in global GUI and filter screen display (same shader for both)
-	{ 0x99D562, Shader_Definition(action_replace | action_injectText, Feature::NS430 , L"VR_GUI_MFD_PS.cso", 0) },
+	{ 0x99D562, Shader_Definition(action_replace_bind | action_injectText, Feature::NS430 , L"VR_GUI_MFD_PS.cso", 0) },
 	// disable NS430 frame, shared with some cockpit parts (can not be done by skip)
-	{ 0xEFD973A1, Shader_Definition(action_replace, Feature::NS430 , L"NS430__framePS.cso", 0, {SET_NS430}) },
+	{ 0xEFD973A1, Shader_Definition(action_replace_bind, Feature::NS430 , L"NS430__framePS.cso", 0, {SET_NS430}) },
 	// disable NS430 screen background (done in shader because shared with other objects than NS430)
-	{ 0x6EF95548, Shader_Definition(action_replace, Feature::NS430, L"NS430_screen_back.cso", 0, {SET_NS430}) },
+	{ 0x6EF95548, Shader_Definition(action_replace_bind, Feature::NS430, L"NS430_screen_back.cso", 0, {SET_NS430}) },
 	// to filter out call for GUI and MFD
 	{ 0x55288581, Shader_Definition(action_log, Feature::GUI, L"", 0, {SET_DEFAULT}) },
 	//  ** identify game config **
@@ -138,11 +138,11 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{ 0x7BB48FB, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_MISC}) },
 
 	//  ** NVG **
-	{ 0xE65FAB66, Shader_Definition(action_replace , Feature::NVG , L"NVG_extPS.cso", 0, {SET_NVG}) },
+	{ 0xE65FAB66, Shader_Definition(action_replace_bind , Feature::NVG , L"NVG_extPS.cso", 0, {SET_NVG}) },
 	//  ** identify render target ** (VS associated with first global PS)
 	{ 0x936B2B6A, Shader_Definition(action_log , Feature::Effects , L"", 0, {SET_EFFECTS}) },
 	// **test constant color shader for debug**
-	// { 0xCFB718E2, Shader_Definition(action_replace_bind , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
+	{ 0xCFB718E2, Shader_Definition(action_replace , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
 };
 
 //
@@ -206,6 +206,9 @@ extern "C" {
 		a_shared.technique_compiled = false;
 
 		a_shared.VREM_setting[SET_DEFAULT] = 0;
+
+		// parse the shader list to load all shader codes and store codes in shader_code_cache (if not done)
+		read_all_shader_code();
 
         // reshade::log::message(reshade::log::level::info,"DCS VREM: register done...");
     }

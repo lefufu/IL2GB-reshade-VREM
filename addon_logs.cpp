@@ -916,3 +916,43 @@ void log_hunting_push_descriptor(command_list* cmd_list, shader_stage stages, pi
 		}
 	}
 }
+
+void log_error_loading_shader_code(std::string message)
+{
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+		s << "addon **** Error when loading shader code : " << message << " !!! ***";
+		reshade::log::message(reshade::log::level::error, s.str().c_str());
+	}
+}
+
+void log_replaced_shader_code(uint32_t hash, std::unordered_map<uint32_t, Shader_Definition>::iterator it, uint32_t newHash)
+{
+
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+
+		s << "addon - onCreatePipeline, hash to handle = " << std::hex << hash << " ;";
+		s << "shader code statically replaced by :" << to_string(it->second.replace_filename) << ", new hash =" << newHash << ";";
+
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+void log_shader_def_list()
+{
+	if (g_shared_state->debug)
+	{
+		std::stringstream s;
+		for (const auto& [hash, shader] : shader_by_hash) {
+			//{0xC0CC8D69, Shader_Definition(action_replace_bind, Feature::Rotor, L"AH64_rotorPS.cso", 0, {SET_ROTOR})},
+			// s << "hash = " << std::hex << hash << ", action = " << to_string(shader.action) << ", feature = " << to_string(shader.feature) << ", replace_filename = " << to_string(shader.replace_filename) <<  ", replace_filename = " << shader.VREM_options << ";";
+			s << "hash = " << std::hex << hash << ", " << to_string(shader);
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+			s.str("");
+			s.clear();
+		}
+	}	
+}

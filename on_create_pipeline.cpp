@@ -49,8 +49,65 @@
 #include "VREM_settings.h"
 #include "addon_logs.h"
 
+extern std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;
 
 using namespace reshade::api;
+
+// *******************************************************************************************************
+// load_shader_code_static() : replace shader code once for all at creation as done by crosire for usage in create_pipeline
+// update pipeline_by_hash with new hash
+// 
+bool load_shader_code_static(device_api device_type, shader_desc& orig_desc)
+{
+	if (orig_desc.code_size == 0)
+	{
+		log_error_loading_shader_code(" on create pipeline - code size zero");
+		return false;
+	}
+
+	//do static replacement of shader code only if not in debug mode, otherwise dynamic replacement is forced in on_bind_pipeline
+	if (!g_shared_state->debug)
+	{
+		uint32_t shader_hash = calculateShaderHash(orig_desc);
+		//check if hash is in shader_by_hash
+		auto it = shader_by_hash.find(shader_hash);
+		if (it != shader_by_hash.end()) {
+
+			if (it->second.action & action_replace)
+			{
+
+				auto it2 = shader_code_cache.find(shader_hash);
+				//if hash found in cache replace code in the cloned desc
+				if (!(it2 == shader_code_cache.end()))
+				{
+
+					// replace code by the one from cso
+					const std::vector<uint8_t>& shader_code = it2->second;
+
+					orig_desc.code = shader_code.data();
+					orig_desc.code_size = shader_code.size();
+
+					uint32_t new_shader_hash = calculateShaderHash(orig_desc);
+
+					// add a new entry in shader_by_hash with new hash if not existing
+					auto it3 = shader_by_hash.find(new_shader_hash);
+					if (it3 == shader_by_hash.end()) {
+						Shader_Definition new_shader_def = it->second;
+						new_shader_def.hash = new_shader_hash;
+						shader_by_hash.emplace(new_shader_hash, new_shader_def);
+					}
+
+					log_replaced_shader_code(shader_hash, it, new_shader_hash);
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+
+
 
 extern "C" {
 
@@ -63,39 +120,29 @@ extern "C" {
 	__declspec(dllexport) bool vrem_on_create_pipeline(device* device, pipeline_layout, uint32_t subobject_count, const pipeline_subobject* subobjects) {
 
 		
-		if (!g_shared_state->debug) return false;
+		// if (!g_shared_state->debug) return false;
 			
 		const device_api device_type = device->get_api();
+
+		bool replaced_stages = false;
 
 		for (uint32_t i = 0; i < subobject_count; ++i)
 		{
 			
 			const auto& sub = subobjects[i];
-			if (ALLOWED_SHADERS.count(sub.type) > 0) save_shader_code(device_type, *static_cast<const shader_desc*>(subobjects[i].data));
-			
-			/*
-			switch (subobjects[i].type)
+			if (ALLOWED_SHADERS.count(sub.type) > 0)
 			{
-			case pipeline_subobject_type::vertex_shader:
-			//case pipeline_subobject_type::hull_shader:
-			//case pipeline_subobject_type::domain_shader:
-			//case pipeline_subobject_type::geometry_shader:
-			case pipeline_subobject_type::pixel_shader:
-			case pipeline_subobject_type::compute_shader:
-			case pipeline_subobject_type::amplification_shader:
-			case pipeline_subobject_type::mesh_shader:
-			case pipeline_subobject_type::raygen_shader:
-			case pipeline_subobject_type::any_hit_shader:
-			case pipeline_subobject_type::closest_hit_shader:
-			case pipeline_subobject_type::miss_shader:
-			case pipeline_subobject_type::intersection_shader:
-			case pipeline_subobject_type::callable_shader:
-				save_shader_code(device_type, *static_cast<const shader_desc*>(subobjects[i].data));
+				// save shader code for debug
+				if (g_shared_state->debug) save_shader_code(device_type, *static_cast<const shader_desc*>(subobjects[i].data));
+
+				// handle replacement of code if option setup for this shader
+				replaced_stages |= load_shader_code_static(device_type, *static_cast<shader_desc*>(subobjects[i].data));
 				break;
-			} */
+			}
 		}
 
-		return false;
+	// Return whether any shader code was replaced
+	return replaced_stages;
 
 	}
 }
