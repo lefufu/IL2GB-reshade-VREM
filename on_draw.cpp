@@ -87,6 +87,9 @@ extern "C" {
 	__declspec(dllexport) bool vrem_on_draw(command_list* commandList, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 	{
 
+		// log
+		if (g_shared_state->shader_hunter && flag_capture) log_ondraw(vertex_count, instance_count, first_vertex, first_instance);
+		
 		if (!track_for_depthStencil && !do_not_draw && !a_shared.render_effect) return false;
 		
 		bool skip = false;
@@ -106,6 +109,9 @@ extern "C" {
 	__declspec(dllexport) bool vrem_on_draw_indexed(command_list* commandList, uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 	{
 
+		// log
+		if (g_shared_state->shader_hunter && flag_capture) log_on_draw_indexed(index_count, instance_count, first_index, vertex_offset, first_instance);
+		
 		if (!track_for_depthStencil && !do_not_draw && !a_shared.render_effect) return false;
 
 		bool skip = false;
@@ -124,6 +130,9 @@ extern "C" {
 	// On draw* : skip draw
 	__declspec(dllexport) bool vrem_on_drawOrDispatch_indirect(command_list* commandList, indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride)
 	{
+
+		// log
+		if (g_shared_state->shader_hunter && flag_capture) log_on_drawOrDispatch_indirect(type, buffer, offset, draw_count, stride);
 
 		if (!track_for_depthStencil && !do_not_draw && !a_shared.render_effect) return false;
 		

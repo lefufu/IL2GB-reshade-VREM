@@ -50,3 +50,4 @@ extern void log_success_load();
 extern void log_unloaded();
 extern void log_delete_saved_pipelines();
 extern void log_saved_pipelines_value(save_pipeline saved_pipeline);
+extern void log_shader_marked(save_pipeline* p_found, char buffer[256]);

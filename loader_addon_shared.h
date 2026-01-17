@@ -111,8 +111,8 @@ struct PipeLine_Definition {
 
 // Structure for data that should be kept between mod reload
 struct PersistentPipelineData {
-    std::unordered_map<uint32_t, PipeLine_Definition> pipeline_by_hash;
-    std::unordered_map<uint64_t, PipeLine_Definition> pipeline_by_handle;
+    //std::unordered_map<uint32_t, PipeLine_Definition> pipeline_by_hash;
+    //std::unordered_map<uint64_t, PipeLine_Definition> pipeline_by_handle;
     std::vector<save_pipeline> saved_pipelines;
 };
 
@@ -134,9 +134,18 @@ struct SharedState {
 
 	// flag to setup generation of filtered pipeline list and cloning
 	bool filtered_pipeline_to_setup = true;
-
+  
     PersistentPipelineData VREM_pipelines;
 
     reshade::api::pipeline_layout DX11_layout = {};
+
+    // for hunting
+	bool shader_hunter = false;
+    // bool save_cso = false;
+    //flag for shader marking (0=>hidden, 1=>color)
+	int color_PS = 0;
+	int number_of_pipelines = 0;
+    int PSshader_index = 0;
+    std::vector <uint64_t> PSshader_list;
 
 };

@@ -108,3 +108,6 @@ extern void log_cbuffer_info(std::string CB_name, reshade::api::buffer_range cbu
 extern void log_constant_buffer_copy(std::string CB_name, float* dest_array, int buffer_size);
 extern void log_constant_buffer_mapping_error(std::string CB_name);
 extern void log_pipeline_filtered_skipped(uint64_t handle);
+extern void log_hunting_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle);
+extern void log_shader_marked();
+extern void log_hunting_push_descriptor(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update);

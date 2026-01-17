@@ -71,50 +71,7 @@ extern "C" {
 
 
 		log_init_pipeline_layout(paramCount, params, layout);
-		// generate data for constant_buffer or shader_resource_view
-		// for (uint32_t paramIndex = 0; paramIndex < paramCount; ++paramIndex) {
-			// auto param = params[paramIndex];
-			// reshade::api::pipeline_layout_param param = params[paramIndex];
 
-
-			//log infos
-			// log_init_pipeline_params(paramCount, params, layout, paramIndex, param);
-		//}
-		/*
-			if (param.push_descriptors.type == descriptor_type::constant_buffer)
-			{
-
-				// create pipeline layout for injecting VREM settings/parameters in CB CBINDEX
-				create_modified_CB_layout(dev, CBINDEX, "VREM settings Cbuffer", SETTINGS_CB_NB);
-
-				g_shared_state->DX11_layout = layout;
-
-				// create pipeline layout for injecting CperFrame parameters in CB CPERFRAME_INDEX
-				// create_modified_CB_layout(dev, CPERFRAME_INDEX, "CperFrame", CPERFRAME_CB_NB);
-			}
-
-			
-			else if (param.push_descriptors.type == descriptor_type::shader_resource_view)
-			{
-
-				// create a new pipeline_layout for just 1 rsource view to be updated by push_constant(), RV number defined in RVINDEX
-				reshade::api::descriptor_range srv_range;
-				srv_range.dx_register_index = RVINDEX;
-				srv_range.count = UINT32_MAX;
-				srv_range.visibility = reshade::api::shader_stage::pixel;
-				srv_range.type = reshade::api::descriptor_type::shader_resource_view;
-
-				const reshade::api::pipeline_layout_param params[] = {
-					srv_range,
-				};
-
-				bool  result = dev->create_pipeline_layout(std::size(params), params, &shared_data.saved_pipeline_layout_RV);
-
-				if (result)  log_create_RVlayout();
-				else log_error_creating_RVlayout();
-			}
-			*/
-	
 	}
 }
 

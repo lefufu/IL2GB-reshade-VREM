@@ -50,6 +50,7 @@
 
 #include "config.hpp"
 #include "addon_logs.h"
+#include "addon_objects.h"
 
 //shader code cache to keep loaded code in memory, avoid mutliple load of same shader, handle option change without reloading all cso key=hash of shader
 extern std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;
@@ -124,6 +125,11 @@ void read_all_shader_code()
                 }
             }
         }
+
+        //read cso for constant color shader
+
+        load_shader_code(shader_code_cache, CONSTANT_HASH, CONSTANT_COLOR_NAME);
+
         a_shared.cso_imported = true;
     }
 }

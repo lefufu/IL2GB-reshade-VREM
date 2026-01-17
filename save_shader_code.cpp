@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////
 //
 // Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
@@ -6,7 +5,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-// on_bind_render_targets_and_depth_stencil : store render target for technique rendering
+// save shader code to file, reshade file from Crosire
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -42,61 +41,60 @@
 // 
 /////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+
+
 #include <reshade.hpp>
-#include <unordered_map>
-
-
-#include "loader_addon_shared.h"
-#include "addon_functions.h"
-#include "addon_objects.h"
-#include "VREM_settings.h"
-#include "addon_logs.h"
-
-#include "to_string.hpp"
-
+#include "config.hpp"
+#include "crc32_hash.hpp"
+#include <cstring>
+#include <fstream>
+#include <filesystem>
 
 using namespace reshade::api;
 
+constexpr uint32_t SPIRV_MAGIC = 0x07230203;
 
-extern "C" {
-	//*******************************************************************************
-	__declspec(dllexport) void vrem_on_bind_render_targets_and_depth_stencil(command_list* cmd_list, uint32_t count, const resource_view* rtvs, resource_view dsv)
-	{
+static std::filesystem::path make_shader_file_path(uint32_t shader_hash, const wchar_t* extension)
+{
+	// Prepend executable directory to image files
+	wchar_t file_prefix[MAX_PATH] = L"";
+	GetModuleFileNameW(nullptr, file_prefix, ARRAYSIZE(file_prefix));
 
-		// copy render target if tracking
-	// BUG: using this line with openknweeboard is blocking game !!!!
-	// 	if (shared_data.track_for_render_target && shared_data.count_display > -1 && !shared_data.cb_inject_values.mapMode && count > 0 && (shared_data.effects_feature || shared_data.texture_needed))
-		
-		if (a_shared.track_for_render_target && a_shared.count_display > -1 && !a_shared.cb_inject_values.mapMode && count > 0 && (a_shared.VREM_setting[SET_EFFECTS]))
-		{
+	std::filesystem::path path = file_prefix;
+	path = path.parent_path();
+	path /= RESHADE_ADDON_SHADER_SAVE_DIR;
 
-			saved_RenderTargetView RTView;
-			// only first render target view to get
-			device* dev = cmd_list->get_device();
-			resource scr_resource = dev->get_resource_from_view(rtvs[0]);
-			resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
+	// Ensure target directory exists
+	if (!std::filesystem::exists(path))
+		std::filesystem::create_directory(path);
 
-			// get information of render target
-			/*RTView.RV = rtvs[0];
-			RTView.copied = true;
-			RTView.width = src_resource_desc.texture.width;
-			RTView.height = src_resource_desc.texture.height;
-			current_RTV_handle = rtvs[0].handle;
-			a_shared.saved_RenderTargetViews.emplace(current_RTV_handle, RTView);
-			*/
-			last_RTV_saved.copied = true;
-			last_RTV_saved.RV = rtvs[0];
-			last_RTV_saved.width = src_resource_desc.texture.width;
-			last_RTV_saved.height = src_resource_desc.texture.height;
-			
-			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
-			
-		}
+	wchar_t hash_string[11];
+	swprintf_s(hash_string, L"0x%08X", shader_hash);
 
-		// log for shader hunting
-		if (g_shared_state->shader_hunter)
-		{
-			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
-		}
-	}
+	path /= hash_string;
+	path += extension;
+
+	return path;
+}
+
+void save_shader_code(device_api device_type, const shader_desc& desc)
+{
+
+	if (desc.code_size == 0)
+		return;
+
+	uint32_t shader_hash = compute_crc32(static_cast<const uint8_t*>(desc.code), desc.code_size);
+
+	const wchar_t* extension = L".cso";
+	if (device_type == device_api::vulkan || (device_type == device_api::opengl && desc.code_size > sizeof(uint32_t) && *static_cast<const uint32_t*>(desc.code) == SPIRV_MAGIC))
+		extension = L".spv"; // Vulkan uses SPIR-V (and sometimes OpenGL does too)
+	else if (device_type == device_api::opengl)
+		extension = desc.code_size > 5 && std::strncmp(static_cast<const char*>(desc.code), "!!ARB", 5) == 0 ? L".txt" : L".glsl"; // OpenGL otherwise uses plain text ARB assembly language or GLSL
+
+	const std::filesystem::path file_path = make_shader_file_path(shader_hash, extension);
+
+	std::ofstream file(file_path, std::ios::binary);
+	file.write(static_cast<const char*>(desc.code), desc.code_size);
 }

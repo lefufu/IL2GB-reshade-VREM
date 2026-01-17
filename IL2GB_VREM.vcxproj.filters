@@ -18,7 +18,7 @@
     <ClCompile Include="addon_init_cleanup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="on_present_reload_effects.cpp">
+    <ClCompile Include="on_present.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="addon_logs.cpp">
@@ -61,6 +61,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="on_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="on_bind_render_targets_and_depth_stencil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="on_reshade_reloaded_effects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="technique.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="on_reshade_overlay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hunting.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="save_shader_code.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="on_create_pipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

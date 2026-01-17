@@ -131,4 +131,27 @@ void log_saved_pipelines_value(save_pipeline saved_pipeline) {
 	}
 }
 
+void log_shader_marked(save_pipeline* p_found, char comment[256])
+{
 
+	if (g_shared_state_l.shader_hunter)
+	{
+		std::stringstream s;
+
+		if (p_found->pipeline.handle != 0)
+		{
+			s << "loader: hunting ===>  pipeline marked : "<< comment << ", handle = " << std::hex << p_found->pipeline.handle;
+			for (int i = 0; i < p_found->subobject_count; i++)
+			{
+				s << ", hash[" << i << "] = " << std::hex << p_found->hash[i];
+			}
+		}
+		else
+		{
+			s << "loader: hunting ===>  pipeline marked : handle = " << std::hex << p_found->pipeline.handle;
+		}
+		s << " <====";
+
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}

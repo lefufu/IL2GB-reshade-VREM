@@ -91,6 +91,13 @@ static void draw_settings(reshade::api::effect_runtime*)
     // debug flag
     ImGui::Checkbox("Debug messages", &g_shared_state_l.debug);
 
+    // shader hunter mode : display full framelogs and filter 1 PS
+    ImGui::Checkbox("Shader hunter", &g_shared_state_l.shader_hunter);
+
+	//shader hunter mode
+    ImGui::RadioButton("Disable", &g_shared_state_l.color_PS, 0); ImGui::SameLine();
+    ImGui::RadioButton("Color", &g_shared_state_l.color_PS, 1);
+
     //capture a fame 
     if (ImGui::Button("Capture frame"))
     {
@@ -99,6 +106,52 @@ static void draw_settings(reshade::api::effect_runtime*)
     else
     {
         g_shared_state_l.button_capture = false;
+    }
+
+
+    ImGui::Text("Number of pipeline: %d", g_shared_state_l.PSshader_list.size() - 1);
+    ImGui::Text("current hunted pipeline index");
+    if (ImGui::Button("-"))
+    {
+        g_shared_state_l.PSshader_index--;
+        if (g_shared_state_l.PSshader_index < 0)  g_shared_state_l.PSshader_index = g_shared_state_l.PSshader_list.size() - 1;
+    }
+    ImGui::SameLine();
+    ImGui::InputInt("", &g_shared_state_l.PSshader_index, 0, static_cast<int>(g_shared_state_l.PSshader_list.size()) - 1);
+    ImGui::SameLine();
+    if (ImGui::Button("+"))
+    {
+        g_shared_state_l.PSshader_index++;
+        if (g_shared_state_l.PSshader_index > g_shared_state_l.PSshader_list.size() - 1) g_shared_state_l.PSshader_index = 0;
+    }
+
+    // display info on pipeline
+    if (g_shared_state_l.PSshader_list.size() > 0)
+    {
+        uint64_t handle = g_shared_state_l.PSshader_list[g_shared_state_l.PSshader_index];
+        ImGui::Text("Hunted pipeline handle: 0x%llx", handle);
+        uint32_t hash = 0;
+		save_pipeline* p_found = nullptr;
+        if (handle != 0)
+        {
+
+            for (auto& p : g_shared_state_l.VREM_pipelines.saved_pipelines) {
+                if (p.pipeline.handle == handle) {
+                    hash = p.hash[0];
+                    p_found = &p;
+                }
+            }
+        }
+        ImGui::SameLine();
+        ImGui::Text("    first hash = 0x%llx", hash);
+        //ImGui::Text("    first hash = 0x%llx", p_found->hash[0]);
+        static char buffer[256] = "marking...";
+        ImGui::InputText("Comment", buffer, sizeof(buffer));
+
+        if (ImGui::Button("write shader in log"))
+        {
+            log_shader_marked(p_found, buffer);
+        }
     }
 #else
     // Mode Release : indiquer que le hot reload est désactivé

@@ -102,6 +102,13 @@ void save_pipeline_in_list(
     memset(&temp_pipe.blend, 0, sizeof(temp_pipe.blend));
     memset(&temp_pipe.depth_stencil, 0, sizeof(temp_pipe.depth_stencil));
 
+    // store the first PS pipeline for shader hunting
+    if (subobject_count == 1 && subobjects[0].type == reshade::api::pipeline_subobject_type::pixel_shader && a_shared.first_PS_pipeline_handle == 0)
+    {       
+        a_shared.first_PS_pipeline_handle = pipeline.handle;
+	}
+
+
     bool to_store = false;
 
     // browse and copy all subobjects
@@ -312,6 +319,9 @@ void save_pipeline_in_list(
 
 // find a pipeline per handle
 save_pipeline* find__pipeline_per_handle(uint64_t handle) {
+
+
+
     for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines) {
         if (p.pipeline.handle == handle) {
             return &p;

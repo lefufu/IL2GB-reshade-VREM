@@ -133,9 +133,9 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{ 0xA337E177, Shader_Definition(action_identify, Feature::mapMode, L"", 0, {SET_DEFAULT}) },
 	//  ** reflection on instrument, done by GCOCKPITIBL of CperFrame **
 	// A10C PS 
-	{ 0xC9F547A7, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_REFLECT}) },
+	{ 0xC9F547A7, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_MISC}) },
 	// AH64 + F4 PS 
-	{ 0x7BB48FB, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_REFLECT}) },
+	{ 0x7BB48FB, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_MISC}) },
 
 	//  ** NVG **
 	{ 0xE65FAB66, Shader_Definition(action_replace , Feature::NVG , L"NVG_extPS.cso", 0, {SET_NVG}) },
@@ -247,6 +247,8 @@ extern "C" {
 		}
 		a_shared.saved_DS.clear();
 		a_shared.technique_vector.clear();
+
+		g_shared_state->PSshader_list.clear();
 
         // Nettoyer uniquement les données temporaires
         // shader_code.clear();

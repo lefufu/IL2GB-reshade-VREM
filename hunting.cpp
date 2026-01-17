@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////
 //
 // Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
@@ -6,7 +5,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-// on_bind_render_targets_and_depth_stencil : store render target for technique rendering
+// hunting functions
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -43,60 +42,59 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include <reshade.hpp>
-#include <unordered_map>
+#include <vector>
+#include <filesystem>
+#include <fstream>
 
-
-#include "loader_addon_shared.h"
-#include "addon_functions.h"
-#include "addon_objects.h"
-#include "VREM_settings.h"
+#include "config.hpp"
 #include "addon_logs.h"
-
-#include "to_string.hpp"
-
 
 using namespace reshade::api;
 
-
-extern "C" {
-	//*******************************************************************************
-	__declspec(dllexport) void vrem_on_bind_render_targets_and_depth_stencil(command_list* cmd_list, uint32_t count, const resource_view* rtvs, resource_view dsv)
+//hunting function called when binding a pipeline
+void on_bind_pipeline_hunting(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle)
+{
+	// build list of PS shaders and log messages if capture is active
+	if (flag_capture)
 	{
-
-		// copy render target if tracking
-	// BUG: using this line with openknweeboard is blocking game !!!!
-	// 	if (shared_data.track_for_render_target && shared_data.count_display > -1 && !shared_data.cb_inject_values.mapMode && count > 0 && (shared_data.effects_feature || shared_data.texture_needed))
 		
-		if (a_shared.track_for_render_target && a_shared.count_display > -1 && !a_shared.cb_inject_values.mapMode && count > 0 && (a_shared.VREM_setting[SET_EFFECTS]))
+		if (stages == pipeline_stage::pixel_shader)
 		{
-
-			saved_RenderTargetView RTView;
-			// only first render target view to get
-			device* dev = cmd_list->get_device();
-			resource scr_resource = dev->get_resource_from_view(rtvs[0]);
-			resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
-
-			// get information of render target
-			/*RTView.RV = rtvs[0];
-			RTView.copied = true;
-			RTView.width = src_resource_desc.texture.width;
-			RTView.height = src_resource_desc.texture.height;
-			current_RTV_handle = rtvs[0].handle;
-			a_shared.saved_RenderTargetViews.emplace(current_RTV_handle, RTView);
-			*/
-			last_RTV_saved.copied = true;
-			last_RTV_saved.RV = rtvs[0];
-			last_RTV_saved.width = src_resource_desc.texture.width;
-			last_RTV_saved.height = src_resource_desc.texture.height;
+			if (g_shared_state->debug && flag_capture)
+			{
+				std::stringstream s;
+				s << "--> pipelineHandle.handle =  " << std::hex << pipelineHandle.handle << " g_shared_state->PSshader_list.size() = "  << g_shared_state->PSshader_list.size() <<  "; ";
+				reshade::log::message(reshade::log::level::info, s.str().c_str());
+			}
 			
-			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
-			
+			auto it = std::find(g_shared_state->PSshader_list.begin(), g_shared_state->PSshader_list.end(), pipelineHandle.handle);
+
+			if (it == g_shared_state->PSshader_list.end()) {
+				// new handle, store it
+				g_shared_state->PSshader_list.push_back(pipelineHandle.handle);
+			}
 		}
+		// log bind pipeline
+		log_hunting_bind_pipeline(commandList, stages, pipelineHandle);
+		
+	}
 
-		// log for shader hunting
-		if (g_shared_state->shader_hunter)
+	// if current pipeline is hunted, eiter replace it by constant color or skip draw call
+	if (g_shared_state->PSshader_list.size() > 0)
+	{
+		if (pipelineHandle.handle == g_shared_state->PSshader_list[g_shared_state->PSshader_index])
 		{
-			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
+			if (g_shared_state->color_PS)
+			{
+				//color
+				commandList->bind_pipeline(stages, a_shared.cloned_constant_color_pipeline);
+			}
+			else
+			{
+				// skip next draw call
+				do_not_draw = true;
+			}
 		}
 	}
+
 }

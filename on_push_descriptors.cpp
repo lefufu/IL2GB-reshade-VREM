@@ -58,6 +58,13 @@ extern "C" {
 	__declspec(dllexport) void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 	{
 
+		// log for shader hunting
+		if (g_shared_state->shader_hunter)
+		{
+			log_hunting_push_descriptor(cmd_list, stages, layout, param_index, update);
+			return;
+		}
+
 		// to limit processing only when a tracing is setup
 		if (!a_shared.render_effect && !track_for_depthStencil && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
 		

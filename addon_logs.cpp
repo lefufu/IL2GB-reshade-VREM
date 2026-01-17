@@ -47,6 +47,7 @@
 #include "loader_addon_shared.h"
 #include "to_string.hpp"
 #include "addon_objects.h"
+#include "addon_functions.h"
 
 //extern SharedState g_shared_state;
 
@@ -562,13 +563,15 @@ void log_reset_tracking()
 
 void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
-	if ((g_shared_state->debug && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect)) )
+	if ((g_shared_state->debug && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)) )
 	{
 		std::stringstream s;
 		s << "draw(" << vertex_count << ", " << instance_count << ", " << first_vertex << ", " << first_instance << ")";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
+
+		if (g_shared_state->shader_hunter) return;
 
 		s << "track_for_depthStencil=" << track_for_depthStencil << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
@@ -581,11 +584,14 @@ void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_v
 
 void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 {
-	if ((g_shared_state->debug && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect)))
+	if ((g_shared_state->debug && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)))
 	{
 		std::stringstream s;
 		s << "draw_indexed(" << index_count << ", " << instance_count << ", " << first_index << ", " << vertex_offset << ", " << first_instance << ")";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
+
+		if (g_shared_state->shader_hunter) return;
+
 		s << "track_for_depthStencil=" << track_for_depthStencil << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
@@ -596,15 +602,19 @@ void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t
 
 void log_on_drawOrDispatch_indirect(indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride)
 {
-	if ((g_shared_state->debug && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect)))
+	if ((g_shared_state->debug && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)))
 	{
 		std::stringstream s;
 		s << "draw_indexed_indirect(" << (void*)buffer.handle << ", " << offset << ", " << draw_count << ", " << stride << ")";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
+
+		if (g_shared_state->shader_hunter) return;
+
 		s << "track_for_depthStencil=" << track_for_depthStencil << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
+
 		reshade::log::message(reshade::log::level::info, "Clear tracking flags");
 	}
 }
@@ -640,7 +650,7 @@ void log_waiting_setting()
 
 void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_view dsv, command_list* cmd_list, uint64_t RTV_handle)
 {
-	if (g_shared_state->debug && flag_capture && a_shared.track_for_render_target)
+	if (g_shared_state->debug && flag_capture && ( a_shared.track_for_render_target || g_shared_state->shader_hunter))
 	{
 		std::stringstream s;
 
@@ -655,6 +665,8 @@ void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
+
+		if (g_shared_state->shader_hunter) return;
 
 		//s << "    saved_RenderTargetViews[" << std::hex << RTV_handle << "].created, width = " << a_shared.saved_RenderTargetViews[RTV_handle].width <<", height = " << a_shared.saved_RenderTargetViews[RTV_handle].height << ";";
 		s << "    last_RTV_saved updated for handle " << std::hex << last_RTV_saved.RV.handle << ", width = " << last_RTV_saved.width << ", height = " << last_RTV_saved.height << "; ";
@@ -820,5 +832,87 @@ void log_constant_buffer_mapping_error(std::string CB_name)
 		std::stringstream s;
 		s << "**** map_buffer_region KO for " << CB_name << " !!! ***";
 		reshade::log::message(reshade::log::level::error, s.str().c_str());
+	}
+}
+
+void log_hunting_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle)
+{
+	if (g_shared_state->debug && flag_capture)
+	{
+		std::stringstream s;
+		if (pipelineHandle.handle != 0)
+		{
+			save_pipeline* pipe = find__pipeline_per_handle(pipelineHandle.handle);
+			//only first hash displayed
+			s << "adddon: hunting - BIND_PIPELINE(" << to_string(stages) << " 1st hash = " << std::hex << pipe->hash[0] << ", pipelineHandle: " << std::hex << pipelineHandle.handle << ")";
+		}
+		else
+			s << "adddon: hunting - BIND_PIPELINE(" << to_string(stages) << ", pipelineHandle: " << std::hex << pipelineHandle.handle << ")";
+
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+void log_shader_marked()
+{
+	
+	if (g_shared_state->shader_hunter)
+	{
+		std::stringstream s;
+
+		uint64_t handle = g_shared_state->PSshader_list[g_shared_state->PSshader_index];
+		if (handle != 0)
+		{
+			save_pipeline* pipe = find__pipeline_per_handle(handle);
+			s << "adddon: hunting ===>  pipeline marked : handle =" << std::hex << pipe->pipeline.handle;
+			for (int i = 0; i < pipe->subobject_count; i++)
+			{
+				s << ", hash[" << i << "] = " << std::hex << pipe->hash[i];
+			}
+		}
+		else
+		{
+			s << "adddon: hunting ===>  pipeline marked : handle =" << std::hex << handle;
+		}
+		s << " <====";
+			
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+
+void log_hunting_push_descriptor(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
+{
+	
+	if (flag_capture)
+	{
+		std::stringstream s;
+		s << "adddon: hunting - push_descriptors(stage =" << to_string(stages) << ", layout.handle=" << (void*)layout.handle << ", param_index=" << param_index << ", update = { type:" << to_string(update.type) << ", binding:" << update.binding << ", count:" << update.count << " })";
+
+		if (update.type == descriptor_type::shader_resource_view)
+		{
+			// add info on textures hash
+			for (uint32_t i = 0; i < update.count; ++i)
+			{
+				auto item = static_cast<const reshade::api::resource_view*>(update.descriptors)[i];
+				s << "--> resource_view[" << i << "],  handle = " << reinterpret_cast<void*>(item.handle) << " })";
+			}
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+		}
+
+
+		// test to handle cbuffer cPerFrame : register(b6)
+		if (update.type == descriptor_type::constant_buffer)
+		{
+
+			// add info on textures hash
+			for (uint32_t i = 0; i < update.count; ++i)
+			{
+				auto item = static_cast<const reshade::api::resource_view*>(update.descriptors)[i];
+				s << "--> constant_buffer[" << i << "],  handle = " << reinterpret_cast<void*>(item.handle) << " })";
+			}
+
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+		}
 	}
 }

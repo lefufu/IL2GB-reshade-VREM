@@ -105,83 +105,79 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 
 	uint64_t last_handle;
 
-	// ensure the hidden "set_default" uniform has been read
-	// if (a_shared.VREM_setting[SET_DEFAULT] == 1)
-	// {
-	//	log_display_settings();
 
-		// parse the list of saved pipelines to identify which one to keep regarding mod settings
-		for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines)
-		{
-			// is this pipeline to be processed regarding mod settings ?
-			bool to_be_filtered = false;
-			// check if the shader hash is in the mod list
+	// parse the list of saved pipelines to identify which one to keep regarding mod settings
+	for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines)
+	{
+		// is this pipeline to be processed regarding mod settings ?
+		bool to_be_filtered = false;
+		// check if the shader hash is in the mod list
 
-			// check if not already added
-			auto filtered_pipe = filtered_pipeline.find(p.pipeline.handle);
-			if (filtered_pipe != filtered_pipeline.end()) {
-				// pipeline is already in the list, do nothing
+		// check if not already added
+		auto filtered_pipe = filtered_pipeline.find(p.pipeline.handle);
+		if (filtered_pipe != filtered_pipeline.end()) {
+			// pipeline is already in the list, do nothing
+			// ***************************************************************                   
+			// removed because too verbose !
+			// log_pipeline_filtered_skipped(p.pipeline.handle);
+		}
+		else {
+			// add pipeline in the filtered list
+
+			auto shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
+			if (shader_def_opt.has_value())
+			{
+
+				bool active = check_if_active_option(shader_def_opt.value());
 				// ***************************************************************                   
 				// removed because too verbose !
-				// log_pipeline_filtered_skipped(p.pipeline.handle);
-			}
-			else {
-				// add pipeline in the filtered list
+				// log_shader(p.pipeline, shader_def_opt.value(), active);
 
-				auto shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
-				if (shader_def_opt.has_value())
+				// if the shader is active, add it to the filtered pipeline list for later processing
+				if (active)
 				{
-
-					bool active = check_if_active_option(shader_def_opt.value());
-					// ***************************************************************                   
-					// removed because too verbose !
-					// log_shader(p.pipeline, shader_def_opt.value(), active);
-
-					// if the shader is active, add it to the filtered pipeline list for later processing
-					if (active)
+					// cloned pipeline if needed
+					if ((shader_def_opt.value().action & action_replace_bind) || (shader_def_opt.value().action & action_replace))
 					{
-						// cloned pipeline if needed
-						if ((shader_def_opt.value().action & action_replace_bind) || (shader_def_opt.value().action & action_replace))
+
+						//clone the pipeline with the new shader code
+						pipeline cloned_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, p.hash);
+						if (cloned_pipeline.handle == 0)
 						{
-
-							//clone the pipeline with the new shader code
-							pipeline cloned_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, p.hash);
-							if (cloned_pipeline.handle == 0)
-							{
-								log_pipeline_clone_error(p.pipeline.handle);
-
-							}
-							else
-							{
-								// store the cloned & modified pipeline for later usage in bind_pipeline
-								shader_def_opt.value().substitute_pipeline = cloned_pipeline;
-								//add cloned pipeline in cloned_pipeline to suppress them if addon is reloaded
-								cloned_pipeline_list.emplace(cloned_pipeline.handle, cloned_pipeline);
-								last_handle = cloned_pipeline.handle;
-							}
+							log_pipeline_clone_error(p.pipeline.handle);
 
 						}
-						filtered_pipeline.emplace(p.pipeline.handle, shader_def_opt.value());
-						// ***************************************************************                   
-						// removed because too verbose !
-						log_filtered_added(p.pipeline.handle);
+						else
+						{
+							// store the cloned & modified pipeline for later usage in bind_pipeline
+							shader_def_opt.value().substitute_pipeline = cloned_pipeline;
+							//add cloned pipeline in cloned_pipeline to suppress them if addon is reloaded
+							cloned_pipeline_list.emplace(cloned_pipeline.handle, cloned_pipeline);
+							last_handle = cloned_pipeline.handle;
+						}
+
 					}
+					filtered_pipeline.emplace(p.pipeline.handle, shader_def_opt.value());
+					// ***************************************************************                   
+					// removed because too verbose !
+					log_filtered_added(p.pipeline.handle);
 				}
 			}
 		}
 
-		// read technique list
-		// enumerateTechniques(runtime);
 
-		return false;
+		//create constant color pipeline for hunting by using the first PS pipeline and the has corresponding to constant color .cso
+		if (p.pipeline.handle == a_shared.first_PS_pipeline_handle)
+		{
+			
+			uint32_t hash_color[1] = { CONSTANT_HASH };
+			a_shared.cloned_constant_color_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, hash_color);
+		}
 	}
-	/* else
-	{
-		log_waiting_setting();
-		return true;
-	} */
-	
-//}
+
+	return false;
+}
+
 
 
 

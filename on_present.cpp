@@ -119,28 +119,7 @@ extern "C" {
         else
         {
             log_waiting_setting();
-            // bool techniques_ok = get_uniform_and_techniques(runtime);
-        }
-
-
-        /*
-        // frame capture by button on GUI
-        
-        if (flag_capture)
-        {
-            flag_capture = false;
-            log_end_capture_frame();
-        }
-        else
-        {
-            if (g_shared_state->button_capture)
-            {
-                flag_capture = true;
-                log_start_capture_frame();
-
-            }
-        } */
-
+        } 
         
         // Fin de capture seulement si une frame réelle a commencé
         if (flag_capture && frame_started)
@@ -166,8 +145,32 @@ extern "C" {
             flag_capture = true;
             frame_started = true;
             log_start_capture_frame();
+
+			// if shader hunter mode : clean list of PS
+			if (g_shared_state->shader_hunter)  g_shared_state->PSshader_list.clear();
         } 
         
+        /*
+		// handle shader + / - / mark keys
+        if (g_shared_state->shader_hunter)
+        {
+            if (runtime->is_key_pressed(VK_UP))
+            {
+                g_shared_state->PSshader_index++;
+                if (g_shared_state->PSshader_index > g_shared_state->PSshader_list.size() - 1) g_shared_state->PSshader_index = 0;
+            }
+            if (runtime->is_key_pressed(VK_DOWN))
+            {
+                g_shared_state->PSshader_index--;
+                if (g_shared_state->PSshader_index < 0)  g_shared_state->PSshader_index = g_shared_state->PSshader_list.size() - 1;
+            }
+
+            if (runtime->is_key_pressed(VK_RIGHT))
+            {
+                log_shader_marked();
+            }
+        }
+        */
 		//force capture for testing
         // flag_capture = true;
     }

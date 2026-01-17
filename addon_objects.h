@@ -98,6 +98,11 @@ static const int  GCOCKPITIBL_Y_SAVE = 1;
 #define QVINNER 2
 constexpr size_t CHAR_BUFFER_SIZE = 256;
 
+
+//for hunting shaders
+constexpr uint32_t CONSTANT_HASH = 0x00000001;
+constexpr const wchar_t* CONSTANT_COLOR_NAME = L"full_red.cso";
+
 //mod actions (not as a class for easier use of &)
 // 
 //replace = the shader will be replaced by a modded one during init
@@ -326,6 +331,15 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	bool VRonly_technique = false;
 	bool init_VRonly_technique = false;
 	bool button_preprocess = false;
+
+	// for shader hunting
+	//list of PS handle 
+	// std::vector <uint64_t> PSshader_list;
+	//current index in the list
+	// int32_t PSshader_index = 0;
+	// fixed color pipeline for replacing any PS during hunting
+	uint64_t first_PS_pipeline_handle = 0;
+	pipeline cloned_constant_color_pipeline = {};
 };
 
 extern struct addon_shared a_shared;

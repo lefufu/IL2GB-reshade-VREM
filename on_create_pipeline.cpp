@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////
 //
 // Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
@@ -6,7 +5,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-// on_bind_render_targets_and_depth_stencil : store render target for technique rendering
+//  on_create_pipeline : save shader code
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -43,8 +42,6 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include <reshade.hpp>
-#include <unordered_map>
-
 
 #include "loader_addon_shared.h"
 #include "addon_functions.h"
@@ -52,51 +49,53 @@
 #include "VREM_settings.h"
 #include "addon_logs.h"
 
-#include "to_string.hpp"
-
 
 using namespace reshade::api;
 
-
 extern "C" {
+
+	// *******************************************************************************************************
+	/// create_CB_layout()
+	///  create a CB layout for CB created or modified by VREM 
+
+
 	//*******************************************************************************
-	__declspec(dllexport) void vrem_on_bind_render_targets_and_depth_stencil(command_list* cmd_list, uint32_t count, const resource_view* rtvs, resource_view dsv)
-	{
+	__declspec(dllexport) bool vrem_on_create_pipeline(device* device, pipeline_layout, uint32_t subobject_count, const pipeline_subobject* subobjects) {
 
-		// copy render target if tracking
-	// BUG: using this line with openknweeboard is blocking game !!!!
-	// 	if (shared_data.track_for_render_target && shared_data.count_display > -1 && !shared_data.cb_inject_values.mapMode && count > 0 && (shared_data.effects_feature || shared_data.texture_needed))
 		
-		if (a_shared.track_for_render_target && a_shared.count_display > -1 && !a_shared.cb_inject_values.mapMode && count > 0 && (a_shared.VREM_setting[SET_EFFECTS]))
+		if (!g_shared_state->debug) return false;
+			
+		const device_api device_type = device->get_api();
+
+		for (uint32_t i = 0; i < subobject_count; ++i)
 		{
-
-			saved_RenderTargetView RTView;
-			// only first render target view to get
-			device* dev = cmd_list->get_device();
-			resource scr_resource = dev->get_resource_from_view(rtvs[0]);
-			resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
-
-			// get information of render target
-			/*RTView.RV = rtvs[0];
-			RTView.copied = true;
-			RTView.width = src_resource_desc.texture.width;
-			RTView.height = src_resource_desc.texture.height;
-			current_RTV_handle = rtvs[0].handle;
-			a_shared.saved_RenderTargetViews.emplace(current_RTV_handle, RTView);
-			*/
-			last_RTV_saved.copied = true;
-			last_RTV_saved.RV = rtvs[0];
-			last_RTV_saved.width = src_resource_desc.texture.width;
-			last_RTV_saved.height = src_resource_desc.texture.height;
 			
-			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
+			const auto& sub = subobjects[i];
+			if (ALLOWED_SHADERS.count(sub.type) > 0) save_shader_code(device_type, *static_cast<const shader_desc*>(subobjects[i].data));
 			
+			/*
+			switch (subobjects[i].type)
+			{
+			case pipeline_subobject_type::vertex_shader:
+			//case pipeline_subobject_type::hull_shader:
+			//case pipeline_subobject_type::domain_shader:
+			//case pipeline_subobject_type::geometry_shader:
+			case pipeline_subobject_type::pixel_shader:
+			case pipeline_subobject_type::compute_shader:
+			case pipeline_subobject_type::amplification_shader:
+			case pipeline_subobject_type::mesh_shader:
+			case pipeline_subobject_type::raygen_shader:
+			case pipeline_subobject_type::any_hit_shader:
+			case pipeline_subobject_type::closest_hit_shader:
+			case pipeline_subobject_type::miss_shader:
+			case pipeline_subobject_type::intersection_shader:
+			case pipeline_subobject_type::callable_shader:
+				save_shader_code(device_type, *static_cast<const shader_desc*>(subobjects[i].data));
+				break;
+			} */
 		}
 
-		// log for shader hunting
-		if (g_shared_state->shader_hunter)
-		{
-			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
-		}
+		return false;
+
 	}
 }

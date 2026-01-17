@@ -65,15 +65,14 @@ extern "C" {
 		// optimize performance by reducing processing to ALLOWED_STAGES
 		if ((static_cast<uint32_t>(stages) & static_cast<uint32_t>(ALLOWED_STAGES)) == 0) return;
 		
-		// for frame capture, to ensure there is at least one bind_pipeline in the frame => need to be moved to another event sooner than bind_pipeline !
-		/* *************************************************************************************************
-		if (request_capture)
+		// store handle if shader hunting and PS, replace pipleine or skip the draw call
+		if (g_shared_state->shader_hunter)
 		{
-			request_capture = false;
-			flag_capture = true;
-			frame_started = true;
-			log_start_capture_frame();
-		} */
+			
+			on_bind_pipeline_hunting(commandList, stages, pipelineHandle);
+			// skip processing if shader hunting
+			return;
+		}
 
 		// identify if the pipeline is to be processed
 		auto it = filtered_pipeline.find(pipelineHandle.handle);

@@ -175,8 +175,6 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
                 else if (uniform_name == "flag_fps") a_shared.cb_inject_values.testGlobal = uniform_value;
                 else if (uniform_name == "var_haze_factor") a_shared.cb_inject_values.hazeReduction = uniform_value;
                 else if (uniform_name == "var_reflection") a_shared.cb_inject_values.gCockpitIBL = uniform_value;
-                
-                
             }
         });
 }

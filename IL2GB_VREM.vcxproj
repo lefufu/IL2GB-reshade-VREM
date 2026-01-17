@@ -22,6 +22,13 @@
     <ClCompile Include="clone_pipeline.cpp" />
     <ClCompile Include="addon_init_cleanup.cpp" />
     <ClCompile Include="constant_buffer.cpp" />
+    <ClCompile Include="hunting.cpp" />
+    <ClCompile Include="on_bind_render_targets_and_depth_stencil.cpp" />
+    <ClCompile Include="on_create_pipeline.cpp" />
+    <ClCompile Include="on_reshade_overlay.cpp" />
+    <ClCompile Include="on_reshade_reloaded_effects.cpp" />
+    <ClCompile Include="save_shader_code.cpp" />
+    <ClCompile Include="technique.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="get_settings_from_uniforms.cpp" />
     <ClCompile Include="load_shader_code.cpp" />
@@ -30,7 +37,7 @@
     <ClCompile Include="on_draw.cpp" />
     <ClCompile Include="on_init_pipeline.cpp" />
     <ClCompile Include="on_init_pipeline_layout.cpp" />
-    <ClCompile Include="on_present_reload_effects.cpp" />
+    <ClCompile Include="on_present.cpp" />
     <ClCompile Include="addon_logs.cpp" />
     <ClCompile Include="on_push_descriptors.cpp" />
     <ClCompile Include="save_pipelines.cpp" />
@@ -147,7 +154,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
@@ -169,7 +176,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>

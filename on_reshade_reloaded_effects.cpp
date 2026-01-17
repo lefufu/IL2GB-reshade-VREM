@@ -88,7 +88,7 @@ extern "C" {
 
 		if (g_shared_state->debug)
 		{
-			reshade::log::message(reshade::log::level::info, "***** vrem_on_reshade_reloaded_effects");
+			reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects");
 		}
 
 		// should work only for reload
