@@ -57,7 +57,9 @@ using namespace reshade::api;
 
 static thread_local std::vector<std::vector<uint8_t>> shader_code;
 
+#ifdef _DEBUG
 extern "C" {
+#endif
 
 	/* void create_vrem_cb(reshade::api::device* device)
 	{
@@ -92,7 +94,7 @@ extern "C" {
 	*/
 
 	//*******************************************************************************
-	__declspec(dllexport) void vrem_on_init_pipeline(device* device, pipeline_layout layout, uint32_t subobjectCount, const pipeline_subobject* subobjects, pipeline pipelineHandle)
+	VREM_EXPORT void vrem_on_init_pipeline(device* device, pipeline_layout layout, uint32_t subobjectCount, const pipeline_subobject* subobjects, pipeline pipelineHandle)
 	{
 
 
@@ -107,4 +109,6 @@ extern "C" {
 
 		g_shared_state->DX11_layout = layout;
 	}
+#ifdef _DEBUG
 }
+#endif

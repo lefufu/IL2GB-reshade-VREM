@@ -56,10 +56,12 @@
 
 using namespace reshade::api;
 
-
+#ifdef _DEBUG
 extern "C" {
+#endif
 	//*******************************************************************************
-	__declspec(dllexport) void vrem_on_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle)
+	//__declspec(dllexport) void vrem_on_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle)
+	VREM_EXPORT void vrem_on_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle)
 	{
 
 		// optimize performance by reducing processing to ALLOWED_STAGES
@@ -357,4 +359,6 @@ extern "C" {
 		}
 
 	}
+#ifdef _DEBUG
 }
+#endif

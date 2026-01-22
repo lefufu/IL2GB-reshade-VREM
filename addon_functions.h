@@ -47,6 +47,19 @@
 #include "addon_objects.h"
 #include <optional>
 
+/* #ifdef _DEBUG
+#define USE_HOT_RELOAD 1
+#else
+#define USE_HOT_RELOAD 0    
+#endif */
+
+#ifdef _DEBUG
+#define VREM_EXPORT extern "C" __declspec(dllexport)
+#else
+#define VREM_EXPORT
+#endif
+
+
 extern void get_settings_from_uniforms(reshade::api::effect_runtime* runtime);
 // extern uint32_t calculateShaderHash(void* shaderData);
 extern uint32_t calculateShaderHash(const reshade::api::shader_desc& desc);
@@ -75,5 +88,4 @@ extern bool  get_uniform_and_techniques(effect_runtime* runtime);
 extern bool read_constant_buffer(command_list* cmd_list, const descriptor_table_update& update, std::string CB_name, int descriptors_index, float* dest_array, int buffer_size);
 extern void on_bind_pipeline_hunting(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle);
 extern void save_shader_code(device_api device_type, const shader_desc& desc);
-
 

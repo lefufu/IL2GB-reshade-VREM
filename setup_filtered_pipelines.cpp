@@ -122,6 +122,8 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 					{
 
 						//clone the pipeline with the new shader code
+						reshade::log::message(reshade::log::level::info, "addon - setup filtered pipeline : clone");
+
 						pipeline cloned_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, p.hash);
 						if (cloned_pipeline.handle == 0)
 						{
@@ -141,7 +143,7 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 					filtered_pipeline.emplace(p.pipeline.handle, shader_def_opt.value());
 					// ***************************************************************                   
 					// removed because too verbose !
-					// log_filtered_added(p.pipeline.handle);
+					log_filtered_added(p.pipeline.handle);
 				}
 			}
 		}
@@ -151,6 +153,7 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 		if (p.pipeline.handle == a_shared.first_PS_pipeline_handle)
 		{
 			
+			reshade::log::message(reshade::log::level::info, "addon - setup filtered pipeline : clone color PS");
 			uint32_t hash_color[1] = { CONSTANT_HASH };
 			a_shared.cloned_constant_color_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, hash_color);
 		}

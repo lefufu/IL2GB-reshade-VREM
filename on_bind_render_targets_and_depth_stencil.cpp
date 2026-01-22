@@ -57,10 +57,11 @@
 
 using namespace reshade::api;
 
-
+#ifdef _DEBUG
 extern "C" {
+#endif
 	//*******************************************************************************
-	__declspec(dllexport) void vrem_on_bind_render_targets_and_depth_stencil(command_list* cmd_list, uint32_t count, const resource_view* rtvs, resource_view dsv)
+	VREM_EXPORT void vrem_on_bind_render_targets_and_depth_stencil(command_list* cmd_list, uint32_t count, const resource_view* rtvs, resource_view dsv)
 	{
 
 		// copy render target if tracking
@@ -99,4 +100,6 @@ extern "C" {
 			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
 		}
 	}
+#ifdef _DEBUG
 }
+#endif

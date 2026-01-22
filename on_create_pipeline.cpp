@@ -108,8 +108,9 @@ bool load_shader_code_static(device_api device_type, shader_desc& orig_desc)
 
 
 
-
+#ifdef _DEBUG
 extern "C" {
+#endif
 
 	// *******************************************************************************************************
 	/// create_CB_layout()
@@ -117,7 +118,7 @@ extern "C" {
 
 
 	//*******************************************************************************
-	__declspec(dllexport) bool vrem_on_create_pipeline(device* device, pipeline_layout, uint32_t subobject_count, const pipeline_subobject* subobjects) {
+	VREM_EXPORT  bool vrem_on_create_pipeline(device* device, pipeline_layout, uint32_t subobject_count, const pipeline_subobject* subobjects) {
 
 		
 		// if (!g_shared_state->debug) return false;
@@ -145,4 +146,6 @@ extern "C" {
 	return replaced_stages;
 
 	}
+#ifdef _DEBUG
 }
+#endif

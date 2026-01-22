@@ -79,11 +79,13 @@ bool  get_uniform_and_techniques(effect_runtime* runtime) {
 }
 
 
+#ifdef _DEBUG
 extern "C" {
+#endif
 	// *******************************************************************************************************
 	// vrem_on_reshade_reloaded_effects() : to call when effects are reloaded, should not do aything before real effect compilation (another call from on_present)
 	// called a lot !n
-	__declspec(dllexport) void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)
+	VREM_EXPORT void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)
 	{
 
 		if (g_shared_state->debug)
@@ -94,4 +96,6 @@ extern "C" {
 		// should work only for reload
 		bool status = get_uniform_and_techniques(runtime);
 	}
+#ifdef _DEBUG
 }
+#endif

@@ -81,9 +81,11 @@ void intialize_counters()
 }
 
 
+#ifdef _DEBUG
 extern "C" {
+#endif
     //*******************************************************************************
-    _declspec(dllexport) void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
+    VREM_EXPORT void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
     {
 
         
@@ -155,4 +157,6 @@ extern "C" {
         // flag_capture = true;
     }
 
+#ifdef _DEBUG
 }
+#endif

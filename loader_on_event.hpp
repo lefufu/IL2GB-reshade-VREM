@@ -91,6 +91,11 @@ struct AddonFunctions {
     void* on_destroy_pipeline = nullptr;
 };
 
+ 
+#ifndef DEBUG
+extern void vrem_init(reshade::api::device* device, reshade::api::command_queue* queue, reshade::api::swapchain* swapchain, PersistentPipelineData* persistent_data, SharedState* shared_state);
+extern void vrem_cleanup(PersistentPipelineData* persistent_data);
+#endif
 
 //*******************************************************************************
 // loader structure
@@ -114,23 +119,27 @@ private:
 public:
     VREMHotReloader(const std::string& path) : addon_path(path) {
         temp_path = addon_path + ".loaded";
+#ifdef _DEBUG
         if (fs::exists(addon_path)) {
             last_write_time = fs::last_write_time(addon_path);
             load_addon();
         }
+#endif
     }
 
     ~VREMHotReloader() {
+#ifdef _DEBUG
         unload_addon();
+#endif
     }
 
-  
     void manual_reload() {
         // reshade::log::message(reshade::log::level::info,"DCS VREM: Rechargement manuel...");
         log_manual_reload();
+#ifdef _DEBUG
         reload_addon();
+#endif
     }
-
     /*
     void set_cache(device* dev, command_queue* queue, swapchain* swap) {
         cached_device = dev;
@@ -166,7 +175,6 @@ private:
             log_dll_copy_error_code(error);
             return false;
         }
-
         // function mapping defintion (!!! they should also be handled in AddonFunctions for a working mapping !!!)
         funcs.init = (InitFunc)GetProcAddress(addon_module, "vrem_init");
         funcs.cleanup = (CleanupFunc)GetProcAddress(addon_module, "vrem_cleanup");
@@ -181,7 +189,7 @@ private:
         funcs.on_draw_indirect = GetProcAddress(addon_module, "vrem_on_draw_indirect");
         funcs.on_push_descriptors = GetProcAddress(addon_module, "vrem_on_push_descriptors");
         funcs.on_create_pipeline = GetProcAddress(addon_module, "vrem_on_create_pipeline");
-        funcs.on_after_create_pipeline = GetProcAddress(addon_module, "vrem_on_after_create_pipeline");
+        //funcs.on_after_create_pipeline = GetProcAddress(addon_module, "vrem_on_after_create_pipeline");
         funcs.on_bind_render_targets = GetProcAddress(addon_module, "vrem_on_bind_render_targets_and_depth_stencil");
         funcs.on_reshade_overlay = GetProcAddress(addon_module, "vrem_on_reshade_overlay");
         funcs.on_reshade_set_technique_state = GetProcAddress(addon_module, "vrem_on_reshade_set_technique_state");
@@ -196,11 +204,11 @@ private:
             // funcs.init(cached_device, cached_queue, cached_swapchain, &persistent_data);
             funcs.init(cached_device, cached_queue, cached_swapchain, &persistent_data, &g_shared_state_l);
         }
-
         return true;
     }
 
     void unload_addon() {
+
         if (!addon_module) return;
 
         if (funcs.cleanup) {
@@ -222,7 +230,9 @@ private:
 
         // reshade::log::message(reshade::log::level::info,"DCS VREM: Addon decharge");
         log_unloaded();
+
     }
+
 
     void reload_addon() {
         unload_addon();
@@ -250,38 +260,94 @@ private:
 extern VREMHotReloader* g_reloader;
 #else
     // Mode Release : déclare les fonctions directement
-extern "C" {
-    __declspec(dllimport) void vrem_on_bind_pipeline(
+extern void vrem_on_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle);
+extern void vrem_on_bind_render_targets_and_depth_stencil(command_list* cmd_list, uint32_t count, const resource_view* rtvs, resource_view dsv);
+extern bool vrem_on_create_pipeline(device* device, pipeline_layout, uint32_t subobject_count, const pipeline_subobject* subobjects);
+extern bool vrem_on_draw(command_list* commandList, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
+extern bool vrem_on_draw_indexed(command_list* commandList, uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance);
+extern bool vrem_on_drawOrDispatch_indirect(command_list* commandList, indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride);
+extern void vrem_on_init_pipeline(device* device, pipeline_layout layout, uint32_t subobjectCount, const pipeline_subobject* subobjects, pipeline pipelineHandle);
+extern void vrem_on_init_pipeline_layout(device* dev, uint32_t paramCount, const pipeline_layout_param* params, pipeline_layout layout);
+extern void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update);
+extern void vrem_on_reshade_reloaded_effects(effect_runtime* runtime);
+extern void vrem_on_reshade_overlay(effect_runtime* runtime);
+
+
+//extern "C" {
+/*    __declspec(dllimport) void vrem_on_bind_pipeline(
         reshade::api::command_list*,
         reshade::api::pipeline_stage,
-        reshade::api::pipeline);
+        reshade::api::pipeline); */
 
-    __declspec(dllimport) void vrem_on_init_pipeline(
+   /* __declspec(dllimport) void vrem_on_init_pipeline(
         reshade::api::device*,
         reshade::api::pipeline_layout,
         uint32_t,
         const reshade::api::pipeline_subobject*,
-        reshade::api::pipeline);
+        reshade::api::pipeline); */
 
-    __declspec(dllimport) void vrem_on_init_pipeline_layout(
+    /*__declspec(dllimport) void vrem_on_init_pipeline_layout(
         reshade::api::device*,
         const uint32_t,
         const reshade::api::pipeline_layout_param*,
-        reshade::api::pipeline_layout);
+        reshade::api::pipeline_layout); */
 
-    __declspec(dllimport) bool vrem_on_create_pipeline(
+    /*__declspec(dllimport) bool vrem_on_create_pipeline(
         reshade::api::device*,
         reshade::api::pipeline_layout,
         uint32_t,
-        const reshade::api::pipeline_subobject*);
+        const reshade::api::pipeline_subobject*); */
 
-    __declspec(dllimport) void vrem_on_after_create_pipeline(
+ /*   __declspec(dllimport) void vrem_on_after_create_pipeline(
         reshade::api::device*,
         reshade::api::pipeline_layout,
         uint32_t,
         const reshade::api::pipeline_subobject*,
-        reshade::api::pipeline);
-}
+        reshade::api::pipeline); */
+
+   /* __declspec(dllimport) void vrem_on_bind_render_targets_and_depth_stencil(
+        command_list* cmd, 
+        uint32_t count,
+        const resource_view* rtvs, 
+        resource_view dsv); */
+
+   /*
+     __declspec(dllimport) bool vrem_on_draw(
+        command_list* commandList, 
+        uint32_t vertex_count, 
+        uint32_t instance_count, 
+        uint32_t first_vertex, 
+        uint32_t first_instance);
+
+    __declspec(dllimport) bool vrem_on_draw_indexed(
+        command_list* commandList,
+        uint32_t index_count,
+        uint32_t instance_count,
+        uint32_t first_index,
+        int32_t vertex_offset,
+        uint32_t first_instance);
+
+    __declspec(dllimport) bool vrem_on_drawOrDispatch_indirect(
+        command_list* commandList,
+        indirect_command type,
+        resource buffer,
+        uint64_t offset,
+        uint32_t draw_count,
+        uint32_t stride); */
+
+    /*__declspec(dllimport)  void vrem_on_push_descriptors(
+        command_list* cmd_list,
+        shader_stage stages,
+        pipeline_layout layout,
+        uint32_t param_index,
+        const descriptor_table_update& update); */
+
+    /*__declspec(dllimport) void vrem_on_reshade_reloaded_effects(
+        effect_runtime* runtime);*/
+
+    /*__declspec(dllimport) void vrem_on_reshade_overlay(
+        effect_runtime* runtime); */
+//}
 #endif
 
 
@@ -294,7 +360,7 @@ static void on_init_pipeline(device* dev, pipeline_layout layout, uint32_t count
             ((Func)g_reloader->get_functions().on_init_pipeline)(dev, layout, count, objs, pipe);
         }
     #else
-        vrem_on_init_pipeline(device, layout, subobjectCount, subobjects, pipelineHandle);
+        vrem_on_init_pipeline(dev, layout, count, objs, pipe);
     #endif
 }
 
@@ -306,7 +372,7 @@ static void on_bind_pipeline(command_list* cmd, pipeline_stage stages, pipeline 
             ((Func)g_reloader->get_functions().on_bind_pipeline)(cmd, stages, pipe);
         }
     #else
-        vrem_on_bind_pipeline)(cmd, stages, pipe)
+    vrem_on_bind_pipeline(cmd, stages, pipe);
     #endif
 }
 
@@ -318,10 +384,10 @@ static void on_init_pipeline_layout(device* dev, uint32_t count,
     if (g_reloader && g_reloader->get_functions().on_init_pipeline_layout) {
         typedef void (*Func)(device*, uint32_t, const pipeline_layout_param*, pipeline_layout);
         ((Func)g_reloader->get_functions().on_init_pipeline_layout)(dev, count, params, layout);
-    #else
-    vrem_on_init_pipeline(device, layout, subobjectCount, subobjects, pipelineHandle);
-    #endif
     }
+    #else
+    vrem_on_init_pipeline_layout(dev, count, params, layout);
+    #endif
 }
 
 static bool on_draw(command_list* cmd, uint32_t v, uint32_t i, uint32_t fv, uint32_t fi) {
@@ -352,7 +418,8 @@ static bool on_draw_indexed(command_list* cmd, uint32_t ic, uint32_t ins,
     }
 
 #else
-    return vrem_on_draw_indexed(cmd, ic, ins, fi, vo, fii);
+    bool result = vrem_on_draw_indexed(cmd, ic, ins, fi, vo, fii);
+    return result;
 #endif
 
 }
@@ -371,7 +438,8 @@ static bool on_draw_indirect(command_list* cmd, indirect_command type, resource 
     }
 
 #else
-    return vrem_on_draw_indirect(cmd, type, buf, off, cnt, stride);
+    bool result = vrem_on_drawOrDispatch_indirect(cmd, type, buf, off, cnt, stride);
+    return result;
 #endif
 }
 
@@ -397,11 +465,11 @@ static bool on_create_pipeline(device* dev, pipeline_layout layout, uint32_t cou
         return ((Func)g_reloader->get_functions().on_create_pipeline)(dev, layout, count, objs);
     }
 #else
-    vrem_on_create_pipeline(dev, layout, count, objs);
+    return vrem_on_create_pipeline(dev, layout, count, objs);
 #endif
-    return false;
 }
 
+/*
 static void on_after_create_pipeline(device* dev, pipeline_layout layout, uint32_t count,
     const pipeline_subobject* objs, pipeline pipe) {
 
@@ -414,6 +482,7 @@ static void on_after_create_pipeline(device* dev, pipeline_layout layout, uint32
     vrem_on_after_create_pipeline(dev, layout, count, objs, pipe);
 #endif
 }
+*/
 
 static void on_bind_render_targets(command_list* cmd, uint32_t count,
     const resource_view* rtvs, resource_view dsv) {
@@ -437,34 +506,35 @@ static void on_reshade_reloaded_effects(effect_runtime* runtime) {
         ((Func)g_reloader->get_functions().on_reshade_reloaded_effects)(runtime);
     }
 #else
-    vrem_on_reshade_reloaded_effects)(runtime);
+    vrem_on_reshade_reloaded_effects(runtime);
 #endif
 }
 
+/* not used for the moment
 static void on_reshade_set_technique_state(effect_runtime* runtime,
     effect_technique technique, bool enabled) {
-    if (g_reloader && g_reloader->get_functions().on_reshade_set_technique_state) {
-
 #if USE_HOT_RELOAD
+    if (g_reloader && g_reloader->get_functions().on_reshade_set_technique_state) {
         typedef void (*Func)(effect_runtime*, effect_technique, bool);
         ((Func)g_reloader->get_functions().on_reshade_set_technique_state)(runtime, technique, enabled);
     }
 #else
-        vrem_on_reshade_set_technique_state)(runtime, technique, enabled);
+        vrem_on_reshade_set_technique_state(runtime, technique, enabled);
 #endif
 }
-
+*/
+/*
 static void on_destroy_pipeline(device* dev, pipeline pipe) {
-    if (g_reloader && g_reloader->get_functions().on_destroy_pipeline) {
-
 #if USE_HOT_RELOAD
+    if (g_reloader && g_reloader->get_functions().on_destroy_pipeline) {
         typedef void (*Func)(device*, pipeline);
         ((Func)g_reloader->get_functions().on_destroy_pipeline)(dev, pipe);
     }
 #else
-        vrem_on_destroy_pipeline)(dev, pipe);
+        vrem_on_destroy_pipeline(dev, pipe);
 #endif
 }
+*/
 
 
 static void on_reshade_overlay(effect_runtime* runtime) {
@@ -475,6 +545,6 @@ static void on_reshade_overlay(effect_runtime* runtime) {
             ((Func)g_reloader->get_functions().on_reshade_overlay)(runtime);
         }
 #else
-        vrem_on_reshade_overlay(effect_runtime * runtime);
+    vrem_on_reshade_overlay(runtime);
 #endif
     }

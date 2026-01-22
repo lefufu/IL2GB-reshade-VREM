@@ -151,11 +151,11 @@ std::unordered_map<uint64_t, Shader_Definition> filtered_pipeline;
 
 std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;
 
-
-
+#ifdef _DEBUG
 extern "C" {
+#endif
     //*******************************************************************************
-    __declspec(dllexport) void vrem_init(
+	VREM_EXPORT void vrem_init(
         reshade::api::device* device,
         reshade::api::command_queue* queue,
         reshade::api::swapchain* swapchain,
@@ -166,12 +166,13 @@ extern "C" {
         // set the g_shared_state vaiable of the addon to the variable shared by the launcher
         g_shared_state = shared_state;
 
-		g_shared_state->device = device;
+		// device is null when called
+		// g_shared_state->device = device;
 
         log_addon_init();
         // reshade::log::message(reshade::log::level::info, "** DCS VREM: Initialisation de l'addon...");
 
-        // Code du DLL_PROCESS_ATTACH
+        // Code du DLL_PROCESS_ATTACH (not used ?)
         WCHAR buf[MAX_PATH];
         const std::filesystem::path dllPath = GetModuleFileNameW(nullptr, buf, ARRAYSIZE(buf)) ?
             buf : std::filesystem::path();
@@ -216,18 +217,18 @@ extern "C" {
     //*******************************************************************************
 	// called when the addon is unloaded
 	//*******************************************************************************
-    __declspec(dllexport) void vrem_cleanup(PersistentPipelineData* persistent_data)
+	VREM_EXPORT void vrem_cleanup(PersistentPipelineData* persistent_data)
     {
 		// delete cloned pipelines => if reload .cso may have changed
 
 		
 		log_addon_cleanup_cloned();
 
-		if (g_shared_state == nullptr || g_shared_state->device == nullptr)
+		if (g_shared_state->device == nullptr)
 		{
 			log_device_null();
 		}
-		else
+		if (g_shared_state != nullptr)
 		{
 			delete_cloned_pipelines(g_shared_state->device);
 
@@ -245,13 +246,13 @@ extern "C" {
 			// delete texture resources created for mod
 			log_cleanup_texture();
 			delete_texture_resources(g_shared_state->device);
+			a_shared.saved_DS.clear();
+			a_shared.technique_vector.clear();
 
+			g_shared_state->PSshader_list.clear();
 
 		}
-		a_shared.saved_DS.clear();
-		a_shared.technique_vector.clear();
 
-		g_shared_state->PSshader_list.clear();
 
         // Nettoyer uniquement les données temporaires
         // shader_code.clear();
@@ -264,4 +265,6 @@ extern "C" {
         // - reshade::unregister_event()
         // - device->destroy_pipeline(substitute_pipeline)
     }
+#ifdef _DEBUG
 }
+#endif

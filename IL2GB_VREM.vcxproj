@@ -178,6 +178,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <OptimizeReferences />
+      <EnableCOMDATFolding />
     </Link>
     <PostBuildEvent>
       <Command>copy H:\utils\Repos\IL2GB_VREM\x64\Debug\IL2GB_VREM.dll "G:\jeux\DCS World OpenBeta\bin-mt"</Command>

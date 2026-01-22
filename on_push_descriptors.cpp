@@ -51,11 +51,13 @@
 
 using namespace reshade::api;
 
+#ifdef _DEBUG
 extern "C" {
+#endif
 	// *******************************************************************************************************
 	// on_push_descriptors() : to be monitored in order to copy texture and engage effect
 	// called a lot !
-	__declspec(dllexport) void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
+	VREM_EXPORT  void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 	{
 
 		// log for shader hunting
@@ -157,5 +159,7 @@ extern "C" {
 			}
 		}
 	}
+#ifdef _DEBUG
 }
+#endif
 

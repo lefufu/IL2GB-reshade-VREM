@@ -194,7 +194,7 @@ void  log_pipeline_clone_OK(uint64_t orig_handle, uint64_t cloned_handle) {
 void  log_pipeline_clone_error(uint64_t orig_handle) {
 
 		std::stringstream s;
-		s << "ERROR : addon - error in cloning pipeline ("
+		s << "ERROR : addon - error in cloning pipeline"
 			<< ", orig pipeline: " << std::hex << orig_handle
 			<< ")";
 		reshade::log::message(reshade::log::level::error, s.str().c_str());

@@ -53,10 +53,12 @@
 
 using namespace reshade::api;
 
+#ifdef _DEBUG
 extern "C" {
+#endif
 	//*******************************************************************************************************
 	// on_reshade_overlay() : initialize preprocessor variables
-	__declspec(dllexport) void vrem_on_reshade_overlay(effect_runtime* runtime)
+	VREM_EXPORT void vrem_on_reshade_overlay(effect_runtime* runtime)
 	{
 
 
@@ -64,4 +66,6 @@ extern "C" {
 		init_preprocess(runtime);
 
 	}
+#ifdef _DEBUG
 }
+#endif

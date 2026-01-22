@@ -148,4 +148,6 @@ struct SharedState {
     int PSshader_index = 0;
     std::vector <uint64_t> PSshader_list;
 
+	bool init_done = false;
+
 };

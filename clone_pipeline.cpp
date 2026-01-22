@@ -78,12 +78,19 @@ pipeline clone_pipeline(
         size_t size = 0;
     };*/
 
+
+    std::stringstream s;
+    s << "Clone pipeline, device=" << std::hex << device << ", layout = " <<  std::hex << layout.handle << ", subobjectCount =" << subobjectCount << ", pipeline =" << std::hex << pipeline.handle << ", hash[0] =" << std::hex << hash[0] << "; ";
+    reshade::log::message(reshade::log::level::info, s.str().c_str());
+
     reshade::api::pipeline pipelineClone = {};
 
     // clone subobjects
     reshade::api::pipeline_subobject* newSubobjects = new reshade::api::pipeline_subobject[subobjectCount];
     memcpy(newSubobjects, subobjects, sizeof(reshade::api::pipeline_subobject) * subobjectCount);
 
+    // *** ALLOCATION PERSISTANTE DES SHADER_DESC ***
+    shader_desc* clonedDescs = new shader_desc[subobjectCount];
 
     // clone the desc and change code source
     for (uint32_t i = 0; i < subobjectCount; ++i) {
@@ -101,18 +108,33 @@ pipeline clone_pipeline(
             shader_desc desc = *static_cast<shader_desc*>(subobjects[i].data);
 
             // Clone desc
-            reshade::api::shader_desc clonedDesc;
-            memcpy(&clonedDesc, &desc, sizeof(reshade::api::shader_desc));
+            //reshade::api::shader_desc clonedDesc;
+            //memcpy(&clonedDesc, &desc, sizeof(reshade::api::shader_desc));
+            memcpy(&clonedDescs[i], &desc, sizeof(reshade::api::shader_desc));
 
             // Point to cloned desc
-            clonedSubObject->data = &clonedDesc;
+            //clonedSubObject->data = &clonedDesc;
+            clonedSubObject->data = &clonedDescs[i];
 
             // change code source to use the new one 
             // clone ReplaceshaderCode
-            clonedDesc.code = shader_code.data();
-            clonedDesc.code_size = shader_code.size();
+            //clonedDesc.code = shader_code.data();
+            //clonedDesc.code_size = shader_code.size();
+
+            /*std::stringstream s;
+            s.str("");
+            s << "shader_code_cache size " << shader_code_cache.size() << " shaders:";
+            reshade::log::message(reshade::log::level::info, s.str().c_str()); */
+
+            clonedDescs[i].code = shader_code.data();
+            clonedDescs[i].code_size = shader_code.size();
         }
         //else keep original code
+        // *** IMPORTANT: Garder l'original quand même ***
+        // On copie le desc original dans le tableau pour garder une référence valide
+        ////shader_desc desc = *static_cast<shader_desc*>(subobjects[i].data);
+        ////memcpy(&clonedDescs[i], &desc, sizeof(reshade::api::shader_desc));
+        ////clonedSubObject->data = &clonedDescs[i];
 
     }
 
@@ -136,6 +158,7 @@ pipeline clone_pipeline(
     // free(cache->data);
 
     delete[] newSubobjects;
+    ////delete[] clonedDescs;
 
     return pipelineClone;
 }

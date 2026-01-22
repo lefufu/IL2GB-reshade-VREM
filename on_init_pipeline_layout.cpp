@@ -59,20 +59,24 @@ using namespace reshade::api;
 
 
 
+#ifdef _DEBUG
 extern "C" {
+#endif
 
 	// *******************************************************************************************************
 	/// create_CB_layout()
 	///  create a CB layout for CB created or modified by VREM 
-	
+
 
 	//*******************************************************************************
-	__declspec(dllexport) void vrem_on_init_pipeline_layout(device* dev, uint32_t paramCount, const pipeline_layout_param* params, pipeline_layout layout) {
+	VREM_EXPORT void vrem_on_init_pipeline_layout(device* dev, uint32_t paramCount, const pipeline_layout_param* params, pipeline_layout layout) {
 
 
 		log_init_pipeline_layout(paramCount, params, layout);
 
 	}
+#ifdef _DEBUG
 }
+#endif
 
 

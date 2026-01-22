@@ -95,7 +95,7 @@ void log_delete_saved_pipelines() {
 	}
 }
 
-void log_saved_pipelines_value(save_pipeline saved_pipeline) {
+void log_saved_pipelines_value_l(save_pipeline saved_pipeline) {
 	if (g_shared_state_l.debug)
 	{
 		//uint32_t hash;
