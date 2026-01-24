@@ -55,6 +55,12 @@
 
 #define MAX_OBJ_PER_PIPELINE 5
 
+#ifdef _DEBUG
+#define _DEBUG_LOGS 1
+#else
+#define _DEBUG_LOGS 0
+#endif
+
 using namespace reshade::api;
 
 // handled pipeline types
@@ -128,14 +134,25 @@ struct SharedState {
     // to know when overlay is active and so update uniforms
     bool overlay_is_open = false;
     // debug flag
+#ifdef _DEBUG
     bool debug = true;
+#else
+	bool debug = false;
+#endif
+
+#if _DEBUG_LOGS
+    bool debug_log = true;
+#else
+    bool debug_log = false;
+#endif
+
     // capture button
     bool button_capture = false;
 
 	// flag to setup generation of filtered pipeline list and cloning
 	bool filtered_pipeline_to_setup = true;
   
-    PersistentPipelineData VREM_pipelines;
+    PersistentPipelineData VREM_pipelines = {};
 
     reshade::api::pipeline_layout DX11_layout = {};
 

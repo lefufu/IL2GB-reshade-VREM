@@ -303,13 +303,22 @@ void save_pipeline_in_list(
                     &temp_pipe.depth_stencil_format
                     });
             }
+#ifndef _DEBUG
+            //filter pipeline to keep only those with shaders in mod
+            auto shader_def_opt = is_in_mod_hash(temp_pipe.hash, temp_pipe.subobject_count);
+            if (shader_def_opt.has_value())
+#endif
+            {
+                // add to global list
+                g_shared_state->VREM_pipelines.saved_pipelines.push_back(std::move(temp_pipe));
 
-            // add to global list
-            g_shared_state->VREM_pipelines.saved_pipelines.push_back(std::move(temp_pipe));
+                const auto& last_pipe = g_shared_state->VREM_pipelines.saved_pipelines.back();
+#if _DEBUG_LOGS
+                // too verbose !
+                //log_saved_pipelines_value(last_pipe);
+#endif
+            }
 
-            const auto& last_pipe = g_shared_state->VREM_pipelines.saved_pipelines.back();
-            // too verbose !
-            log_saved_pipelines_value(last_pipe);
         }
     }
 }

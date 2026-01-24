@@ -62,14 +62,24 @@ bool  get_uniform_and_techniques(effect_runtime* runtime) {
 	// reload all uniforms
 	get_settings_from_uniforms(runtime);
 
+	//secure things by ens
 	if (a_shared.VREM_setting[SET_DEFAULT])
 	{
+#if _DEBUG_LOGS
 		log_display_settings();
+
+#endif
+		// if reload: new options may be settup => re generate the filtered shader list
+		g_shared_state->filtered_pipeline_to_setup = true;
+		filtered_pipeline.clear();
+		
 		// read techniques activated to use them later for technique rendering in VR
 		if (a_shared.VREM_setting[SET_EFFECTS])
 		{
 			enumerateTechniques(runtime);
+#if _DEBUG_LOGS
 			log_effect_reloaded();
+#endif
 			a_shared.technique_compiled = true;
 		}
 		result = true;
@@ -87,11 +97,6 @@ extern "C" {
 	// called a lot !n
 	VREM_EXPORT void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)
 	{
-
-		if (g_shared_state->debug)
-		{
-			reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects");
-		}
 
 		// should work only for reload
 		bool status = get_uniform_and_techniques(runtime);

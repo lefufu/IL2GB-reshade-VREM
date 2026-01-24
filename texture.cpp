@@ -98,7 +98,9 @@ bool copy_depthStencil(command_list* cmd_list, shader_stage stages, pipeline_lay
 		resource_DS_copy DS_copy = {};
 
 		// create a new single ressource containing stencil and depth
+#if _DEBUG_LOGS
 		log_creation_start("depthStencil");
+#endif
 
 		bool status = dev->create_resource(src_resource_desc, nullptr, resource_usage::shader_resource, &DS_copy.texresource, nullptr);
 		if (!status)
@@ -117,9 +119,11 @@ bool copy_depthStencil(command_list* cmd_list, shader_stage stages, pipeline_lay
 				// store new elements for copied resource
 				a_shared.saved_DS.emplace(scr_resource.handle, DS_copy);
 				resource_found = true;
+#if _DEBUG_LOGS
 				log_resource_created("depthStencil", dev, src_resource_desc, scr_resource.handle);
 				log_resource_view_created("Depth",  dev, DS_copy.texresource_view_depth, scr_resource.handle);
 				log_resource_view_created("Stencil", dev, DS_copy.texresource_view_stencil, scr_resource.handle);
+#endif
 			}
 		}
 
@@ -147,9 +151,10 @@ bool copy_depthStencil(command_list* cmd_list, shader_stage stages, pipeline_lay
 
 		// to retrieve infos for pushing texture in bind_pipeline
 		current_DS_handle = scr_resource.handle;
-
+#if _DEBUG_LOGS
 		//log copy done
 		log_copy_texture("depthStencil", current_DS_handle);
+#endif
 	}
 	return true;
 }
@@ -188,7 +193,12 @@ void create_RV_pipeline_layout(device* device)
 
 		bool  result = device->create_pipeline_layout(std::size(params), params, &a_shared.saved_pipeline_layout_RV);
 
-		if (result)  log_create_RVlayout();
+		if (result)
+		{
+#if _DEBUG_LOGS
+			log_create_RVlayout();
+#endif
+		}
 		else log_error_creating_RVlayout();
 	}
 }

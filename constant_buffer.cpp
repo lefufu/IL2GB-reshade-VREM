@@ -91,7 +91,11 @@ void create_modified_CB_layout(reshade::api::device* device, int cbindex, std::s
 		bool result = device->create_pipeline_layout(1, &newParams, &a_shared.saved_pipeline_layout_CB[layout_number]);
 
 		if (result)
+		{
+#if _DEBUG_LOGS  
 			log_create_CBlayout(CB_name, layout_number);
+#endif
+		} 
 		else
 			log_error_creating_CBlayout(CB_name, layout_number);
 	}
@@ -117,7 +121,9 @@ void delete_modified_CB_layout(reshade::api::device* device, int cbindex, std::s
 	{
 		if (a_shared.saved_pipeline_layout_CB[i].handle != 0)
 		{
+#if _DEBUG_LOGS  
 			log_destroy_CBlayout(a_shared.saved_pipeline_layout_CB[i].handle);
+#endif
 			device->destroy_pipeline_layout(a_shared.saved_pipeline_layout_CB[i]);
 			a_shared.saved_pipeline_layout_CB[i] = { 0 }; 
 
@@ -137,7 +143,9 @@ bool read_constant_buffer(command_list* cmd_list, const descriptor_table_update&
 
 	// select in descriptors table the needed constant buffer to copy
 	auto cbuffer = static_cast<const reshade::api::buffer_range*>(update.descriptors)[descriptors_index];
+#if _DEBUG_LOGS  
 	log_cbuffer_info(CB_name, cbuffer);
+#endif
 
 	// create a new buffer resource to copy source buffer
 	device* dev = cmd_list->get_device();
@@ -178,7 +186,9 @@ bool read_constant_buffer(command_list* cmd_list, const descriptor_table_update&
 		dev->destroy_resource(dest_buffer);
 
 		//log operation and dump CB
+#if _DEBUG_LOGS  
 		log_constant_buffer_copy(CB_name, dest_array, buffer_size);
+#endif
 	}
 	else
 	{

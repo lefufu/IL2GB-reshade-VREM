@@ -93,8 +93,9 @@ bool load_shader_code(std::unordered_map<uint32_t, std::vector<uint8_t>>& shader
     file.seekg(0, std::ios::end);
     std::vector<uint8_t> shader_code(static_cast<size_t>(file.tellg()));
     file.seekg(0, std::ios::beg).read(reinterpret_cast<char*>(shader_code.data()), shader_code.size());
-
+#if _DEBUG_LOGS  
     log_shader_code_readed(filename, hash, shader_code.size());
+#endif
 
     // Stocker dans la map
     shader_cache[hash] = std::move(shader_code);

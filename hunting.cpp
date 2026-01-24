@@ -75,7 +75,9 @@ void on_bind_pipeline_hunting(command_list* commandList, pipeline_stage stages, 
 			}
 		}
 		// log bind pipeline
+#if _DEBUG_LOGS  
 		log_hunting_bind_pipeline(commandList, stages, pipelineHandle);
+#endif
 		
 	}
 

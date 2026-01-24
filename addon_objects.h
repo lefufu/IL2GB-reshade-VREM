@@ -49,6 +49,8 @@
 #include "addon_injection.h"
 #include "VREM_settings.h"
 
+#define DEBUG_LOGS 1
+
 // number of CB modified by VREM (used for an array allocation)
 static const int NUMBER_OF_MODIFIED_CB = 2;
 

@@ -104,7 +104,7 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// to start spying texture for depthStencil (Vs associated with global illumination PS)
 	// and inject modified CB CperFrame
 	{ 0x4DDC4917, Shader_Definition(action_log | action_injectCB, Feature::GetStencil, L"", 0, {SET_DEFAULT}) },
-	{ 0x57D037A0, Shader_Definition(action_injectCB, Feature::Sky, L"", 0, {SET_DEFAULT}) },
+	{ 0x57D037A0, Shader_Definition(action_injectCB, Feature::Sky, L"", 0, {SET_MISC}) },
 	{ 0x4DDC4917, Shader_Definition(action_log , Feature::GetStencil, L"", 0, {SET_COLOR, SET_EFFECTS, SET_MISC}) },
 	// global PS for all changes
 	//{ 0xBAF1E52F, Shader_Definition(action_replace | action_injectText, Feature::Global, L"global_PS_2.cso", 0, {SET_COLOR, SET_MISC}) },
@@ -133,9 +133,11 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{ 0xA337E177, Shader_Definition(action_identify, Feature::mapMode, L"", 0, {SET_DEFAULT}) },
 	//  ** reflection on instrument, done by GCOCKPITIBL of CperFrame **
 	// A10C PS 
-	{ 0xC9F547A7, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_MISC}) },
+	{ 0xECF6610, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_MISC}) },
 	// AH64 + F4 PS 
-	{ 0x7BB48FB, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_MISC}) },
+	//{ 0x7BB48FB, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_MISC}) },
+	{ 0x485b58ba, Shader_Definition(action_injectCB , Feature::NoReflect , L"", 0, {SET_MISC}) },
+	
 
 	//  ** NVG **
 	{ 0xE65FAB66, Shader_Definition(action_replace_bind , Feature::NVG , L"NVG_extPS.cso", 0, {SET_NVG}) },
@@ -168,8 +170,9 @@ extern "C" {
 
 		// device is null when called
 		// g_shared_state->device = device;
-
+#ifdef USE_LOGS  
         log_addon_init();
+#endif
         // reshade::log::message(reshade::log::level::info, "** DCS VREM: Initialisation de l'addon...");
 
         // Code du DLL_PROCESS_ATTACH (not used ?)
@@ -221,8 +224,9 @@ extern "C" {
     {
 		// delete cloned pipelines => if reload .cso may have changed
 
-		
+#ifdef _DEBUG  		
 		log_addon_cleanup_cloned();
+#endif
 
 		if (g_shared_state->device == nullptr)
 		{
@@ -233,18 +237,24 @@ extern "C" {
 			delete_cloned_pipelines(g_shared_state->device);
 
 			// clean the filtered shader/pipeline list => if reload shader list may have changed
+#ifdef _DEBUG  
 			log_addon_cleanup_filtered();
+#endif 
 			filtered_pipeline.clear();
 
 			// clean the shader code cache
+#ifdef _DEBUG  
 			log_cleanup_shader_code();
+#endif
 			shader_code_cache.clear();
 
 			// to reload filtered and cloned
 			g_shared_state->filtered_pipeline_to_setup = true;
 
 			// delete texture resources created for mod
+#ifdef _DEBUG  
 			log_cleanup_texture();
+#endif
 			delete_texture_resources(g_shared_state->device);
 			a_shared.saved_DS.clear();
 			a_shared.technique_vector.clear();
@@ -253,17 +263,6 @@ extern "C" {
 
 		}
 
-
-        // Nettoyer uniquement les données temporaires
-        // shader_code.clear();
-        // s_data_to_delete.clear();
-
-        // NE PAS FAIRE :
-        // - pipeline_by_handle.clear()
-        // - pipeline_by_hash.clear()
-        // - reshade::unregister_overlay()
-        // - reshade::unregister_event()
-        // - device->destroy_pipeline(substitute_pipeline)
     }
 #ifdef _DEBUG
 }

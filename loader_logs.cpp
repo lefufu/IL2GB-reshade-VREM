@@ -50,14 +50,14 @@ extern SharedState g_shared_state_l;
 // extern SharedState* g_shared_state;
 
 void log_manual_reload() {
-	if (g_shared_state_l.debug)
+	if (g_shared_state_l.debug_log)
 	{
 		reshade::log::message(reshade::log::level::info, "VREM launcher : manual reloading...");
 	}
 }
 
 void log_dll_copy_error() {
-	if (g_shared_state_l.debug)
+	if (g_shared_state_l.debug_log)
 	{
 		reshade::log::message(reshade::log::level::error,
 			"VREM launcher: Impossible to copy DLL");
@@ -66,7 +66,7 @@ void log_dll_copy_error() {
 
 void  log_dll_copy_error_code(DWORD error)
 {
-	if (g_shared_state_l.debug)
+	if (g_shared_state_l.debug_log)
 	{
 		reshade::log::message(reshade::log::level::error,
 			("VREM launcher: LoadLibrary failed, code: " + std::to_string(error)).c_str());
@@ -74,7 +74,7 @@ void  log_dll_copy_error_code(DWORD error)
 }
 
 void   log_success_load() {
-	if (g_shared_state_l.debug)
+	if (g_shared_state_l.debug_log)
 	{
 		reshade::log::message(reshade::log::level::info, "VREM launcher: Load Library success");
 	}
@@ -82,21 +82,21 @@ void   log_success_load() {
 }
 
 void log_unloaded() {
-	if (g_shared_state_l.debug)
+	if (g_shared_state_l.debug_log)
 	{
 		reshade::log::message(reshade::log::level::info, "VREM launcher: Unload library success");
 	}
 }
 
 void log_delete_saved_pipelines() {
-	if (g_shared_state_l.debug)
+	if (g_shared_state_l.debug_log)
 	{
 		reshade::log::message(reshade::log::level::info, "VREM launcher: deleting saved pipelines :");
 	}
 }
 
 void log_saved_pipelines_value_l(save_pipeline saved_pipeline) {
-	if (g_shared_state_l.debug)
+	if (g_shared_state_l.debug_log)
 	{
 		//uint32_t hash;
 		std::stringstream s;

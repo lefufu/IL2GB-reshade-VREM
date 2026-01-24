@@ -120,7 +120,9 @@ extern "C" {
         }
         else
         {
+#if _DEBUG_LOGS
             log_waiting_setting();
+#endif
         } 
         
         // Fin de capture seulement si une frame réelle a commencé
@@ -128,7 +130,9 @@ extern "C" {
         {
             flag_capture = false;
             frame_started = false;
+#if _DEBUG_LOGS
             log_end_capture_frame();
+#endif
         }
 
         // Détection front bouton
@@ -146,8 +150,10 @@ extern "C" {
             request_capture = false;
             flag_capture = true;
             frame_started = true;
+#if _DEBUG_LOGS
             log_start_capture_frame();
             log_shader_def_list();
+#endif
 
 			// if shader hunter mode : clean list of PS
 			if (g_shared_state->shader_hunter)  g_shared_state->PSshader_list.clear();

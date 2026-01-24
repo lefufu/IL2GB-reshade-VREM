@@ -46,11 +46,10 @@
 #include "loader_on_event.hpp"
 
 //local variables
-// #if USE_HOT_RELOAD
 VREMHotReloader* g_reloader = nullptr;
 static bool g_reload_in_progress = false;
 static bool g_reload_requested = false;
-// #endif
+
 
 SharedState g_shared_state_l;
 
@@ -58,10 +57,10 @@ SharedState g_shared_state_l;
 // addon infos
 extern "C" __declspec(dllexport) const char* NAME = "IL2 GB VREM";
 extern "C" __declspec(dllexport) const char* DESCRIPTION = 
-#if USE_HOT_RELOAD
+#if _DEBUG
 "VR Enhancer Mod for IL2 Great Battle (DEBUG - Hot Reload Enabled).";
 #else
-"VR Enhancer Mod for IL2 Great Battle (RELEASE - Direct Call).";
+"VR Enhancer Mod for IL2 Great Battle (RELEASE).";
 #endif
 
 #ifndef _DEBUG
@@ -70,30 +69,12 @@ extern void vrem_init(reshade::api::device* device,reshade::api::command_queue* 
 extern void vrem_cleanup(PersistentPipelineData* persistent_data);
 #endif
 
-/*
-//****************************************************************
-// to launch addon initialization if no hot reloader
-#ifndef _DEBUG
-static void OnInitSwapchain(reshade::api::swapchain* swapchain)
-{
-    
-    reshade::log::message(reshade::log::level::info, "VREM launcher : OnInitSwapchain");
-    if (!g_shared_state_l.init_done)
-    {
-        g_shared_state_l.init_done = true;
-        auto* device = swapchain->get_device();
-        reshade::log::message(reshade::log::level::info, "VREM launcher : OnInitSwapchain call vrem_init");
-        vrem_init(device, nullptr, swapchain, nullptr, &g_shared_state_l);
-    }
-}
-#endif
-*/
 
 //****************************************************************
 // GUI for reshade addon
 static void draw_settings(reshade::api::effect_runtime*)
 {
-#if USE_HOT_RELOAD
+#ifdef _DEBUG
     // reload button
     // deactivate button during reloard
     if (g_reload_in_progress) {
@@ -201,7 +182,7 @@ static bool reshade_open_overlay(reshade::api::effect_runtime* runtime, bool ope
 // handle button press plus call vrem "on_present" function
 
 static void on_reshade_present(effect_runtime* runtime) {
-#if USE_HOT_RELOAD
+#ifdef _DEBUG
     if (g_reloader) {
         // Vérifier demande GUI
         if (g_reload_requested) {
@@ -247,19 +228,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
 //#endif
 #ifdef _DEBUG
         reshade::log::message(reshade::log::level::info, "VREM Loader: DEBUG MODE - Hot reload enabled");
-#else
-        // Mode Release : pas de reloader
-        reshade::log::message(reshade::log::level::info, "VREM Loader: RELEASE MODE - Direct calls");
-#endif
-/*
-#ifndef _DEBUG
-        //intialization of addon if no hot reload
-        reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
-#endif   
-*/
-#ifndef _DEBUG
-        vrem_init(nullptr, nullptr, nullptr, nullptr, &g_shared_state_l);
-#endif 
         // register event : local mapping
         reshade::register_overlay(nullptr, draw_settings);
         reshade::register_event<reshade::addon_event::reshade_present>(on_reshade_present);
@@ -274,9 +242,31 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::push_descriptors>(on_push_descriptors);
         reshade::register_event<reshade::addon_event::create_pipeline>(on_create_pipeline);
         reshade::register_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
-        reshade::register_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay); 
-        reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects); 
+        reshade::register_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
+        reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
+#else
+        // Mode Release : pas de reloader
+        reshade::log::message(reshade::log::level::info, "VREM Loader: RELEASE MODE - Direct calls");
 
+        vrem_init(nullptr, nullptr, nullptr, nullptr, &g_shared_state_l);
+
+        // register event : local mapping
+        reshade::register_overlay(nullptr, draw_settings);
+        reshade::register_event<reshade::addon_event::reshade_present>(vrem_on_reshade_present);
+        reshade::register_event<reshade::addon_event::reshade_open_overlay>(reshade_open_overlay);
+        reshade::register_event<reshade::addon_event::init_pipeline>(vrem_on_init_pipeline);
+        // !!! warning !!! to optimize performance there is a filtering setup in on_bind_pipeline() to limit processing to ALLOWED_STAGES
+        reshade::register_event<reshade::addon_event::bind_pipeline>(vrem_on_bind_pipeline);
+        reshade::register_event<reshade::addon_event::init_pipeline_layout>(vrem_on_init_pipeline_layout);
+        reshade::register_event<reshade::addon_event::draw>(vrem_on_draw);
+        reshade::register_event<reshade::addon_event::draw_indexed>(vrem_on_draw_indexed);
+        reshade::register_event<reshade::addon_event::draw_or_dispatch_indirect>(vrem_on_drawOrDispatch_indirect);
+        reshade::register_event<reshade::addon_event::push_descriptors>(vrem_on_push_descriptors);
+        reshade::register_event<reshade::addon_event::create_pipeline>(vrem_on_create_pipeline);
+        reshade::register_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(vrem_on_bind_render_targets_and_depth_stencil);
+        reshade::register_event<reshade::addon_event::reshade_overlay>(vrem_on_reshade_overlay); 
+        reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(vrem_on_reshade_reloaded_effects); 
+#endif
         //reshade::register_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline); 
         // register event : call of addon exported functions (see loader_on_event.hpp)
         // reshade::register_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
@@ -289,11 +279,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
     }
     case DLL_PROCESS_DETACH:
     {
-#ifndef _DEBUG   
-//#ifdef _DEBUG  
-        //cleaning of addon variables if no hot reload
-        vrem_cleanup(nullptr);
-#endif        
+
+#ifdef _DEBUG
         // unregister event : local mapping
         reshade::unregister_overlay(nullptr, draw_settings);
         reshade::unregister_event<reshade::addon_event::reshade_present>(on_reshade_present);
@@ -309,12 +296,25 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
         reshade::unregister_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
-
-/* #ifndef _DEBUG
-        //intialization of addon if no hot reload
-        reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
-#endif */   
-
+#else
+        //cleaning of addon variables if no hot reload
+        vrem_cleanup(nullptr);
+        // register event : local mapping
+        reshade::register_overlay(nullptr, draw_settings);
+        reshade::unregister_event<reshade::addon_event::reshade_present>(vrem_on_reshade_present);
+        reshade::unregister_event<reshade::addon_event::reshade_open_overlay>(reshade_open_overlay);
+        reshade::unregister_event<reshade::addon_event::init_pipeline>(vrem_on_init_pipeline);
+        reshade::unregister_event<reshade::addon_event::bind_pipeline>(vrem_on_bind_pipeline);
+        reshade::unregister_event<reshade::addon_event::init_pipeline_layout>(vrem_on_init_pipeline_layout);
+        reshade::unregister_event<reshade::addon_event::draw>(vrem_on_draw);
+        reshade::unregister_event<reshade::addon_event::draw_indexed>(vrem_on_draw_indexed);
+        reshade::unregister_event<reshade::addon_event::draw_or_dispatch_indirect>(vrem_on_drawOrDispatch_indirect);
+        reshade::unregister_event<reshade::addon_event::push_descriptors>(vrem_on_push_descriptors);
+        reshade::unregister_event<reshade::addon_event::create_pipeline>(vrem_on_create_pipeline);
+        reshade::unregister_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(vrem_on_bind_render_targets_and_depth_stencil);
+        reshade::unregister_event<reshade::addon_event::reshade_overlay>(vrem_on_reshade_overlay);
+        reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(vrem_on_reshade_reloaded_effects);
+#endif
         //reshade::unregister_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline);
         // unregister event : call of addon exported functions (see loader_on_event.hpp)
         // reshade::unregister_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
@@ -323,7 +323,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         // reshade::unregister_event<reshade::addon_event::init_pipeline>(on_after_create_pipeline);
 
 
-#if USE_HOT_RELOAD
+#ifdef _DEBUG
         if (g_reloader) {
             delete g_reloader;
             g_reloader = nullptr;

@@ -114,3 +114,24 @@ std::optional<Shader_Definition> is_in_mod_hash(uint32_t hash[], uint32_t subobj
 		return std::nullopt;
 	}
 }
+
+std::optional<Shader_Definition> is_in_mod_hash(uint32_t hash) {
+
+	bool found = false;
+	Shader_Definition foundShader;
+
+	auto it = shader_by_hash.find(hash);
+	if (it != shader_by_hash.end()) {
+		foundShader = it->second;
+		found = true;
+	}
+
+	if (found)
+	{
+		return foundShader;
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}

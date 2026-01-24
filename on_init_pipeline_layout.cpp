@@ -71,8 +71,9 @@ extern "C" {
 	//*******************************************************************************
 	VREM_EXPORT void vrem_on_init_pipeline_layout(device* dev, uint32_t paramCount, const pipeline_layout_param* params, pipeline_layout layout) {
 
-
+#if _DEBUG_LOGS
 		log_init_pipeline_layout(paramCount, params, layout);
+#endif
 
 	}
 #ifdef _DEBUG

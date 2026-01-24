@@ -255,9 +255,106 @@ private:
 #define USE_HOT_RELOAD 0    
 #endif
 
-#if USE_HOT_RELOAD
+#ifdef _DEBUG
     // Mode Debug : utilise le reloader
 extern VREMHotReloader* g_reloader;
+
+static void on_init_pipeline(device* dev, pipeline_layout layout, uint32_t count,
+    const pipeline_subobject* objs, pipeline pipe) {
+
+    if (g_reloader && g_reloader->get_functions().on_init_pipeline) {
+        typedef void (*Func)(device*, pipeline_layout, uint32_t, const pipeline_subobject*, pipeline);
+        ((Func)g_reloader->get_functions().on_init_pipeline)(dev, layout, count, objs, pipe);
+    }
+
+}
+
+static void on_bind_pipeline(command_list* cmd, pipeline_stage stages, pipeline pipe) {
+    if (g_reloader && g_reloader->get_functions().on_bind_pipeline) {
+        typedef void (*Func)(command_list*, pipeline_stage, pipeline);
+        ((Func)g_reloader->get_functions().on_bind_pipeline)(cmd, stages, pipe);
+    }
+}
+
+static void on_init_pipeline_layout(device* dev, uint32_t count,
+    const pipeline_layout_param* params, pipeline_layout layout) {
+    if (g_reloader && g_reloader->get_functions().on_init_pipeline_layout) {
+        typedef void (*Func)(device*, uint32_t, const pipeline_layout_param*, pipeline_layout);
+        ((Func)g_reloader->get_functions().on_init_pipeline_layout)(dev, count, params, layout);
+    }
+}
+
+static bool on_draw(command_list* cmd, uint32_t v, uint32_t i, uint32_t fv, uint32_t fi) {
+
+    if (g_reloader && g_reloader->get_functions().on_draw) {
+        typedef bool (*Func)(command_list*, uint32_t, uint32_t, uint32_t, uint32_t);
+        return ((Func)g_reloader->get_functions().on_draw)(cmd, v, i, fv, fi);
+    }
+    else {
+        return false;
+    }
+}
+
+static bool on_draw_indexed(command_list* cmd, uint32_t ic, uint32_t ins,
+    uint32_t fi, int32_t vo, uint32_t fii) {
+    if (g_reloader && g_reloader->get_functions().on_draw_indexed) {
+        typedef bool (*Func)(command_list*, uint32_t, uint32_t, uint32_t, int32_t, uint32_t);
+        return ((Func)g_reloader->get_functions().on_draw_indexed)(cmd, ic, ins, fi, vo, fii);
+    }
+    else {
+        return false;
+    }
+}
+
+static bool on_draw_indirect(command_list* cmd, indirect_command type, resource buf,
+    uint64_t off, uint32_t cnt, uint32_t stride) {
+    if (g_reloader && g_reloader->get_functions().on_draw_indirect) {
+        typedef bool (*Func)(command_list*, indirect_command, resource, uint64_t, uint32_t, uint32_t);
+        return ((Func)g_reloader->get_functions().on_draw_indirect)(cmd, type, buf, off, cnt, stride);
+    }
+    else {
+        return false;
+    }
+}
+
+static void on_push_descriptors(command_list* cmd, shader_stage stages, pipeline_layout layout,
+    uint32_t idx, const descriptor_table_update& upd) {
+    if (g_reloader && g_reloader->get_functions().on_push_descriptors) {
+        typedef void (*Func)(command_list*, shader_stage, pipeline_layout, uint32_t, const descriptor_table_update&);
+        ((Func)g_reloader->get_functions().on_push_descriptors)(cmd, stages, layout, idx, upd);
+    }
+}
+
+static bool on_create_pipeline(device* dev, pipeline_layout layout, uint32_t count,const pipeline_subobject* objs) {
+    if (g_reloader && g_reloader->get_functions().on_create_pipeline) {
+        typedef bool (*Func)(device*, pipeline_layout, uint32_t, const pipeline_subobject*);
+        return ((Func)g_reloader->get_functions().on_create_pipeline)(dev, layout, count, objs);
+    }
+}
+
+static void on_bind_render_targets(command_list* cmd, uint32_t count,
+    const resource_view* rtvs, resource_view dsv) {
+    if (g_reloader && g_reloader->get_functions().on_bind_render_targets) {
+        typedef void (*Func)(command_list*, uint32_t, const resource_view*, resource_view);
+        ((Func)g_reloader->get_functions().on_bind_render_targets)(cmd, count, rtvs, dsv);
+    }
+
+}
+
+static void on_reshade_reloaded_effects(effect_runtime* runtime) {
+    if (g_reloader && g_reloader->get_functions().on_reshade_reloaded_effects) {
+        typedef void (*Func)(effect_runtime*);
+        ((Func)g_reloader->get_functions().on_reshade_reloaded_effects)(runtime);
+    }
+}
+
+static void on_reshade_overlay(effect_runtime* runtime) {
+    if (g_reloader && g_reloader->get_functions().on_reshade_overlay) {
+        typedef void (*Func)(effect_runtime*);
+        ((Func)g_reloader->get_functions().on_reshade_overlay)(runtime);
+    }
+}
+
 #else
     // Mode Release : déclare les fonctions directement
 extern void vrem_on_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle);
@@ -271,280 +368,6 @@ extern void vrem_on_init_pipeline_layout(device* dev, uint32_t paramCount, const
 extern void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update);
 extern void vrem_on_reshade_reloaded_effects(effect_runtime* runtime);
 extern void vrem_on_reshade_overlay(effect_runtime* runtime);
-
-
-//extern "C" {
-/*    __declspec(dllimport) void vrem_on_bind_pipeline(
-        reshade::api::command_list*,
-        reshade::api::pipeline_stage,
-        reshade::api::pipeline); */
-
-   /* __declspec(dllimport) void vrem_on_init_pipeline(
-        reshade::api::device*,
-        reshade::api::pipeline_layout,
-        uint32_t,
-        const reshade::api::pipeline_subobject*,
-        reshade::api::pipeline); */
-
-    /*__declspec(dllimport) void vrem_on_init_pipeline_layout(
-        reshade::api::device*,
-        const uint32_t,
-        const reshade::api::pipeline_layout_param*,
-        reshade::api::pipeline_layout); */
-
-    /*__declspec(dllimport) bool vrem_on_create_pipeline(
-        reshade::api::device*,
-        reshade::api::pipeline_layout,
-        uint32_t,
-        const reshade::api::pipeline_subobject*); */
-
- /*   __declspec(dllimport) void vrem_on_after_create_pipeline(
-        reshade::api::device*,
-        reshade::api::pipeline_layout,
-        uint32_t,
-        const reshade::api::pipeline_subobject*,
-        reshade::api::pipeline); */
-
-   /* __declspec(dllimport) void vrem_on_bind_render_targets_and_depth_stencil(
-        command_list* cmd, 
-        uint32_t count,
-        const resource_view* rtvs, 
-        resource_view dsv); */
-
-   /*
-     __declspec(dllimport) bool vrem_on_draw(
-        command_list* commandList, 
-        uint32_t vertex_count, 
-        uint32_t instance_count, 
-        uint32_t first_vertex, 
-        uint32_t first_instance);
-
-    __declspec(dllimport) bool vrem_on_draw_indexed(
-        command_list* commandList,
-        uint32_t index_count,
-        uint32_t instance_count,
-        uint32_t first_index,
-        int32_t vertex_offset,
-        uint32_t first_instance);
-
-    __declspec(dllimport) bool vrem_on_drawOrDispatch_indirect(
-        command_list* commandList,
-        indirect_command type,
-        resource buffer,
-        uint64_t offset,
-        uint32_t draw_count,
-        uint32_t stride); */
-
-    /*__declspec(dllimport)  void vrem_on_push_descriptors(
-        command_list* cmd_list,
-        shader_stage stages,
-        pipeline_layout layout,
-        uint32_t param_index,
-        const descriptor_table_update& update); */
-
-    /*__declspec(dllimport) void vrem_on_reshade_reloaded_effects(
-        effect_runtime* runtime);*/
-
-    /*__declspec(dllimport) void vrem_on_reshade_overlay(
-        effect_runtime* runtime); */
-//}
 #endif
 
 
-static void on_init_pipeline(device* dev, pipeline_layout layout, uint32_t count,
-    const pipeline_subobject* objs, pipeline pipe) {
-
-    #if USE_HOT_RELOAD
-        if (g_reloader && g_reloader->get_functions().on_init_pipeline) {
-            typedef void (*Func)(device*, pipeline_layout, uint32_t, const pipeline_subobject*, pipeline);
-            ((Func)g_reloader->get_functions().on_init_pipeline)(dev, layout, count, objs, pipe);
-        }
-    #else
-        vrem_on_init_pipeline(dev, layout, count, objs, pipe);
-    #endif
-}
-
-static void on_bind_pipeline(command_list* cmd, pipeline_stage stages, pipeline pipe) {
-
-    #if USE_HOT_RELOAD
-        if (g_reloader && g_reloader->get_functions().on_bind_pipeline) {
-            typedef void (*Func)(command_list*, pipeline_stage, pipeline);
-            ((Func)g_reloader->get_functions().on_bind_pipeline)(cmd, stages, pipe);
-        }
-    #else
-    vrem_on_bind_pipeline(cmd, stages, pipe);
-    #endif
-}
-
-
-static void on_init_pipeline_layout(device* dev, uint32_t count,
-    const pipeline_layout_param* params, pipeline_layout layout) {
-
-    #if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_init_pipeline_layout) {
-        typedef void (*Func)(device*, uint32_t, const pipeline_layout_param*, pipeline_layout);
-        ((Func)g_reloader->get_functions().on_init_pipeline_layout)(dev, count, params, layout);
-    }
-    #else
-    vrem_on_init_pipeline_layout(dev, count, params, layout);
-    #endif
-}
-
-static bool on_draw(command_list* cmd, uint32_t v, uint32_t i, uint32_t fv, uint32_t fi) {
-
-#if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_draw) {
-        typedef bool (*Func)(command_list*, uint32_t, uint32_t, uint32_t, uint32_t);
-        return ((Func)g_reloader->get_functions().on_draw)(cmd, v, i, fv, fi);
-    }
-    else {
-        return false;
-    }
-#else
-    return  vrem_on_draw(cmd, v, i, fv, fi);
-#endif
-}
-
-static bool on_draw_indexed(command_list* cmd, uint32_t ic, uint32_t ins,
-    uint32_t fi, int32_t vo, uint32_t fii) {
-
-#if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_draw_indexed) {
-        typedef bool (*Func)(command_list*, uint32_t, uint32_t, uint32_t, int32_t, uint32_t);
-        return ((Func)g_reloader->get_functions().on_draw_indexed)(cmd, ic, ins, fi, vo, fii);
-    }
-    else {
-        return false;
-    }
-
-#else
-    bool result = vrem_on_draw_indexed(cmd, ic, ins, fi, vo, fii);
-    return result;
-#endif
-
-}
-
-static bool on_draw_indirect(command_list* cmd, indirect_command type, resource buf,
-    uint64_t off, uint32_t cnt, uint32_t stride) {
-
-#if USE_HOT_RELOAD
-
-    if (g_reloader && g_reloader->get_functions().on_draw_indirect) {
-        typedef bool (*Func)(command_list*, indirect_command, resource, uint64_t, uint32_t, uint32_t);
-        return ((Func)g_reloader->get_functions().on_draw_indirect)(cmd, type, buf, off, cnt, stride);
-    }
-    else {
-        return false;
-    }
-
-#else
-    bool result = vrem_on_drawOrDispatch_indirect(cmd, type, buf, off, cnt, stride);
-    return result;
-#endif
-}
-
-static void on_push_descriptors(command_list* cmd, shader_stage stages, pipeline_layout layout,
-    uint32_t idx, const descriptor_table_update& upd) {
-
-#if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_push_descriptors) {
-        typedef void (*Func)(command_list*, shader_stage, pipeline_layout, uint32_t, const descriptor_table_update&);
-        ((Func)g_reloader->get_functions().on_push_descriptors)(cmd, stages, layout, idx, upd);
-    }
-#else
-    vrem_on_push_descriptors(cmd, stages, layout, idx, upd);
-#endif
-}
-
-static bool on_create_pipeline(device* dev, pipeline_layout layout, uint32_t count,
-    const pipeline_subobject* objs) {
-
-#if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_create_pipeline) {
-        typedef bool (*Func)(device*, pipeline_layout, uint32_t, const pipeline_subobject*);
-        return ((Func)g_reloader->get_functions().on_create_pipeline)(dev, layout, count, objs);
-    }
-#else
-    return vrem_on_create_pipeline(dev, layout, count, objs);
-#endif
-}
-
-/*
-static void on_after_create_pipeline(device* dev, pipeline_layout layout, uint32_t count,
-    const pipeline_subobject* objs, pipeline pipe) {
-
-#if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_after_create_pipeline) {
-        typedef void (*Func)(device*, pipeline_layout, uint32_t, const pipeline_subobject*, pipeline);
-        ((Func)g_reloader->get_functions().on_after_create_pipeline)(dev, layout, count, objs, pipe);
-    }
-#else
-    vrem_on_after_create_pipeline(dev, layout, count, objs, pipe);
-#endif
-}
-*/
-
-static void on_bind_render_targets(command_list* cmd, uint32_t count,
-    const resource_view* rtvs, resource_view dsv) {
-
-#if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_bind_render_targets) {
-        typedef void (*Func)(command_list*, uint32_t, const resource_view*, resource_view);
-        ((Func)g_reloader->get_functions().on_bind_render_targets)(cmd, count, rtvs, dsv);
-    }
-
-#else
-    vrem_on_bind_render_targets_and_depth_stencil(cmd, count, rtvs, dsv);
-#endif
-}
-
-static void on_reshade_reloaded_effects(effect_runtime* runtime) {
-
-#if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_reshade_reloaded_effects) {
-        typedef void (*Func)(effect_runtime*);
-        ((Func)g_reloader->get_functions().on_reshade_reloaded_effects)(runtime);
-    }
-#else
-    vrem_on_reshade_reloaded_effects(runtime);
-#endif
-}
-
-/* not used for the moment
-static void on_reshade_set_technique_state(effect_runtime* runtime,
-    effect_technique technique, bool enabled) {
-#if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_reshade_set_technique_state) {
-        typedef void (*Func)(effect_runtime*, effect_technique, bool);
-        ((Func)g_reloader->get_functions().on_reshade_set_technique_state)(runtime, technique, enabled);
-    }
-#else
-        vrem_on_reshade_set_technique_state(runtime, technique, enabled);
-#endif
-}
-*/
-/*
-static void on_destroy_pipeline(device* dev, pipeline pipe) {
-#if USE_HOT_RELOAD
-    if (g_reloader && g_reloader->get_functions().on_destroy_pipeline) {
-        typedef void (*Func)(device*, pipeline);
-        ((Func)g_reloader->get_functions().on_destroy_pipeline)(dev, pipe);
-    }
-#else
-        vrem_on_destroy_pipeline(dev, pipe);
-#endif
-}
-*/
-
-
-static void on_reshade_overlay(effect_runtime* runtime) {
-
-#if USE_HOT_RELOAD
-        if (g_reloader && g_reloader->get_functions().on_reshade_overlay) {
-            typedef void (*Func)(effect_runtime*);
-            ((Func)g_reloader->get_functions().on_reshade_overlay)(runtime);
-        }
-#else
-    vrem_on_reshade_overlay(runtime);
-#endif
-    }

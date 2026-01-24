@@ -64,6 +64,7 @@ extern "C" {
 	VREM_EXPORT void vrem_on_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle)
 	{
 
+		
 		// optimize performance by reducing processing to ALLOWED_STAGES
 		if ((static_cast<uint32_t>(stages) & static_cast<uint32_t>(ALLOWED_STAGES)) == 0) return;
 		
@@ -85,9 +86,9 @@ extern "C" {
 		
 			//shader is found in the filtered pipeline list
 			Shader_Definition& shader = it->second;
-
+#if _DEBUG_LOGS  
 			log_shader_binded(pipelineHandle.handle, shader);
-
+#endif
 			// use shader
 			uint32_t action = shader.action;
 			auto& pipeline = shader.substitute_pipeline;
@@ -125,7 +126,9 @@ extern "C" {
 						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
 
 						// log infos
+#if _DEBUG_LOGS  
 						log_texture_injected("depthStencil", current_DS_handle, count_displayVS);
+#endif
 					}
 				}
 			} 
@@ -133,9 +136,7 @@ extern "C" {
 			// ----------------------------------------
 			// replace pipelines during bind
 			if (it->second.action & action_replace_bind || it->second.action & action_replace)
-				//if (it->second.action & action_replace_bind)
 			{
-
 				// TODO : add optimization to avoid pushing CB13 if not needed
 				{
 					// use push constant() to push the mod parameter in CB13,a sit is assumed a replaced shader will need mod parameters
@@ -149,14 +150,18 @@ extern "C" {
 						CBSIZE,
 						&a_shared.cb_inject_values
 					);
+#if _DEBUG_LOGS  
 					log_CB_injected("VREM CB");
+#endif
 				}
 				if (it->second.action & action_replace_bind || ((it->second.action & action_replace) && g_shared_state->debug))
 				{
 					// shader is to be replaced by the new one created in on_Init_Pipeline
 					commandList->bind_pipeline(stages, it->second.substitute_pipeline);
 					// log infos
+#if _DEBUG_LOGS  
 					log_pipeline_replaced(pipelineHandle.handle, it->second.substitute_pipeline.handle);
+#endif
 				}
 			}
 
@@ -172,7 +177,9 @@ extern "C" {
 					track_for_depthStencil = true;
 
 					// log infos
+#if _DEBUG_LOGS  
 					log_start_monitor("Depth Stencil");
+#endif
 				}
 
 				// PS for GUI : set flag
@@ -181,7 +188,9 @@ extern "C" {
 					a_shared.cb_inject_values.GUItodraw = 1.0;
 
 					// log infos
+#if _DEBUG_LOGS  
 					log_start_monitor("GUItodraw");
+#endif
 				}
 
 				if (it->second.feature == Feature::VS_global2)
@@ -201,18 +210,20 @@ extern "C" {
 							a_shared.cb_inject_values.count_display = a_shared.count_display;
 
 							a_shared.track_for_render_target = false;
-
+#if _DEBUG_LOGS  
 							// log infos
 							log_increase_count_display();
+#endif
 
 							if (a_shared.VREM_setting[SET_EFFECTS] && !a_shared.cb_inject_values.mapMode)
 							{
 								// handle effects : setup flag for draw
 								a_shared.render_effect = true;
 								//a_shared.track_for_render_target = false;
-
+#if _DEBUG_LOGS  
 								// log infos
 								log_effect_requested();
+#endif
 							}
 						}
 						/* else
@@ -232,8 +243,10 @@ extern "C" {
 				if (it->second.feature == Feature::Effects && a_shared.VREM_setting[SET_EFFECTS])
 				{
 					a_shared.track_for_render_target = true;
+#if _DEBUG_LOGS  
 					// log infos
 					log_start_monitor("Render target");
+#endif
 				}
 
 				// PS for mirror view : setup VR mode
@@ -246,7 +259,9 @@ extern "C" {
 					// secure only 1 and 2 view processed
 					if (a_shared.count_display == 1) a_shared.mirror_VR = 0;
 					if (a_shared.count_display == 2) a_shared.mirror_VR = 1;
+#if _DEBUG_LOGS  
 					log_mirror_view();
+#endif
 				}
 			}
 
@@ -275,7 +290,7 @@ extern "C" {
 				// inject constant buffer other than the one containing VREM setting
 
 				//CPERFRAME/haze for global illumination :  need to modify value for haze but set orgi. value for reflection
-				if (it->second.feature == Feature::GetStencil && a_shared.CB_copied[CPERFRAME_CB_NB])
+				if (it->second.feature == Feature::GetStencil && a_shared.CB_copied[CPERFRAME_CB_NB] && a_shared.VREM_setting[SET_MISC])
 				{
 
 					//modify value for Haze
@@ -293,15 +308,16 @@ extern "C" {
 						CPERFRAME_SIZE,
 						&a_shared.dest_CB_array[CPERFRAME_CB_NB]
 					);
-
+#if _DEBUG_LOGS  
 					log_CB_injected("CPerFrame updated for fog, GCOCKPITIBL default");
+#endif
 
 					// last_replaced_shader = pipelineHandle.handle;
 					a_shared.last_feature = it->second.feature;
 				}
 
 				//CPERFRAME/haze for other shaders :  need to keep orig. value
-				if (it->second.feature == Feature::Sky && a_shared.CB_copied[CPERFRAME_CB_NB])
+				if (it->second.feature == Feature::Sky && a_shared.CB_copied[CPERFRAME_CB_NB] && a_shared.VREM_setting[SET_MISC])
 				{
 
 					//modify value for Haze
@@ -320,8 +336,9 @@ extern "C" {
 						CPERFRAME_SIZE,
 						&a_shared.dest_CB_array[CPERFRAME_CB_NB]
 					);
-
+#if _DEBUG_LOGS  
 					log_CB_injected("CPerFrame original");
+#endif
 
 					// last_replaced_shader = pipelineHandle.handle;
 					a_shared.last_feature = it->second.feature;
@@ -346,7 +363,9 @@ extern "C" {
 						CPERFRAME_SIZE,
 						&a_shared.dest_CB_array[CPERFRAME_CB_NB]
 					);
+#if _DEBUG_LOGS  
 					log_CB_injected("CPerFrame for GCOCKPITIBL");
+#endif
 
 					// last_replaced_shader = pipelineHandle.handle;
 					a_shared.last_feature = it->second.feature;

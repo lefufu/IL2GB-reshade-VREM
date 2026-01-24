@@ -89,15 +89,17 @@ extern "C" {
 			last_RTV_saved.RV = rtvs[0];
 			last_RTV_saved.width = src_resource_desc.texture.width;
 			last_RTV_saved.height = src_resource_desc.texture.height;
-			
+#if _DEBUG_LOGS  			
 			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
-			
+#endif			
 		}
 
 		// log for shader hunting
 		if (g_shared_state->shader_hunter)
 		{
+#if _DEBUG_LOGS  
 			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
+#endif
 		}
 	}
 #ifdef _DEBUG

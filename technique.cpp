@@ -95,14 +95,15 @@ int default_preprocessor(effect_runtime* runtime, std::string name, float defaul
         {
             runtime->set_preprocessor_definition(name.c_str(), std::to_string(rounded).c_str());
             result = 1;
-
+#if _DEBUG_LOGS
             log_preprocessor(name, defaultValue, update, exists, parsed, false, 2, display_to_use);
-
+#endif
         }
         else
         {
+#if _DEBUG_LOGS
             log_preprocessor(name, defaultValue, update, exists, parsed, false, 3, display_to_use);
-
+#endif
         }
 
     }
@@ -111,9 +112,9 @@ int default_preprocessor(effect_runtime* runtime, std::string name, float defaul
         // create preprocessor definition
         runtime->set_preprocessor_definition(name.c_str(), std::to_string(defaultValue).c_str());
         result = 1;
-
+#if _DEBUG_LOGS
         log_preprocessor(name, defaultValue, update, exists, parsed, false, 1, display_to_use);
-
+#endif
     }
 
     return result;
@@ -273,9 +274,10 @@ void enumerateTechniques(effect_runtime* runtime)
 
                 // add the technique in the vector
                 a_shared.technique_vector.push_back({ technique, name, eff_name , technique_status, QV_target });
-
+#if _DEBUG_LOGS
                 //log 
                 log_technique_info(rt, technique, name, eff_name, technique_status, QV_target, has_depth_or_stencil);
+#endif
 
             }
             // log_technique_info(rt, technique, name, eff_name, technique_status, -1, false);
@@ -382,7 +384,9 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
             g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.saved_DS[current_DS_handle].texresource_view_depth, a_shared.saved_DS[current_DS_handle].texresource_view_depth);
             // update STENCIL texture
             g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.saved_DS[current_DS_handle].texresource_view_stencil, a_shared.saved_DS[current_DS_handle].texresource_view_stencil);
+#if _DEBUG_LOGS
             log_export_texture(display_to_use);
+#endif
         }
 
         // render all activated techniques if not 2D mirror or in 2D (reshade is already rendering the effect) 
@@ -390,14 +394,7 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
         {
             for (int i = 0; i < a_shared.technique_vector.size(); ++i)
             {
-
-                if (g_shared_state->debug && flag_capture && a_shared.render_effect)
-                {
-                    std::stringstream s;
-                    s << " *******  render_effect : i= " << i << "; ";
-                    reshade::log::message(reshade::log::level::info, s.str().c_str());
-                }
-                
+               
                 bool buffer_exported = false;
 
                 // render if QV target are relevant for the technique 
@@ -436,7 +433,9 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
                     {
                         // engage effect (will be compiled at the first launch)
                         g_shared_state->runtime->render_technique(a_shared.technique_vector[i].technique, cmd_list, last_RTV_saved.RV, last_RTV_saved.RV);
+#if _DEBUG_LOGS
                         log_effect(a_shared.technique_vector[i], cmd_list, last_RTV_saved.RV);
+#endif
                     }
                 }
             }

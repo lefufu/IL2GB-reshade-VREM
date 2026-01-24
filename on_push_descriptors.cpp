@@ -63,7 +63,9 @@ extern "C" {
 		// log for shader hunting
 		if (g_shared_state->shader_hunter)
 		{
+#if _DEBUG_LOGS
 			log_hunting_push_descriptor(cmd_list, stages, layout, param_index, update);
+#endif
 			return;
 		}
 
@@ -89,7 +91,9 @@ extern "C" {
 			if (reinterpret_cast<const reshade::api::resource_view *>(update.descriptors)[5].handle != 0)
 			{
 				//log infos
+#if _DEBUG_LOGS
 				log_push_descriptor(stages, layout, param_index, update);
+#endif
 
 				// copy depthStencil texture into shared_data
 				bool status = copy_depthStencil(cmd_list, stages, layout, param_index, update);
@@ -125,12 +129,12 @@ extern "C" {
 		*/
 
 
-		if (g_shared_state->debug && flag_capture && a_shared.render_effect)
+		/*if (g_shared_state->debug && flag_capture && a_shared.render_effect)
 		{
 			std::stringstream s;
 			s << "addon - vrem_on_push_descriptors : a_shared.render_effect : " << a_shared.render_effect << ", a_shared.VREM_setting[SET_EFFECTS] : " << a_shared.VREM_setting[SET_EFFECTS] << ", a_shared.cb_inject_values.mapMode : " << a_shared.cb_inject_values.mapMode << ", a_shared.draw_passed : " << a_shared.draw_passed << "; ";
 			reshade::log::message(reshade::log::level::info, s.str().c_str());
-		}
+		}*/
 		
 		//handle CB modification
 		// CB cPerFrame is generated once at the beginning of the frame, it is not needed to use a dedicated shader to track the push_descriptor command

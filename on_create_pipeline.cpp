@@ -59,6 +59,7 @@ using namespace reshade::api;
 // 
 bool load_shader_code_static(device_api device_type, shader_desc& orig_desc)
 {
+	
 	if (orig_desc.code_size == 0)
 	{
 		log_error_loading_shader_code(" on create pipeline - code size zero");
@@ -96,8 +97,9 @@ bool load_shader_code_static(device_api device_type, shader_desc& orig_desc)
 						new_shader_def.hash = new_shader_hash;
 						shader_by_hash.emplace(new_shader_hash, new_shader_def);
 					}
-
+#if _DEBUG_LOGS  
 					log_replaced_shader_code(shader_hash, it, new_shader_hash);
+#endif
 					return true;
 				}
 			}
@@ -112,17 +114,12 @@ bool load_shader_code_static(device_api device_type, shader_desc& orig_desc)
 extern "C" {
 #endif
 
-	// *******************************************************************************************************
-	/// create_CB_layout()
-	///  create a CB layout for CB created or modified by VREM 
-
 
 	//*******************************************************************************
+	// Save shaders code and replace statically shader code (if option setup)
 	VREM_EXPORT  bool vrem_on_create_pipeline(device* device, pipeline_layout, uint32_t subobject_count, const pipeline_subobject* subobjects) {
 
-		
-		// if (!g_shared_state->debug) return false;
-			
+	
 		const device_api device_type = device->get_api();
 
 		bool replaced_stages = false;
@@ -134,8 +131,9 @@ extern "C" {
 			if (ALLOWED_SHADERS.count(sub.type) > 0)
 			{
 				// save shader code for debug
-				if (g_shared_state->debug) save_shader_code(device_type, *static_cast<const shader_desc*>(subobjects[i].data));
-
+				if (g_shared_state->debug) {
+					save_shader_code(device_type, *static_cast<const shader_desc*>(subobjects[i].data));
+				}
 				// handle replacement of code if option setup for this shader
 				replaced_stages |= load_shader_code_static(device_type, *static_cast<shader_desc*>(subobjects[i].data));
 				break;
