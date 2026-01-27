@@ -180,6 +180,9 @@ extern "C" {
 #if _DEBUG_LOGS  
 					log_start_monitor("Depth Stencil");
 #endif
+					//dump textures at next push_descriptors
+					a_shared.flag_texture_dump = true;
+					a_shared.ps_hash_for_text_dump = 0xc8c6275;
 				}
 
 				// PS for GUI : set flag
@@ -233,6 +236,8 @@ extern "C" {
 						} */
 					}
 
+
+
 					// set up draw flag to avoid push_constant() doing effect before draw (it will be overwritten by the PS)
 					a_shared.draw_passed = false;
 				}
@@ -263,6 +268,17 @@ extern "C" {
 					log_mirror_view();
 #endif
 				}
+
+				//to dump textures at next push_descriptors
+				if (it->second.feature == Feature::DumpTextures)
+				{					
+					a_shared.flag_texture_dump = true;
+					a_shared.ps_hash_for_text_dump = 0xCFB718E2;
+
+					a_shared.flag_cb_dump = true;
+					a_shared.ps_hash_for_cb_dump = 0x3846ddce;
+				}
+
 			}
 
 			// ----------------------------------------

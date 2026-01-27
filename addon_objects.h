@@ -162,8 +162,9 @@ enum class Feature : uint32_t
 	// VS of 2nd global color change PS
 	VS_global2 = 21,
 	// PS of sky to not modify gAtmInstensity
-	Sky = 22
-
+	Sky = 22,
+	// to trigger texture export for hunting
+	DumpTextures = 23,
 };
 
 // structure to contain actions to process shader/pipeline
@@ -342,6 +343,12 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	// fixed color pipeline for replacing any PS during hunting
 	uint64_t first_PS_pipeline_handle = 0;
 	pipeline cloned_constant_color_pipeline = {};
+
+	//for saving texture & CB
+	bool flag_texture_dump = false;
+	uint32_t ps_hash_for_text_dump = 0;
+	bool flag_cb_dump = false;
+	uint32_t ps_hash_for_cb_dump = 0;
 };
 
 extern struct addon_shared a_shared;

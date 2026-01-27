@@ -94,8 +94,13 @@ static void draw_settings(reshade::api::effect_runtime*)
     }
     ImGui::Separator();
 
-    // debug flag
+	// debug flag (unused for now)
     ImGui::Checkbox("Debug messages", &g_shared_state_l.debug);
+
+    // save pictures
+    ImGui::Checkbox("Save textures in capture frame", &g_shared_state_l.save_texture_flag);
+    ImGui::Checkbox("Save constant buffer in capture frame", &g_shared_state_l.save_cb_flag);
+    
 
     // shader hunter mode : display full framelogs and filter 1 PS
     ImGui::Checkbox("Shader hunter", &g_shared_state_l.shader_hunter);
@@ -221,10 +226,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
             buf : std::filesystem::path();
         const std::filesystem::path basePath = dllPath.parent_path();
         const std::filesystem::path addonPath = basePath / VREM_ADDON_NAME;
+
+        
+
         // intialization is doing mapping between exported VREM function and the function used in "register_event"
         // if fuction are not exported in addon there will be no call
 //#ifdef _DEBUG
         g_reloader = new VREMHotReloader(addonPath.string());
+        //copy path for saving textures or CB in addon
+        wcscpy_s(g_shared_state_l.g_vrem_base_path, basePath.wstring().c_str());
 //#endif
 #ifdef _DEBUG
         reshade::log::message(reshade::log::level::info, "VREM Loader: DEBUG MODE - Hot reload enabled");

@@ -143,8 +143,12 @@ std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{ 0xE65FAB66, Shader_Definition(action_replace_bind , Feature::NVG , L"NVG_extPS.cso", 0, {SET_NVG}) },
 	//  ** identify render target ** (VS associated with first global PS)
 	{ 0x936B2B6A, Shader_Definition(action_log , Feature::Effects , L"", 0, {SET_EFFECTS}) },
+
 	// **test constant color shader for debug**
 	{ 0xCFB718E2, Shader_Definition(action_replace , Feature::Effects , L"intro_icons.cso", 0, {SET_DEFAULT}) },
+	//to test texture dump, VS associated with welcome screen Icons PS
+	{ 0x77c784e1, Shader_Definition(action_log , Feature::DumpTextures , L"", 0, {SET_DEFAULT}) },
+	
 };
 
 //

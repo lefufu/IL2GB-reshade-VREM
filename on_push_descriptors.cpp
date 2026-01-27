@@ -49,6 +49,9 @@
 #include "addon_functions.h"
 #include "addon_logs.h"
 
+#include "export_texture.hpp"
+#include "export_CB.hpp"
+
 using namespace reshade::api;
 
 #ifdef _DEBUG
@@ -60,15 +63,51 @@ extern "C" {
 	VREM_EXPORT  void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 	{
 
+#ifdef _DEBUG
 		// log for shader hunting
 		if (g_shared_state->shader_hunter)
 		{
 #if _DEBUG_LOGS
 			log_hunting_push_descriptor(cmd_list, stages, layout, param_index, update);
 #endif
-			return;
+
+		}
+		//export textures for hunting if requested
+		if (flag_capture && a_shared.flag_texture_dump && g_shared_state->save_texture_flag && update.type == descriptor_type::shader_resource_view)
+		{
+			TextureExporter g_exporter;
+			g_exporter.export_descriptors(
+				cmd_list,
+				stages,
+				layout,
+				param_index,
+				update,
+				a_shared.ps_hash_for_text_dump,
+				a_shared.count_display
+			);
+
+			a_shared.flag_texture_dump = false;
+
 		}
 
+		if (flag_capture && a_shared.flag_cb_dump && g_shared_state->save_cb_flag && update.type == descriptor_type::constant_buffer)
+		{
+			ConstantBufferExporter cb_exporter;
+			cb_exporter.export_constant_buffers(
+				cmd_list,
+				stages,
+				layout,
+				param_index,
+				update,
+				a_shared.ps_hash_for_cb_dump,
+				a_shared.count_display,
+				true // true = export en .txt (lisible), false = .bin (binaire)
+			);
+
+			a_shared.flag_cb_dump = false;
+		}
+
+#endif
 		// to limit processing only when a tracing is setup
 		if (!a_shared.render_effect && !track_for_depthStencil && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
 		

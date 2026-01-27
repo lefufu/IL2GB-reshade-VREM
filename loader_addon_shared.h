@@ -167,4 +167,10 @@ struct SharedState {
 
 	bool init_done = false;
 
+    //for saving texture & CB
+	bool save_texture_flag = false;
+    wchar_t g_vrem_base_path[MAX_PATH] = {};
+
+    bool  save_cb_flag = false;
+    
 };

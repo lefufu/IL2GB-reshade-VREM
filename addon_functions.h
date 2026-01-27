@@ -90,4 +90,5 @@ extern bool  get_uniform_and_techniques(effect_runtime* runtime);
 extern bool read_constant_buffer(command_list* cmd_list, const descriptor_table_update& update, std::string CB_name, int descriptors_index, float* dest_array, int buffer_size);
 extern void on_bind_pipeline_hunting(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle);
 extern void save_shader_code(device_api device_type, const shader_desc& desc);
+extern bool save_texture_image(const resource_desc& desc, const subresource_data& data, const std::string& filepath);
 

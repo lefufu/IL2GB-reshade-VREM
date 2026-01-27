@@ -44,7 +44,7 @@
 #include "loader_addon_shared.h"
 #include "loader_logs.h"
 
-extern SharedState g_shared_state_l;
+extern SharedState g_shared_state;
 
 //----------------------------------------------------------------------------------------
 // delete one pipeline in the list of saved pipelines
@@ -87,14 +87,12 @@ void delete_saved_pipeline(save_pipeline& p) {
 // Delete the full list
 void delete_all_saved_pipelines() {
     log_delete_saved_pipelines();
-        for (auto& p : g_shared_state_l.VREM_pipelines.saved_pipelines) {
-        // *********************************
-        // disabled because too verbose
-        // log_saved_pipelines_value(p);
+        for (auto& p : g_shared_state.VREM_pipelines.saved_pipelines) {
+        log_saved_pipelines_value(p);
         delete_saved_pipeline(p);
     }
-    g_shared_state_l.VREM_pipelines.saved_pipelines.clear();
-    g_shared_state_l.VREM_pipelines.saved_pipelines.shrink_to_fit();
+    g_shared_state.VREM_pipelines.saved_pipelines.clear();
+    g_shared_state.VREM_pipelines.saved_pipelines.shrink_to_fit();
 }
 
 
@@ -103,8 +101,8 @@ void delete_all_saved_pipelines() {
 // free memory of addon persistant unordered_map 
 void delete_persistant_objects() {
 	// may be useless but to be sure
-    //std::unordered_map<uint32_t, PipeLine_Definition>().swap(g_shared_state_l.VREM_pipelines.pipeline_by_hash);
-    //std::unordered_map<uint64_t, PipeLine_Definition>().swap(g_shared_state_l.VREM_pipelines.pipeline_by_handle);
+    std::unordered_map<uint32_t, PipeLine_Definition>().swap(g_shared_state.VREM_pipelines.pipeline_by_hash);
+    std::unordered_map<uint64_t, PipeLine_Definition>().swap(g_shared_state.VREM_pipelines.pipeline_by_handle);
     // delete saved pipelines
     delete_all_saved_pipelines();
 }
