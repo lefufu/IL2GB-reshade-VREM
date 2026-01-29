@@ -20,6 +20,7 @@
 #include <vector>
 #include <filesystem>
 #include "stb_image_write.h"
+#include "addon_objects.h"
 
 #if RESHADE_ADDON_TEXTURE_SAVE_ENABLE_HASH_SET
 #include <set>
@@ -30,12 +31,14 @@ using namespace reshade::api;
 static std::filesystem::path make_texture_file_path(uint32_t texture_hash)
 {
 	// Prepend executable directory to image files
-	wchar_t file_prefix[MAX_PATH] = L"";
+	/* wchar_t file_prefix[MAX_PATH] = L"";
 	GetModuleFileNameW(nullptr, file_prefix, ARRAYSIZE(file_prefix));
 
 	std::filesystem::path path = file_prefix;
-	path = path.parent_path();
-	path /= RESHADE_ADDON_TEXTURE_SAVE_DIR;
+	path = path.parent_path(); */
+
+	std::filesystem::path  path = g_shared_state->g_vrem_base_path;
+	path /= RESHADE_ADDON_TEXTURE_SAVE_DIR; 
 
 	// Ensure target directory exists
 	if (!std::filesystem::exists(path))

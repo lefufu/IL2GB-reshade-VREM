@@ -72,6 +72,7 @@ extern "C" {
 #endif
 
 		}
+
 		//export textures for hunting if requested
 		if (flag_capture && a_shared.flag_texture_dump && g_shared_state->save_texture_flag && update.type == descriptor_type::shader_resource_view)
 		{
@@ -85,8 +86,6 @@ extern "C" {
 				a_shared.ps_hash_for_text_dump,
 				a_shared.count_display
 			);
-
-			a_shared.flag_texture_dump = false;
 
 		}
 
@@ -104,7 +103,6 @@ extern "C" {
 				true // true = export en .txt (lisible), false = .bin (binaire)
 			);
 
-			a_shared.flag_cb_dump = false;
 		}
 
 #endif

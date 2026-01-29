@@ -116,4 +116,14 @@ extern void log_shader_marked();
 extern void log_hunting_push_descriptor(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update);
 extern void log_replaced_shader_code(uint32_t hash, std::unordered_map<uint32_t, Shader_Definition>::iterator it, uint32_t newHash);
 extern void log_shader_def_list();
+extern void log_error_staging();
+extern void log_error_map_staging();
+extern void log_error_map_data();
+extern void log_exported_texture(std::string text_path);
+extern void log_error_not_buffer();
+extern void log_error_CB_size();
+extern void log_error_CB_tooLarge();
+extern void log_error_create_file(std::string path);
+extern void log_error_create_ressource();
+extern void log_exported_CB(std::string path);
 #endif

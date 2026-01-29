@@ -87,6 +87,9 @@
     <ClCompile Include="save_texture_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="save_render_target.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VREM_settings.h">

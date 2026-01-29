@@ -88,6 +88,7 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 	uint64_t last_handle;
 
 	filtered_pipeline.reserve(g_shared_state->VREM_pipelines.saved_pipelines.size());
+	std::optional<Shader_Definition> shader_def_opt;
 
 	// parse the list of saved pipelines to identify which one to keep regarding mod settings
 	for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines)
@@ -109,13 +110,14 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 			// pipeline is already in the list, do nothing
 			// ***************************************************************                   
 			// removed because too verbose !
+			// remove crash in release before moving shader_def_opt out of te loop....
 			// log_pipeline_filtered_skipped(p.pipeline.handle);
 #endif
 		}
 		else {
 			// add pipeline in the filtered list
 
-			auto shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
+			shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
 
 			if (shader_def_opt.has_value())
 			{

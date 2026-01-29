@@ -52,6 +52,7 @@
 #include <vector>
 
 #include "to_string.hpp"
+#include "config.hpp"
 
 namespace fs = std::filesystem;
 
@@ -59,6 +60,7 @@ extern SharedState* g_shared_state;
 
 #define DELAY_BETWEEN_CB_EXPORT_MS 50
 
+#ifdef _DEBUG
 class ConstantBufferExporter {
 private:
     uint32_t draw_call_counter = 0;
@@ -100,8 +102,6 @@ private:
         const std::string& filepath
     ) {
         using namespace reshade::api;
-
-        reshade::log::message(reshade::log::level::info, "in export as bin");
         
         // Récupérer les informations du constant buffer
         resource_desc desc = device->get_resource_desc(cb_buffer.buffer);
@@ -109,20 +109,20 @@ private:
 
 
         if (desc.type != resource_type::buffer) {
-            reshade::log::message(reshade::log::level::error, "Resource is not a buffer");
+            log_error_not_buffer();
             return false;
         }
 
         // Vérifier que la taille est valide
         if (desc.buffer.size == 0) {
-            reshade::log::message(reshade::log::level::warning, "Constant buffer has zero size");
+            void log_error_CB_size();
             return false;
         }
 
         // Limiter la taille pour éviter les problèmes
         const uint64_t MAX_CB_SIZE = 65536; // 64 KB
         if (desc.buffer.size > MAX_CB_SIZE) {
-            reshade::log::message(reshade::log::level::warning, "Constant buffer too large, skipping");
+            log_error_CB_tooLarge();
             return false;
         }
 
@@ -136,7 +136,7 @@ private:
 
         resource staging_buffer = {};
         if (!device->create_resource(staging_desc, nullptr, resource_usage::copy_dest, &staging_buffer)) {
-            reshade::log::message(reshade::log::level::error, "Failed to create staging buffer");
+            log_error_staging();
             return false;
         }
 
@@ -154,14 +154,14 @@ private:
             map_access::read_only,
             &mapped_data
         )) {
-            reshade::log::message(reshade::log::level::error, "Failed to map staging buffer");
+            log_error_map_staging();
             device->destroy_resource(staging_buffer);
             return false;
         }
 
         // Vérifier que les données mappées sont valides
         if (!mapped_data) {
-            reshade::log::message(reshade::log::level::error, "Mapped data is null");
+            log_error_map_data();
             device->unmap_buffer_region(staging_buffer);
             device->destroy_resource(staging_buffer);
             return false;
@@ -170,7 +170,9 @@ private:
         // Créer le fichier binaire
         std::ofstream file(filepath, std::ios::binary);
         if (!file.is_open()) {
-            reshade::log::message(reshade::log::level::error, ("Failed to open file: " + filepath).c_str());
+
+            log_error_create_file(filepath);
+
             device->unmap_buffer_region(staging_buffer);
             device->destroy_resource(staging_buffer);
             return false;
@@ -202,20 +204,8 @@ private:
     ) {
         using namespace reshade::api;
         
-        reshade::log::message(reshade::log::level::info, "in export as text");
-
         // Récupérer les informations du constant buffer
         resource_desc desc = device->get_resource_desc(cb_buffer.buffer);
-
-        if (desc.type != resource_type::buffer) {
-            reshade::log::message(reshade::log::level::info, "desc.type != resource_type::buffer");
-            return false;
-        }
-
-        if (desc.buffer.size == 0 || desc.buffer.size > 65536) {
-            reshade::log::message(reshade::log::level::info, "desc.buffer.size == 0 || desc.buffer.size > 65536");
-            return false;
-        }
 
         // Créer un buffer de staging
         resource_desc staging_desc = {};
@@ -228,7 +218,7 @@ private:
 
         resource staging_buffer = {};
         if (!device->create_resource(staging_desc, nullptr, resource_usage::copy_dest, &staging_buffer, nullptr)) {
-            reshade::log::message(reshade::log::level::info, ">create_resource KO");
+            log_error_create_ressource();
             return false;
         }
 
@@ -241,7 +231,7 @@ private:
         void* mapped_data = nullptr;
         if (!device->map_buffer_region(staging_buffer, 0, UINT64_MAX, map_access::read_only, &mapped_data)) {
             device->destroy_resource(staging_buffer);
-            reshade::log::message(reshade::log::level::info, "map_buffer_region KO");
+            log_error_map_staging();
             return false;
         }
 
@@ -289,7 +279,7 @@ private:
             file << ")\n";
         }
 
-        // Ajouter dump hexadécimal
+        /*
         file << "\nHexadecimal dump:\n";
         const uint8_t* byte_data = reinterpret_cast<const uint8_t*>(mapped_data);
         for (uint64_t i = 0; i < desc.buffer.size; i += 16) {
@@ -299,11 +289,12 @@ private:
             }
             file << "\n";
         }
+        */
 
         file.close();
-        std::this_thread::sleep_for(std::chrono::milliseconds(DELAY_BETWEEN_CB_EXPORT_MS));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(DELAY_BETWEEN_CB_EXPORT_MS));
 
-        // Nettoyer
+		// cleanup
         device->unmap_buffer_region(staging_buffer);
         device->destroy_resource(staging_buffer);
 
@@ -311,7 +302,6 @@ private:
     }
 
 public:
-    // Fonction principale à appeler depuis on_push_descriptors
     void export_constant_buffers(
         reshade::api::command_list* cmd_list,
         reshade::api::shader_stage stages,
@@ -324,26 +314,24 @@ public:
     ) {
         using namespace reshade::api;
 
-        reshade::log::message(reshade::log::level::info, "export_constant_buffers called");
-
-        // Vérifier que c'est bien un constant buffer
         if (update.type != descriptor_type::constant_buffer) {
             return;
         }
 
-        // Obtenir le device
         device* dev = cmd_list->get_device();
 
-        // Timestamp
         uint64_t timestamp = get_reshade_timestamp();
 
-        // Créer le dossier de sortie
-        fs::path output_dir = fs::path(g_shared_state->g_vrem_base_path) / "reshade_cb_dumps";
-        if (!fs::exists(output_dir)) {
-            fs::create_directories(output_dir);
+		// create output directory if not exists
+
+        std::filesystem::path  path = g_shared_state->g_vrem_base_path;
+        path /= VREM_CB_SAVE_DIR;
+
+        if (!fs::exists(path)) {
+            fs::create_directories(path);
         }
 
-        // Parcourir tous les constant buffers dans la table
+		// browse all constant buffers in the update
         for (uint32_t i = 0; i < update.count; ++i) {
             buffer_range buff = static_cast<const buffer_range*>(update.descriptors)[i];
 
@@ -359,8 +347,7 @@ public:
                 extension
             );
 
-            fs::path filepath = output_dir / filename;
-            reshade::log::message(reshade::log::level::info, "call export");
+            fs::path filepath = path / filename;
 
             // Exporter le constant buffer
             bool success = false;
@@ -372,11 +359,10 @@ public:
             }
 
             if (success) {
-                reshade::log::message(
-                    reshade::log::level::info,
-                    ("Exported constant buffer: " + filepath.string()).c_str()
-                );
+                log_exported_CB(filepath.string());
+
             }
         }
     }
 };
+#endif

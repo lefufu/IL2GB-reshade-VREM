@@ -119,7 +119,8 @@ extern "C" {
 	// Save shaders code and replace statically shader code (if option setup)
 	VREM_EXPORT  bool vrem_on_create_pipeline(device* device, pipeline_layout, uint32_t subobject_count, const pipeline_subobject* subobjects) {
 
-	
+		// reshade::log::message(reshade::log::level::info, "Addon - vrem_on_create_pipeline");
+
 		const device_api device_type = device->get_api();
 
 		bool replaced_stages = false;

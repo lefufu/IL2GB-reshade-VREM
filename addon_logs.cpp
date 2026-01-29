@@ -956,3 +956,70 @@ void log_shader_def_list()
 		}
 	}	
 }
+
+void log_error_staging()
+{
+	reshade::log::message(reshade::log::level::error, "addon - Failed to create staging texture/CB");
+}
+
+void log_error_map_staging()
+{
+	reshade::log::message(reshade::log::level::error, "addon - Failed to map staging texture/CB");
+}
+
+void log_error_map_data()
+{
+	reshade::log::message(reshade::log::level::error, "addon - Mapped data is null");
+}
+
+
+void log_exported_texture(std::string text_path)
+{
+	
+	if (g_shared_state->debug_log)
+	{
+		std::stringstream s;
+		s << "addon - Exported texture: " << text_path;
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+
+}
+
+void log_error_not_buffer()
+{
+	reshade::log::message(reshade::log::level::error, "Addon - Resource is not a buffer");
+}
+
+void log_error_CB_size()
+{
+	reshade::log::message(reshade::log::level::error, "Addon - Constant buffer has zero size");
+}
+
+void log_error_CB_tooLarge()
+{
+	reshade::log::message(reshade::log::level::error, "Addon - Constant buffer too large, skipping");
+}
+
+void log_error_create_file(std::string path)
+{
+	std::stringstream s;
+	s << "Addon - failed to create file for exporting CB/Texture : " << path;
+	reshade::log::message(reshade::log::level::info, s.str().c_str());
+}
+
+void log_error_create_ressource()
+{
+	reshade::log::message(reshade::log::level::error, "Addon - create ressource KO");
+}
+
+void log_exported_CB(std::string CB_path)
+{
+
+	if (g_shared_state->debug_log)
+	{
+		std::stringstream s;
+		s << "addon - Exported CB: " << CB_path;
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+
+}

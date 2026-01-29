@@ -64,10 +64,17 @@ extern "C" {
 	VREM_EXPORT void vrem_on_bind_render_targets_and_depth_stencil(command_list* cmd_list, uint32_t count, const resource_view* rtvs, resource_view dsv)
 	{
 
-		// copy render target if tracking
-	// BUG: using this line with openknweeboard is blocking game !!!!
-	// 	if (shared_data.track_for_render_target && shared_data.count_display > -1 && !shared_data.cb_inject_values.mapMode && count > 0 && (shared_data.effects_feature || shared_data.texture_needed))
-		
+#ifdef _DEBUG
+		// Sauvegarder le premier render target
+		if (count > 0 && rtvs != nullptr && flag_capture)
+		{
+			a_shared.g_current_rtv = rtvs[0];
+		}
+
+#endif
+		// reshade::log::message(reshade::log::level::info, "Addon - vrem_on_bind_render_targets_and_depth_stencil");
+
+		// copy render target if tracking	
 		if (a_shared.track_for_render_target && a_shared.count_display > -1 && !a_shared.cb_inject_values.mapMode && count > 0 && (a_shared.VREM_setting[SET_EFFECTS]))
 		{
 

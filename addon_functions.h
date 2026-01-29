@@ -91,4 +91,5 @@ extern bool read_constant_buffer(command_list* cmd_list, const descriptor_table_
 extern void on_bind_pipeline_hunting(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle);
 extern void save_shader_code(device_api device_type, const shader_desc& desc);
 extern bool save_texture_image(const resource_desc& desc, const subresource_data& data, const std::string& filepath);
+extern bool save_render_target(command_list* cmd_list, uint32_t fisrthash);
 

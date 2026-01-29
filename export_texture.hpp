@@ -58,7 +58,7 @@
 namespace fs = std::filesystem;
 
 extern SharedState* g_shared_state;
-
+#ifdef _DEBUG
 class TextureExporter {
 private:
     uint32_t draw_call_counter = 0;
@@ -92,7 +92,7 @@ private:
         return oss.str();
     }
 
-    // Sauvegarder une texture en DDS
+    // save a texture
     bool save_texture(
         reshade::api::device* device,
         reshade::api::command_list* cmd_list,
@@ -101,14 +101,14 @@ private:
     ) {
         using namespace reshade::api;
 
-        // Récupérer les informations de la texture source
+        // get source texture info
         resource_desc desc = device->get_resource_desc(texture);
 
-        if (desc.type != resource_type::texture_2d) {
-            return false; // Supporte uniquement les textures 2D
-        }
+        /*if (desc.type != resource_type::texture_2d) {
+			return false; // only 2D texture supported
+        }*/
 
-        // Créer une texture de staging pour la copie CPU
+		// create a staging texture
         resource_desc staging_desc = desc;
         staging_desc.usage = resource_usage::copy_dest;
         staging_desc.heap = memory_heap::gpu_to_cpu;
@@ -116,21 +116,20 @@ private:
 
         resource staging_texture = {};
         if (!device->create_resource(staging_desc, nullptr, resource_usage::copy_dest, &staging_texture)) {
-            reshade::log::message(reshade::log::level::error, "Failed to create staging texture");
+            log_error_staging();
             return false;
         }
 
-        // Copier la texture GPU vers la texture de staging
+		// Copier source texture to staging texture
         cmd_list->barrier(texture, resource_usage::shader_resource, resource_usage::copy_source);
         cmd_list->copy_resource(texture, staging_texture);
         cmd_list->barrier(texture, resource_usage::copy_source, resource_usage::shader_resource);
 
-        // Attendre que la copie soit terminée
-        // Note: Dans un vrai addon, vous devriez utiliser une fence ou attendre la fin de la frame
-        //device->wait_idle();
+		// wait idle is not working here ?
+        //cmd_list->wait_idle();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-        // Mapper la texture de staging
+		// Map staging texture to read data
         subresource_data mapped_data = {};
         if (!device->map_texture_region(
             staging_texture,
@@ -139,15 +138,15 @@ private:
             map_access::read_only,
             &mapped_data
         )) {
-            reshade::log::message(reshade::log::level::error, "Failed to map staging texture");
+            log_error_map_staging();
             device->destroy_resource(staging_texture);
             return false;
         }
 
 
-        // Vérifier que les données mappées sont valides
+		// chek mapped data
         if (!mapped_data.data) {
-            reshade::log::message(reshade::log::level::error, "Mapped data is null");
+            log_error_map_data();
             device->unmap_texture_region(staging_texture, 0);
             device->destroy_resource(staging_texture);
             return false;
@@ -156,71 +155,7 @@ private:
 		// save texture image using reshade function
         bool status = save_texture_image(desc, mapped_data, filepath);
 
-        /*
-        // Créer le fichier DDS
-        std::ofstream file(filepath, std::ios::binary);
-        if (!file.is_open()) {
-            device->unmap_texture_region(staging_texture, 0);
-            device->destroy_resource(staging_texture);
-            return false;
-        }
-
-        // En-tête DDS simplifié (à adapter selon le format exact)
-        struct DDS_HEADER {
-            uint32_t magic = 0x20534444; // "DDS "
-            uint32_t size = 124;
-            uint32_t flags = 0x1 | 0x2 | 0x4 | 0x1000; // CAPS, HEIGHT, WIDTH, PIXELFORMAT
-            uint32_t height;
-            uint32_t width;
-            uint32_t pitch;
-            uint32_t depth = 0;
-            uint32_t mipMapCount = 1;
-            uint32_t reserved1[11] = {};
-            // DDSPIXELFORMAT
-            struct {
-                uint32_t size = 32;
-                uint32_t flags = 0x41; // DDPF_RGB | DDPF_ALPHAPIXELS
-                uint32_t fourCC = 0;
-                uint32_t rgbBitCount = 32;
-                uint32_t rBitMask = 0x00FF0000;
-                uint32_t gBitMask = 0x0000FF00;
-                uint32_t bBitMask = 0x000000FF;
-                uint32_t aBitMask = 0xFF000000;
-            } ddspf;
-            uint32_t caps = 0x1000; // DDSCAPS_TEXTURE
-            uint32_t caps2 = 0;
-            uint32_t caps3 = 0;
-            uint32_t caps4 = 0;
-            uint32_t reserved2 = 0;
-        } header;
-
-        header.width = desc.texture.width;
-        header.height = desc.texture.height;
-        header.pitch = mapped_data.row_pitch;
-
-        reshade::log::message(reshade::log::level::info, "start writing");
-
-        //if (desc.texture.width != 0 && desc.texture.height != 0)
-        {
-            // Écrire l'en-tête
-            file.write(reinterpret_cast<char*>(&header), sizeof(header));
-            reshade::log::message(reshade::log::level::info, "header written");
-
-            // Écrire les données de la texture
-            const uint8_t* src = static_cast<const uint8_t*>(mapped_data.data);
-            for (uint32_t y = 0; y < desc.texture.height; ++y) {
-                file.write(
-                    reinterpret_cast<const char*>(src + y * mapped_data.row_pitch),
-                    desc.texture.width * 4 // Supposons RGBA 8 bits
-                );
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(DELAY_BETWEEN_TEXTURE_EXPORT_MS));
-        }
-        reshade::log::message(reshade::log::level::info, "close file");
-        file.close();
-        
-        */
-        // Nettoyer
+		// cleanup
         device->unmap_texture_region(staging_texture, 0);
         device->destroy_resource(staging_texture);
 
@@ -228,7 +163,7 @@ private:
     }
 
 public:
-    // Fonction principale à appeler depuis on_push_descriptors
+    // main function to call
     void export_descriptors(
         reshade::api::command_list* cmd_list,
         reshade::api::shader_stage stages,
@@ -245,23 +180,15 @@ public:
 
         // Timestamp ReShade
         uint64_t timestamp = get_reshade_timestamp();
-        
-        
-        // Créer le dossier de sortie si nécessaire
-        /*
-        fs::path output_dir = "reshade_texture_dumps";
-        if (!fs::exists(output_dir)) {
-            fs::create_directories(output_dir);
-        }*/
-        
+                
+        std::filesystem::path  path = g_shared_state->g_vrem_base_path;
+        path /= RESHADE_ADDON_TEXTURE_SAVE_DIR;
 
-        // fs::path output_dir = fs::path(g_shared_state->g_vrem_base_path) / RESHADE_ADDON_TEXTURE_SAVE_DIR;
-        fs::path output_dir = RESHADE_ADDON_TEXTURE_SAVE_DIR;
-        if (!fs::exists(output_dir)) {
-            fs::create_directories(output_dir);
+        if (!fs::exists(path)) {
+            fs::create_directories(path);
         }
 
-        // Parcourir tous les descripteurs dans la table
+        // read all desriptors
         for (uint32_t i = 0; i < update.count; ++i) {
             // Vérifier si c'est une texture (SRV)
             if (update.type == descriptor_type::shader_resource_view) {
@@ -269,12 +196,11 @@ public:
 
                 if (srv.handle == 0) continue;
 
-                // Obtenir la ressource depuis la vue
                 resource tex = dev->get_resource_from_view(srv);
 
                 if (tex.handle == 0) continue;
 
-                // Générer le nom de fichier
+				// generate filename
                 std::string filename = generate_filename(
                     ps_hash,
                     vr_draw_num,
@@ -282,17 +208,16 @@ public:
                     i // Index de la texture dans la table
                 );
 
-                fs::path filepath = output_dir / filename;
+                fs::path filepath = path / filename;
 
                 // Exporter la texture
                 if (save_texture(dev, cmd_list, tex, filepath.string())) {
-                    reshade::log::message(
-                        reshade::log::level::info,
-                        ("Exported texture: " + filepath.string()).c_str()
-                    );
+
+                    log_exported_texture(filepath.string());
                 }
             }
         }
     }
 };
+#endif
 

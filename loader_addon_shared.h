@@ -133,6 +133,7 @@ struct SharedState {
     std::chrono::high_resolution_clock::time_point s_last_time_point;
     // to know when overlay is active and so update uniforms
     bool overlay_is_open = false;
+
     // debug flag
 #ifdef _DEBUG
     bool debug = true;
@@ -172,5 +173,7 @@ struct SharedState {
     wchar_t g_vrem_base_path[MAX_PATH] = {};
 
     bool  save_cb_flag = false;
+
+	bool  save_rt_flag = false;
     
 };

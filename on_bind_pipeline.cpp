@@ -56,6 +56,8 @@
 
 using namespace reshade::api;
 
+static uint32_t last_pipeline_hash_PS = 0;
+
 #ifdef _DEBUG
 extern "C" {
 #endif
@@ -64,10 +66,30 @@ extern "C" {
 	VREM_EXPORT void vrem_on_bind_pipeline(command_list* commandList, pipeline_stage stages, pipeline pipelineHandle)
 	{
 
+		// reshade::log::message(reshade::log::level::info, "Addon - vrem_on_bind_pipeline");
 		
 		// optimize performance by reducing processing to ALLOWED_STAGES
 		if ((static_cast<uint32_t>(stages) & static_cast<uint32_t>(ALLOWED_STAGES)) == 0) return;
-		
+
+#ifdef _DEBUG		
+		//for rt dump engage dump at next draw only if change of PS
+		if (stages == pipeline_stage::pixel_shader && g_shared_state->save_rt_flag && flag_capture)
+		{
+
+			save_pipeline* pipe = find__pipeline_per_handle(pipelineHandle.handle);
+
+			//if (pipe->hash[0] != a_shared.last_pipeline_hash_PS)
+			if (pipe->hash[0] != last_pipeline_hash_PS)
+			{
+				uint32_t fisrthash = pipe->hash[0];
+				
+				save_render_target(commandList, last_pipeline_hash_PS);
+				//a_shared.last_pipeline_hash_PS = pipe->hash[0];
+				last_pipeline_hash_PS = pipe->hash[0];
+			}
+
+		}
+
 		// store handle if shader hunting and PS, replace pipleine or skip the draw call
 		if (g_shared_state->shader_hunter)
 		{
@@ -76,7 +98,7 @@ extern "C" {
 			// skip processing if shader hunting
 			return;
 		}
-
+#endif
 		// identify if the pipeline is to be processed
 		auto it = filtered_pipeline.find(pipelineHandle.handle);
 
@@ -269,16 +291,6 @@ extern "C" {
 #endif
 				}
 
-				//to dump textures at next push_descriptors
-				if (it->second.feature == Feature::DumpTextures)
-				{					
-					a_shared.flag_texture_dump = true;
-					a_shared.ps_hash_for_text_dump = 0xCFB718E2;
-
-					a_shared.flag_cb_dump = true;
-					a_shared.ps_hash_for_cb_dump = 0x3846ddce;
-				}
-
 			}
 
 			// ----------------------------------------
@@ -387,6 +399,27 @@ extern "C" {
 					a_shared.last_feature = it->second.feature;
 				}
 
+			}
+
+			// ----------------------------------------
+			//to dump textures at next push_descriptors
+			if (it->second.action & action_dump)
+			{
+				//object to dump choosen in GUI
+				a_shared.flag_texture_dump = true;
+				a_shared.flag_cb_dump = true;
+
+				//to give shader ID for dump
+				if (it->second.feature == Feature::Testing)
+				{
+					a_shared.ps_hash_for_text_dump = 0xCFB718E2;
+					a_shared.ps_hash_for_cb_dump = 0xCFB718E2;
+				}
+				if (it->second.feature == Feature::GUI)
+				{
+					a_shared.ps_hash_for_cb_dump = 0x3846ddce;
+					a_shared.ps_hash_for_text_dump = 0x3846ddce;
+				}
 			}
 
 			// trace current feature for next call

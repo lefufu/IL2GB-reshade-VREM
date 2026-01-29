@@ -69,6 +69,10 @@ void intialize_counters()
 
     a_shared.last_feature = Feature::Null;
 
+	a_shared.draw_counter = 0;
+
+    a_shared.last_pipeline_hash_PS = 0;
+
     // a_shared.CB_copied[CPERFRAME_CB_NB] = false;
 
     // initialize flags for texture copy
@@ -87,8 +91,7 @@ extern "C" {
     //*******************************************************************************
     VREM_EXPORT void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
     {
-
-        
+       
         // not used, 
         reshade::api::device* device = runtime->get_device();
         g_shared_state->device = device;
@@ -125,6 +128,7 @@ extern "C" {
 #endif
         } 
         
+
         // Fin de capture seulement si une frame réelle a commencé
         if (flag_capture && frame_started)
         {
@@ -155,8 +159,10 @@ extern "C" {
             log_shader_def_list();
 #endif
 
+#ifdef _DEBUG
 			// if shader hunter mode : clean list of PS
 			if (g_shared_state->shader_hunter)  g_shared_state->PSshader_list.clear();
+#endif
         } 
 
 		//force capture for testing

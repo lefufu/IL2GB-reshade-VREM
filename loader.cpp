@@ -100,6 +100,7 @@ static void draw_settings(reshade::api::effect_runtime*)
     // save pictures
     ImGui::Checkbox("Save textures in capture frame", &g_shared_state_l.save_texture_flag);
     ImGui::Checkbox("Save constant buffer in capture frame", &g_shared_state_l.save_cb_flag);
+    ImGui::Checkbox("Save render target in capture frame", &g_shared_state_l.save_rt_flag);
     
 
     // shader hunter mode : display full framelogs and filter 1 PS

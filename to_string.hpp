@@ -616,7 +616,8 @@ static const ActionFlag action_flags[] = {
 	{ 0b00010000, "injectText" },
 	{ 0b00100000, "count" },
 	{ 0b01000000, "replace_bind" },
-	{ 0b10000000, "injectCB" }
+	{ 0b10000000, "injectCB" },
+	{ 0b100000000, "dump" }
 };
 
 inline auto to_string(const uint32_t action)
@@ -658,7 +659,6 @@ inline auto to_string(Feature feature) {
 	case Feature::Effects: return "Effects";
 	case Feature::VS_global2: return "VS_global2";
 	case Feature::Sky: return "Sky";
-	case Feature::DumpTextures: return "DumpTextures";
 		
 	}
 }

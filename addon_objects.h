@@ -108,21 +108,23 @@ constexpr const wchar_t* CONSTANT_COLOR_NAME = L"full_red.cso";
 //mod actions (not as a class for easier use of &)
 // 
 //replace = the shader will be replaced by a modded one during init
-static const uint32_t action_replace = 0b00000001;
+static const uint32_t action_replace = 0b000000001;
 // skip : the shader is to be skipped after a count of draw
-static const uint32_t action_skip = 0b00000010;
+static const uint32_t action_skip = 0b000000010;
 //log : the shader will trigger logging of resources 
-static const uint32_t action_log = 0b00000100;
+static const uint32_t action_log = 0b000000100;
 //identify : the shader will be used to identify a configuration of the game (eg VR,..)
-static const uint32_t action_identify = 0b00001000;
+static const uint32_t action_identify = 0b000001000;
 //inject Texture : the shader need to have textures pushed as additional parameters 
-static const uint32_t action_injectText = 0b00010000;
+static const uint32_t action_injectText = 0b000010000;
 //inject count : the shader will trigger call count 
-static const uint32_t action_count = 0b00100000;
+static const uint32_t action_count = 0b000100000;
 //replace_bind = the shader will be replaced by a modded one during bind
-static const uint32_t action_replace_bind = 0b01000000;
+static const uint32_t action_replace_bind = 0b001000000;
 //inject constant buffer
-static const uint32_t action_injectCB = 0b10000000;
+static const uint32_t action_injectCB = 0b010000000;
+// dump texture or resources (for hunting in debug version
+static const uint32_t action_dump = 0b100000000;
 
 // mod features
 enum class Feature : uint32_t
@@ -162,9 +164,7 @@ enum class Feature : uint32_t
 	// VS of 2nd global color change PS
 	VS_global2 = 21,
 	// PS of sky to not modify gAtmInstensity
-	Sky = 22,
-	// to trigger texture export for hunting
-	DumpTextures = 23,
+	Sky = 22
 };
 
 // structure to contain actions to process shader/pipeline
@@ -349,6 +349,11 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	uint32_t ps_hash_for_text_dump = 0;
 	bool flag_cb_dump = false;
 	uint32_t ps_hash_for_cb_dump = 0;
+
+	//for dumping all render targets
+	resource_view g_current_rtv = {};
+	uint32_t draw_counter = 0;
+	uint32_t last_pipeline_hash_PS = 0;
 };
 
 extern struct addon_shared a_shared;
