@@ -64,6 +64,7 @@ extern SharedState* g_shared_state;
 static const int SETTINGS_SIZE = 11;
 
 constexpr uint8_t SET_DEFAULT = 0;
+//will have to be cleaned up later
 constexpr uint8_t SET_ROTOR = 1;
 constexpr uint8_t SET_IHADSS = 2;
 constexpr uint8_t SET_COLOR = 3;
@@ -74,4 +75,5 @@ constexpr uint8_t SET_NVG = 7;
 constexpr uint8_t SET_EFFECTS = 8;
 constexpr uint8_t SET_FPS_LIMIT = 9;
 constexpr uint8_t SET_DUMMY = 10;
+
 

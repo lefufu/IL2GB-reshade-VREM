@@ -73,11 +73,13 @@ void intialize_counters()
 
     a_shared.last_pipeline_hash_PS = 0;
 
+    a_shared.not_track_mask_anymore = false;
+
     // a_shared.CB_copied[CPERFRAME_CB_NB] = false;
 
     // initialize flags for texture copy
-    current_DS_handle = 0;
-    for (auto& [handle, ds_copy] : a_shared.saved_DS) {
+    current_PlaneMask_handle = 0;
+    for (auto& [handle, ds_copy] : a_shared.saved_PlaneMask) {
         ds_copy.copied = false;
     }
 

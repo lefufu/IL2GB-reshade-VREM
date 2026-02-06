@@ -58,7 +58,7 @@ SharedState g_shared_state_l;
 extern "C" __declspec(dllexport) const char* NAME = "IL2 GB VREM";
 extern "C" __declspec(dllexport) const char* DESCRIPTION = 
 #if _DEBUG
-"VR Enhancer Mod for IL2 Great Battle (DEBUG - Hot Reload Enabled).";
+"VR Enhancer Mod for IL2 Great Battle v 0.1 (DEBUG - Hot Reload Enabled).";
 #else
 "VR Enhancer Mod for IL2 Great Battle (RELEASE).";
 #endif
@@ -114,6 +114,7 @@ static void draw_settings(reshade::api::effect_runtime*)
     if (ImGui::Button("Capture frame"))
     {
         g_shared_state_l.button_capture = true;
+		g_shared_state_l.PSshader_index = 0;									
     }
     else
     {

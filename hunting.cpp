@@ -60,12 +60,12 @@ void on_bind_pipeline_hunting(command_list* commandList, pipeline_stage stages, 
 		
 		if (stages == pipeline_stage::pixel_shader)
 		{
-			if (g_shared_state->debug && flag_capture)
+			/*if (g_shared_state->debug && flag_capture)
 			{
 				std::stringstream s;
 				s << "--> pipelineHandle.handle =  " << std::hex << pipelineHandle.handle << " g_shared_state->PSshader_list.size() = "  << g_shared_state->PSshader_list.size() <<  "; ";
 				reshade::log::message(reshade::log::level::info, s.str().c_str());
-			}
+			}*/
 			
 			auto it = std::find(g_shared_state->PSshader_list.begin(), g_shared_state->PSshader_list.end(), pipelineHandle.handle);
 

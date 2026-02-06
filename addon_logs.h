@@ -58,6 +58,10 @@ extern void log_error_creating_RVlayout();
 extern void log_error_loading_shader_code(std::string message);
 extern void log_shader_code_error(const wchar_t filename[], uint32_t hash);
 extern void log_constant_buffer_mapping_error(std::string CB_name);
+extern void log_error_unsuported_format(const resource_desc& desc, const std::string& filepath);
+extern void log_error_srv_handle_null(const std::string& filepath);
+extern void log_error_txt_handle_null(const std::string& filepath);
+
 
 #if _DEBUG_LOGS 
 extern void log_addon_init();

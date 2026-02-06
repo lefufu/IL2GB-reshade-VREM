@@ -123,48 +123,57 @@ static const uint32_t action_count = 0b000100000;
 static const uint32_t action_replace_bind = 0b001000000;
 //inject constant buffer
 static const uint32_t action_injectCB = 0b010000000;
-// dump texture or resources (for hunting in debug version
+// dump texture or resources (for hunting in debug version)
 static const uint32_t action_dump = 0b100000000;
+// get texture 
+static const uint32_t action_get_text = 0b1000000000;
 
 // mod features
 enum class Feature : uint32_t
 {
 	//null
 	Null = 0,
+	// own plane : try to get textures/masks for the user's plane
+	PS_ownPlane = 1,
+	VS_ext_ownPlane = 2,
+	PS_global = 3,
+	VS_global = 4,
+	PS_external = 5,
+	//old things for compatibility
 	// Rotor : disable rotor when in cockpit view
-	Rotor = 1,
+	Rotor = 100,
 	// Global : global effects, change color, sharpen, ... for cockpit or outside
-	Global = 2,
+	Global = 200,
 	// Label : mask labels by cockpit frame
-	Label = 3,
+	Label = 300,
 	// Get stencil : copy texture t4 from global illum shader
-	GetStencil = 4,
+	GetStencil = 400,
 	// IHADSS : handle feature for AH64 IHADSS
-	IHADSS = 5,
+	IHADSS = 500,
 	// define if VRMode
-	VRMode = 6,
+	VRMode = 600,
 	// define if view is in welcome screen or map
-	mapMode = 7,
+	mapMode = 700,
 	// haze control
-	Haze = 8,
+	Haze = 800,
 	// haze control & flag MSAA
-	HazeMSAA2x = 9,
+	HazeMSAA2x = 900,
 	// remove A10C instrument reflect
-	NoReflect = 11,
+	NoReflect = 110,
 	// NS430 
-	NS430 = 12,
+	NS430 = 120,
 	// NVG
-	NVG = 13,
+	NVG = 130,
 	//GUI 
-	GUI = 14,
+	GUI = 140,
 	// Reshade effects
-	Effects = 15,
+	Effects = 150,
 	// Testing : for testing purpose
-	Testing = 20,
+	Testing = 200,
 	// VS of 2nd global color change PS
-	VS_global2 = 21,
+	VS_global2 = 210,
 	// PS of sky to not modify gAtmInstensity
-	Sky = 22
+	Sky = 220
 };
 
 // structure to contain actions to process shader/pipeline
@@ -225,8 +234,8 @@ struct resourceview_trace {
 struct resource_DS_copy {
 	bool copied = false;
 	reshade::api::resource texresource = {};
-	reshade::api::resource_view texresource_view_depth = {};
-	reshade::api::resource_view texresource_view_stencil = {};
+	reshade::api::resource_view texresource_view_planeMask = {};
+	//reshade::api::resource_view texresource_view_stencil = {};
 };
 
 struct saved_RenderTargetView {
@@ -268,6 +277,10 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	// counter for the current display (eye + quad view)
 	short int count_display = 0;
 
+	//track mask for inside/outside view
+	bool not_track_mask_anymore = false;
+	
+	
 	// flag for drawing or not
 
 	bool track_for_render_target = false;
@@ -291,7 +304,7 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	// reshade::api::descriptor_table_update update;
 
 	//resource for depthStencil copy
-	std::unordered_map<uint64_t, resource_DS_copy> saved_DS = {};
+	std::unordered_map<uint64_t, resource_DS_copy> saved_PlaneMask = {};
 
 	// for constant buffer modification
 	float dest_CB_array[NUMBER_OF_MODIFIED_CB][MAX_CBSIZE];
@@ -371,7 +384,7 @@ extern bool frame_started;     // au moins un bind_pipeline vu
 // for logging shader_resource_view in push_descriptors() to get depthStencil 
 extern bool track_for_depthStencil;
 // current depth Stencil handle
-extern uint64_t current_DS_handle;
+extern uint64_t current_PlaneMask_handle;
 
 // track render target
 // extern bool track_for_render_target; 

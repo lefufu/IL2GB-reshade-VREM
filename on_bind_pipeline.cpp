@@ -123,12 +123,13 @@ extern "C" {
 			{
 				// inject texture using push_descriptor() if things has been initialized => draw index is > -1
 
-				//check if the current depthStencil is declared
-				auto it_ds = a_shared.saved_DS.find(current_DS_handle);
-				if (it_ds != a_shared.saved_DS.end())
+				//check if the current planeMask is declared
+				auto it_ds = a_shared.saved_PlaneMask.find(current_PlaneMask_handle);
+				if (it_ds != a_shared.saved_PlaneMask.end())
 				{
 					// stencil depth textures in shaders for color change and label masking 
-					if ((it->second.feature == Feature::Global || it->second.feature == Feature::Label) && count_displayVS > -1 && a_shared.saved_DS[current_DS_handle].copied)
+					// if ((it->second.feature == Feature::PS_global || it->second.feature == Feature::Label) && count_displayVS > -1 && a_shared.saved_PlaneMask[current_PlaneMask_handle].copied)
+					if (it->second.feature == Feature::PS_global && a_shared.saved_PlaneMask[current_PlaneMask_handle].copied)
 					{
 						reshade::api::descriptor_table_update update;
 
@@ -136,20 +137,14 @@ extern "C" {
 						update.count = 1;
 						update.type = reshade::api::descriptor_type::shader_resource_view;
 
-						// push the texture for depth and stencil, descriptor initialized in copy_texture()
-						//depth
+						// push the texture for planeMask, descriptor initialized in copy_texture()
 						update.binding = 0; // t3 as 3 is defined in pipeline_layout
-						update.descriptors = &a_shared.saved_DS[current_DS_handle].texresource_view_depth;
-						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
-
-						//stencil
-						update.binding = 1; // t4 as 3 is defined in pipeline_layout
-						update.descriptors = &a_shared.saved_DS[current_DS_handle].texresource_view_stencil;
+						update.descriptors = &a_shared.saved_PlaneMask[current_PlaneMask_handle].texresource_view_planeMask;
 						commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
 
 						// log infos
 #if _DEBUG_LOGS  
-						log_texture_injected("depthStencil", current_DS_handle, count_displayVS);
+						log_texture_injected("PlaneMask", current_PlaneMask_handle, count_displayVS);
 #endif
 					}
 				}
@@ -188,24 +183,89 @@ extern "C" {
 			}
 
 			// ----------------------------------------
+			//get texture
+			if (it->second.action & action_get_text)
+			{
+				if (it->second.feature == Feature::VS_ext_ownPlane && !a_shared.not_track_mask_anymore)
+				{
+					//set flag to get mask texture at next push_descriptors
+					track_for_depthStencil = true;
+					
+#if _DEBUG_LOGS  
+					// log infos
+					log_start_monitor("ego plane mask");
+#endif
+
+#ifdef _DEBUG
+					//dump textures at next push_descriptors
+					a_shared.flag_texture_dump = true;
+					a_shared.ps_hash_for_text_dump = 0xf7fce9a6;
+#endif
+
+				}
+
+			}
+
+			// ----------------------------------------
 			// setup variables regarding the action
 			if (it->second.action & action_log)
 			{
 
-				// VS for illum : trigger logging of resources (eg texture) or other topics (eg count calls)
-				if (it->second.feature == Feature::GetStencil)
+				// PS for ego plane : stop collecting textures for mask
+				if (it->second.feature == Feature::PS_ownPlane)
 				{
 					// engage tracking shader_resource_view in push_descriptors() to get depthStencil 
-					track_for_depthStencil = true;
+					track_for_depthStencil = false;
+
+					// as same VS is called two time, do not get texture for later call (external)
+					a_shared.not_track_mask_anymore = true;
 
 					// log infos
 #if _DEBUG_LOGS  
-					log_start_monitor("Depth Stencil");
+					if (g_shared_state->debug_log && flag_capture)
+					{
+
+						reshade::log::message(reshade::log::level::info, " PS OwnPlane : Stop monitor texture");
+					}
 #endif
 					//dump textures at next push_descriptors
-					a_shared.flag_texture_dump = true;
-					a_shared.ps_hash_for_text_dump = 0xc8c6275;
+					a_shared.flag_texture_dump = false;
+					if (g_shared_state->debug_log && flag_capture)
+					{
+						std::stringstream s;
+						s << "addon - PS OwnPlane : a_shared.flag_texture_dump = " << a_shared.flag_texture_dump << "; ";
+						reshade::log::message(reshade::log::level::info, s.str().c_str());
+					}
+
 				}
+
+				if (it->second.feature == Feature::PS_external)
+				{
+					// engage tracking shader_resource_view in push_descriptors() to get depthStencil 
+					track_for_depthStencil = false;
+
+					// as same VS is called two time, do not get texture for later call
+					a_shared.not_track_mask_anymore = true;
+
+					// log infos
+#if _DEBUG_LOGS  
+					if (g_shared_state->debug_log && flag_capture)
+					{
+
+						reshade::log::message(reshade::log::level::info, "PS_external : Stop monitor texture");
+					}
+#endif
+					//dump textures at next push_descriptors
+					a_shared.flag_texture_dump = false;
+					if (g_shared_state->debug_log && flag_capture)
+					{
+						std::stringstream s;
+						s << "addon - PS_external : a_shared.flag_texture_dump = " << a_shared.flag_texture_dump << "; ";
+						reshade::log::message(reshade::log::level::info, s.str().c_str());
+					}
+
+				}
+
 
 				// PS for GUI : set flag
 				if (it->second.feature == Feature::GUI)
@@ -399,27 +459,6 @@ extern "C" {
 					a_shared.last_feature = it->second.feature;
 				}
 
-			}
-
-			// ----------------------------------------
-			//to dump textures at next push_descriptors
-			if (it->second.action & action_dump)
-			{
-				//object to dump choosen in GUI
-				a_shared.flag_texture_dump = true;
-				a_shared.flag_cb_dump = true;
-
-				//to give shader ID for dump
-				if (it->second.feature == Feature::Testing)
-				{
-					a_shared.ps_hash_for_text_dump = 0xCFB718E2;
-					a_shared.ps_hash_for_cb_dump = 0xCFB718E2;
-				}
-				if (it->second.feature == Feature::GUI)
-				{
-					a_shared.ps_hash_for_cb_dump = 0x3846ddce;
-					a_shared.ps_hash_for_text_dump = 0x3846ddce;
-				}
 			}
 
 			// trace current feature for next call

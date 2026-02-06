@@ -73,6 +73,13 @@ extern "C" {
 
 		}
 
+		/*if (g_shared_state->debug_log && flag_capture && a_shared.flag_texture_dump)
+		{
+			std::stringstream s;
+			s << "addon - vrem_on_push_descriptors : a_shared.flag_texture_dump = " << a_shared.flag_texture_dump << "update.type = " << to_string(update.type) << "; ";
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+		}*/
+
 		//export textures for hunting if requested
 		if (flag_capture && a_shared.flag_texture_dump && g_shared_state->save_texture_flag && update.type == descriptor_type::shader_resource_view)
 		{
@@ -85,7 +92,14 @@ extern "C" {
 				update,
 				a_shared.ps_hash_for_text_dump,
 				a_shared.count_display
-			);
+			); 
+			/*
+			if (g_shared_state->debug_log && flag_capture)
+			{
+				std::stringstream s;
+				s << "addon - vrem_on_push_descriptors : should dump textures, param_index = " << param_index << "; ";
+				reshade::log::message(reshade::log::level::info, s.str().c_str());
+			}*/
 
 		}
 
@@ -106,9 +120,11 @@ extern "C" {
 		}
 
 #endif
-		// to limit processing only when a tracing is setup
-		if (!a_shared.render_effect && !track_for_depthStencil && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
-		
+		// to limit processing only when a tracking is setup
+		// if (!a_shared.render_effect && !track_for_depthStencil && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
+		if (!track_for_depthStencil) return;
+
+
 		// display_to_use = 0 => outer left, 1 = outer right, 2 = Inner left, 3 = inner right.
 		short int display_to_use = a_shared.count_display - 1;
 
@@ -120,50 +136,28 @@ extern "C" {
 		}
 
 		//handle only shader_resource_view when needed
-		// handle depthStencil
-		if (track_for_depthStencil && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel && update.count == 6)
+		// handle mask => 18 textures for the shader !
+		// if (track_for_depthStencil && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel && update.count == 18) 
+		if (track_for_depthStencil && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel)
 		{
-
-			// in some case the resource view handle is null, skip these cases
-			if (reinterpret_cast<const reshade::api::resource_view *>(update.descriptors)[5].handle != 0)
-			{
-				//log infos
 #if _DEBUG_LOGS
-				log_push_descriptor(stages, layout, param_index, update);
-#endif
-
-				// copy depthStencil texture into shared_data
-				bool status = copy_depthStencil(cmd_list, stages, layout, param_index, update);
-			}
-
-			// stop tracking
-			// shared_data.track_for_depthStencil = false;
-		}
-
-		// handle NS430
-		/* if (shared_data.track_for_NS430 && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel && update.count == 1)
-		{
 			//log infos
 			log_push_descriptor(stages, layout, param_index, update);
-
-			// Copy only if texture has good resolution
-			device* dev = cmd_list->get_device();
-			resource_view NS430_rv = static_cast<const reshade::api::resource_view*>(update.descriptors)[0];
-			resource NS430_resource = dev->get_resource_from_view(NS430_rv);
-			resource_desc NS430_res_desc = dev->get_resource_desc(NS430_resource);
-
-
-			if (NS430_res_desc.texture.width == NS430_textSizeX && NS430_res_desc.texture.height == NS430_textSizeY)
+#endif
+			// get mask for own plane
+			if (a_shared.last_feature == Feature::VS_ext_ownPlane && update.count == 18)
 			{
-				// copy NS430 texture into shared_data (only done once per frame)
-				bool status = copy_NS430_text(cmd_list, stages, layout, param_index, update);
 
-				// stop tracking
-				shared_data.track_for_NS430 = false;
+				// in some case the resource view handle is null, skip these cases
+				if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[8].handle != 0)
+				{
+					// copy depthStencil texture into shared_data
+					bool status = copy_plane_mask(cmd_list, stages, layout, param_index, update);
+				}
 			}
-
+			// stop tracking
+			track_for_depthStencil = false;
 		}
-		*/
 
 
 		/*if (g_shared_state->debug && flag_capture && a_shared.render_effect)

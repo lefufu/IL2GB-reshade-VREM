@@ -1023,3 +1023,25 @@ void log_exported_CB(std::string CB_path)
 	}
 
 }
+
+void log_error_unsuported_format(const resource_desc& desc, const std::string& filepath)
+{
+	std::stringstream s;
+	s << "addon - unsupported format: " << to_string(desc.texture.format) << " for texture " << filepath << ";";
+	reshade::log::message(reshade::log::level::info, s.str().c_str());
+}
+
+void log_error_srv_handle_null(const std::string& filepath)
+{
+	std::stringstream s;
+	s << "addon - resourve view hanlde null for texture: " << filepath << ";";
+	reshade::log::message(reshade::log::level::info, s.str().c_str());
+}
+
+void log_error_txt_handle_null(const std::string& filepath)
+{
+	std::stringstream s;
+	s << "addon - texture view hanlde null for texture: " << filepath << ";";
+	reshade::log::message(reshade::log::level::info, s.str().c_str());
+}
+

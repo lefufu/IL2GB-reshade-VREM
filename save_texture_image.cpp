@@ -19,8 +19,11 @@
 #include "crc32_hash.hpp"
 #include <vector>
 #include <filesystem>
+
 #include "stb_image_write.h"
 #include "addon_objects.h"
+#include "to_string.hpp"
+#include "addon_logs.h"
 
 #if RESHADE_ADDON_TEXTURE_SAVE_ENABLE_HASH_SET
 #include <set>
@@ -124,6 +127,8 @@ static void unpack_bc4_value(uint8_t alpha_0, uint8_t alpha_1, uint32_t alpha_in
 
 bool save_texture_image(const resource_desc &desc, const subresource_data &data, const std::string& filepath)
 {
+
+
 #if RESHADE_ADDON_TEXTURE_SAVE_HASH_TEXMOD
 	// Behavior of the original TexMod (see https://github.com/codemasher/texmod/blob/master/uMod_DX9/uMod_TextureFunction.cpp#L41)
 	const uint32_t hash = ~compute_crc32(
@@ -134,9 +139,10 @@ bool save_texture_image(const resource_desc &desc, const subresource_data &data,
 			format_row_pitch(desc.texture.format, desc.texture.width)));
 #else
 	// Correct hash calculation using entire resource data
-	const uint32_t hash = compute_crc32(
+	/*const uint32_t hash = compute_crc32(
 		static_cast<const uint8_t *>(data.data),
 		format_slice_pitch(desc.texture.format, data.row_pitch, desc.texture.height));
+		*/
 #endif
 
 #if RESHADE_ADDON_TEXTURE_SAVE_ENABLE_HASH_SET
@@ -434,21 +440,151 @@ bool save_texture_image(const resource_desc &desc, const subresource_data &data,
 			}
 		}
 		break;
-	default:
+		//added from claude
+		case format::r10g10b10a2_typeless:
+		case format::r10g10b10a2_unorm:
+		case format::r10g10b10a2_uint:
+			for (size_t y = 0; y < desc.texture.height; ++y, data_p += data.row_pitch)
+			{
+				for (size_t x = 0; x < desc.texture.width; ++x)
+				{
+					const uint32_t* const src = reinterpret_cast<const uint32_t*>(data_p + x * 4);
+					uint8_t* const dst = rgba_pixel_data.data() + (y * desc.texture.width + x) * 4;
+
+					// Extraction des composants (10 bits R, 10 bits G, 10 bits B, 2 bits A)
+					const uint32_t r10 = (*src) & 0x3FF;  // 10 premiers bits
+					const uint32_t g10 = (*src >> 10) & 0x3FF;  // 10 bits suivants
+					const uint32_t b10 = (*src >> 20) & 0x3FF;  // 10 bits suivants
+					const uint32_t a2 = (*src >> 30) & 0x3;    // 2 derniers bits
+
+					// Conversion de 10 bits vers 8 bits (0-1023 -> 0-255)
+					// On divise par 1023 et multiplie par 255, ce qui équivaut à >> 2
+					dst[0] = static_cast<uint8_t>((r10 * 255 + 511) / 1023);
+					dst[1] = static_cast<uint8_t>((g10 * 255 + 511) / 1023);
+					dst[2] = static_cast<uint8_t>((b10 * 255 + 511) / 1023);
+
+					// Conversion de 2 bits vers 8 bits (0-3 -> 0-255)
+					dst[3] = static_cast<uint8_t>(a2 * 85);  // 85 = 255/3
+				}
+			}
+			break;
+
+		case format::r16_typeless:
+		case format::r16_unorm:
+		case format::r16_uint:
+		case format::r16_snorm:
+		case format::r16_sint:
+			for (size_t y = 0; y < desc.texture.height; ++y, data_p += data.row_pitch)
+			{
+				for (size_t x = 0; x < desc.texture.width; ++x)
+				{
+					const uint16_t* const src = reinterpret_cast<const uint16_t*>(data_p + x * 2);
+					uint8_t* const dst = rgba_pixel_data.data() + (y * desc.texture.width + x) * 4;
+
+					// Conversion de 16 bits vers 8 bits (0-65535 -> 0-255)
+					dst[0] = static_cast<uint8_t>((*src * 255 + 32767) / 65535);
+					dst[1] = 0;
+					dst[2] = 0;
+					dst[3] = 255;
+				}
+			}
+			break;
+
+		case format::r16g16_typeless:
+		case format::r16g16_unorm:
+		case format::r16g16_uint:
+		case format::r16g16_snorm:
+		case format::r16g16_sint:
+			for (size_t y = 0; y < desc.texture.height; ++y, data_p += data.row_pitch)
+			{
+				for (size_t x = 0; x < desc.texture.width; ++x)
+				{
+					const uint16_t* const src = reinterpret_cast<const uint16_t*>(data_p + x * 4);
+					uint8_t* const dst = rgba_pixel_data.data() + (y * desc.texture.width + x) * 4;
+
+					// Conversion de 16 bits vers 8 bits pour R et G
+					dst[0] = static_cast<uint8_t>((src[0] * 255 + 32767) / 65535);
+					dst[1] = static_cast<uint8_t>((src[1] * 255 + 32767) / 65535);
+					dst[2] = 0;
+					dst[3] = 255;
+				}
+			}
+			break;
+
+			case format::r32_g8_typeless:
+				for (size_t y = 0; y < desc.texture.height; ++y, data_p += data.row_pitch)
+				{
+					for (size_t x = 0; x < desc.texture.width; ++x)
+					{
+						const uint8_t* const src = data_p + x * 8; // 32 bits R + 8 bits padding + 24 bits unused
+						uint8_t* const dst = rgba_pixel_data.data() + (y * desc.texture.width + x) * 4;
+
+						// Pour R32_FLOAT_X8_TYPELESS, le premier composant est un float
+						// On le convertit en uint8 en le clampant entre 0 et 1
+						const float r_float = *reinterpret_cast<const float*>(src);
+						//const float clamped = std::max(0.0f, std::min(1.0f, r_float));
+						const float clamped = std::clamp(r_float, 0.0f, 1.0f);
+
+						dst[0] = static_cast<uint8_t>(clamped * 255.0f);
+						dst[1] = src[4]; // Le composant G8 est à l'offset 4
+						dst[2] = 0;
+						dst[3] = 255;
+					}
+				}
+				break;
+
+				case format::r16g16b16a16_typeless:
+				case format::r16g16b16a16_unorm:
+				case format::r16g16b16a16_uint:
+				case format::r16g16b16a16_snorm:
+				case format::r16g16b16a16_sint:
+				case format::r16g16b16a16_float:
+					for (size_t y = 0; y < desc.texture.height; ++y, data_p += data.row_pitch)
+					{
+						for (size_t x = 0; x < desc.texture.width; ++x)
+						{
+							const uint16_t* const src = reinterpret_cast<const uint16_t*>(data_p + x * 8);
+							uint8_t* const dst = rgba_pixel_data.data() + (y * desc.texture.width + x) * 4;
+
+							// Conversion de 16 bits vers 8 bits pour chaque canal (RGBA)
+							dst[0] = static_cast<uint8_t>((src[0] * 255 + 32767) / 65535);
+							dst[1] = static_cast<uint8_t>((src[1] * 255 + 32767) / 65535);
+							dst[2] = static_cast<uint8_t>((src[2] * 255 + 32767) / 65535);
+							dst[3] = static_cast<uint8_t>((src[3] * 255 + 32767) / 65535);
+						}
+					}
+					break;
+
+				case format::r24_g8_typeless:
+				case format::d24_unorm_s8_uint:
+					for (size_t y = 0; y < desc.texture.height; ++y, data_p += data.row_pitch)
+					{
+						for (size_t x = 0; x < desc.texture.width; ++x)
+						{
+							const uint32_t* const src = reinterpret_cast<const uint32_t*>(data_p + x * 4);
+							uint8_t* const dst = rgba_pixel_data.data() + (y * desc.texture.width + x) * 4;
+
+							// Extraction des composants (24 bits R, 8 bits G)
+							const uint32_t r24 = (*src) & 0xFFFFFF;  // 24 premiers bits
+							const uint32_t g8 = (*src >> 24) & 0xFF;      // 8 derniers bits
+
+							// Conversion de 24 bits vers 8 bits (0-16777215 -> 0-255)
+							dst[0] = static_cast<uint8_t>((r24 * 255 + 8388607) / 16777215);
+							dst[1] = static_cast<uint8_t>(g8);
+							dst[2] = 0;
+							dst[3] = 255;
+						}
+					}
+					break;
+
+		default:
 		// Unsupported format
+		log_error_unsuported_format(desc, filepath);
 		return false;
 	}
 
 	//const std::filesystem::path file_path = make_texture_file_path(hash);
 	const std::filesystem::path file_path = filepath;
-	/*
-	if (file_path.extension() == L".bmp")
-		return stbi_write_bmp(file_path.u8string().c_str(), desc.texture.width, desc.texture.height, 4, rgba_pixel_data.data()) != 0;
-	else if (file_path.extension() == L".png")
-		return stbi_write_png(file_path.u8string().c_str(), desc.texture.width, desc.texture.height, 4, rgba_pixel_data.data(), desc.texture.width * 4) != 0;
-	else
-		return false;
-*/
 
 	if (file_path.extension() == L".bmp")
 		return stbi_write_bmp(reinterpret_cast<const char*>(file_path.u8string().c_str()), desc.texture.width, desc.texture.height, 4, rgba_pixel_data.data()) != 0;

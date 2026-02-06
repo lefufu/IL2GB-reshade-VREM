@@ -162,7 +162,7 @@
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
-      <Command>copy H:\utils\Repos\IL2GB_VREM\x64\Debug\IL2GB_VREM.dll "G:\jeux\DCS World OpenBeta\bin-mt"</Command>
+      <Command>copy H:\utils\Repos\IL2GB_VREM\x64\Debug\IL2GB_VREM.dll "D:\jeux\IL-2 Sturmovik Great Battles\bin\game"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -186,7 +186,7 @@
       <EnableCOMDATFolding />
     </Link>
     <PostBuildEvent>
-      <Command>copy H:\utils\Repos\IL2GB_VREM\x64\Debug\IL2GB_VREM.dll "G:\jeux\DCS World OpenBeta\bin-mt"</Command>
+      <Command>copy H:\utils\Repos\IL2GB_VREM\x64\Debug\IL2GB_VREM.dll "D:\jeux\IL-2 Sturmovik Great Battles\bin\gamet"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

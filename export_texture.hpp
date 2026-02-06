@@ -194,13 +194,7 @@ public:
             if (update.type == descriptor_type::shader_resource_view) {
                 resource_view srv = static_cast<const resource_view*>(update.descriptors)[i];
 
-                if (srv.handle == 0) continue;
-
-                resource tex = dev->get_resource_from_view(srv);
-
-                if (tex.handle == 0) continue;
-
-				// generate filename
+                // generate filename
                 std::string filename = generate_filename(
                     ps_hash,
                     vr_draw_num,
@@ -209,6 +203,20 @@ public:
                 );
 
                 fs::path filepath = path / filename;
+
+                if (srv.handle == 0)
+                {
+                    log_error_srv_handle_null(filepath.string());
+                    continue;
+                }
+
+                resource tex = dev->get_resource_from_view(srv);
+
+                if (tex.handle == 0)
+                {
+                    log_error_txt_handle_null(filepath.string());
+                    continue;
+                }
 
                 // Exporter la texture
                 if (save_texture(dev, cmd_list, tex, filepath.string())) {

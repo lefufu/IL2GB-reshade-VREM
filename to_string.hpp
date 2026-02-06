@@ -617,7 +617,9 @@ static const ActionFlag action_flags[] = {
 	{ 0b00100000, "count" },
 	{ 0b01000000, "replace_bind" },
 	{ 0b10000000, "injectCB" },
-	{ 0b100000000, "dump" }
+	{ 0b100000000, "dump" },
+	{ 0b1000000000, "action_get_text" },
+	
 };
 
 inline auto to_string(const uint32_t action)
@@ -642,24 +644,13 @@ inline auto to_string(const uint32_t action)
 inline auto to_string(Feature feature) {
 	switch (feature) {
 	default: return "NDef";
-	case Feature::Rotor: return "Rotor";
-	case Feature::Global: return "Global";
-	case Feature::Label: return "Label";
-	case Feature::Testing: return "Testing";
-	case Feature::GetStencil: return "GetStencil";
-	case Feature::IHADSS: return "IHADSS";	
-	case Feature::VRMode: return "VRMode";
-	case Feature::mapMode: return "MapMode";
-	case Feature::Haze: return "Haze";
-	case Feature::NoReflect: return "NoReflect";
-	case Feature::HazeMSAA2x: return "HazeMSAA2x";
-	case Feature::NS430: return "NS430";
-	case Feature::NVG: return "NVG";
-	case Feature::GUI: return "GUI";
-	case Feature::Effects: return "Effects";
-	case Feature::VS_global2: return "VS_global2";
-	case Feature::Sky: return "Sky";
-		
+	case Feature::Null: return "Null";
+	case Feature::PS_ownPlane: return "PS_ownPlane";
+	case Feature::VS_ext_ownPlane: return "VS_ext_ownPlane";
+	case Feature::PS_global: return "PS_global";
+	case Feature::VS_global: return "VS_global";
+	case Feature::PS_external: return "PS_external";
+
 	}
 }
 

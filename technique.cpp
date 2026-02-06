@@ -381,9 +381,9 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
             // update DEPTH texture
             // shared_data.render_target_view[display_to_use].depth_exported_for_technique = true;
             // g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.depth_view[display_to_use].texresource_view, shared_data.depth_view[display_to_use].texresource_view);
-            g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.saved_DS[current_DS_handle].texresource_view_depth, a_shared.saved_DS[current_DS_handle].texresource_view_depth);
+            g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.saved_PlaneMask[current_PlaneMask_handle].texresource_view_planeMask, a_shared.saved_PlaneMask[current_PlaneMask_handle].texresource_view_planeMask);
             // update STENCIL texture
-            g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.saved_DS[current_DS_handle].texresource_view_stencil, a_shared.saved_DS[current_DS_handle].texresource_view_stencil);
+            //g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.saved_PlaneMask[current_PlaneMask_handle].texresource_view_stencil, a_shared.saved_PlaneMask[current_PlaneMask_handle].texresource_view_stencil);
 #if _DEBUG_LOGS
             log_export_texture(display_to_use);
 #endif
@@ -447,9 +447,9 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
         if (a_shared.mirror_VR != -1 && a_shared.texture_needed && !a_shared.VRonly_technique)
         {
             // update DEPTH texture 
-            g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.saved_DS[current_DS_handle].texresource_view_depth, a_shared.saved_DS[current_DS_handle].texresource_view_depth);
+            g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.saved_PlaneMask[current_PlaneMask_handle].texresource_view_depth, a_shared.saved_PlaneMask[current_PlaneMask_handle].texresource_view_depth);
             // update STENCIL texture
-            g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.saved_DS[current_DS_handle].texresource_view_stencil, a_shared.saved_DS[current_DS_handle].texresource_view_stencil);
+            g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.saved_PlaneMask[current_PlaneMask_handle].texresource_view_stencil, a_shared.saved_PlaneMask[current_PlaneMask_handle].texresource_view_stencil);
             log_export_texture(-1);
 
         }
