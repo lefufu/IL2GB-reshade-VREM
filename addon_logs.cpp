@@ -43,7 +43,6 @@
 
 #include <reshade.hpp>
 
-#include "VREM_settings.h"
 #include "loader_addon_shared.h"
 #include "to_string.hpp"
 #include "addon_objects.h"
@@ -391,6 +390,16 @@ void log_start_monitor(std::string texture_name)
 	}
 }
 
+void log_stop_monitor(std::string texture_name)
+{
+	if (g_shared_state->debug_log && flag_capture)
+	{
+		std::stringstream s;
+		s << "addon - on_bind_pipeline : stop monitor " << texture_name << ", draw : " << a_shared.count_display << "; ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
 void log_mirror_view()
 {
 
@@ -563,7 +572,7 @@ void log_reset_tracking()
 
 void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
-	if ((g_shared_state->debug_log && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)) )
+	if ((g_shared_state->debug_log && flag_capture && (track_for_planeMask || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)) )
 	{
 		std::stringstream s;
 		s << "draw(" << vertex_count << ", " << instance_count << ", " << first_vertex << ", " << first_instance << ")";
@@ -573,7 +582,7 @@ void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_v
 
 		if (g_shared_state->shader_hunter) return;
 
-		s << "track_for_depthStencil=" << track_for_depthStencil << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
+		s << "track_for_depthStencil=" << track_for_planeMask << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -584,7 +593,7 @@ void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_v
 
 void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 {
-	if ((g_shared_state->debug_log && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)))
+	if ((g_shared_state->debug_log && flag_capture && (track_for_planeMask || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)))
 	{
 		std::stringstream s;
 		s << "draw_indexed(" << index_count << ", " << instance_count << ", " << first_index << ", " << vertex_offset << ", " << first_instance << ")";
@@ -592,7 +601,7 @@ void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t
 
 		if (g_shared_state->shader_hunter) return;
 
-		s << "track_for_depthStencil=" << track_for_depthStencil << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
+		s << "track_for_depthStencil=" << track_for_planeMask << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -602,7 +611,7 @@ void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t
 
 void log_on_drawOrDispatch_indirect(indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride)
 {
-	if ((g_shared_state->debug_log && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)))
+	if ((g_shared_state->debug_log && flag_capture && (track_for_planeMask || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)))
 	{
 		std::stringstream s;
 		s << "draw_indexed_indirect(" << (void*)buffer.handle << ", " << offset << ", " << draw_count << ", " << stride << ")";
@@ -610,7 +619,7 @@ void log_on_drawOrDispatch_indirect(indirect_command type, resource buffer, uint
 
 		if (g_shared_state->shader_hunter) return;
 
-		s << "track_for_depthStencil=" << track_for_depthStencil << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
+		s << "track_for_depthStencil=" << track_for_planeMask << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();

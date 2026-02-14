@@ -45,7 +45,6 @@
 #include <thread>
 
 #include "loader_addon_shared.h"
-#include "VREM_settings.h"
 #include "addon_functions.h"
 #include "addon_logs.h"
 
@@ -72,11 +71,11 @@ extern "C" {
 #endif
 
 		}
-
-		/*if (g_shared_state->debug_log && flag_capture && a_shared.flag_texture_dump)
+		/*
+		if (g_shared_state->debug_log && flag_capture && a_shared.flag_texture_dump)
 		{
 			std::stringstream s;
-			s << "addon - vrem_on_push_descriptors : a_shared.flag_texture_dump = " << a_shared.flag_texture_dump << "update.type = " << to_string(update.type) << "; ";
+			s << "addon - vrem_on_push_descriptors : a_shared.flag_texture_dump = " << a_shared.flag_texture_dump << ", update.type = " << to_string(update.type) << "; ";
 			reshade::log::message(reshade::log::level::info, s.str().c_str());
 		}*/
 
@@ -92,7 +91,7 @@ extern "C" {
 				update,
 				a_shared.ps_hash_for_text_dump,
 				a_shared.count_display
-			); 
+			);
 			/*
 			if (g_shared_state->debug_log && flag_capture)
 			{
@@ -120,9 +119,10 @@ extern "C" {
 		}
 
 #endif
-		// to limit processing only when a tracking is setup
-		// if (!a_shared.render_effect && !track_for_depthStencil && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
-		if (!track_for_depthStencil) return;
+		// ********** to be updated for later effects
+		// to limit processing only when a tracking is setup 
+		// if (!a_shared.render_effect && !track_for_planeMask && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
+		if (!track_for_planeMask) return;
 
 
 		// display_to_use = 0 => outer left, 1 = outer right, 2 = Inner left, 3 = inner right.
@@ -137,26 +137,60 @@ extern "C" {
 
 		//handle only shader_resource_view when needed
 		// handle mask => 18 textures for the shader !
-		// if (track_for_depthStencil && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel && update.count == 18) 
-		if (track_for_depthStencil && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel)
+		// if (track_for_planeMask && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel && update.count == 18) 
+		if (track_for_planeMask && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel)
 		{
 #if _DEBUG_LOGS
 			//log infos
 			log_push_descriptor(stages, layout, param_index, update);
 #endif
-			// get mask for own plane
-			if (a_shared.last_feature == Feature::VS_ext_ownPlane && update.count == 18)
+			/*
+			// get mask from onw plane  PS, filter by the number of resource
+			if (a_shared.last_feature == Feature::VS_ext_ownPlane && (update.count == 18 || update.count == 17))
 			{
 
 				// in some case the resource view handle is null, skip these cases
 				if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[8].handle != 0)
 				{
-					// copy depthStencil texture into shared_data
-					bool status = copy_plane_mask(cmd_list, stages, layout, param_index, update);
+					// to retrieve infos for pushing texture in bind_pipeline
+					current_PlaneMask_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, 8, "PlaneMask");
 				}
 			}
+			*/
+
+			// get mask from ext plane  PS, filter by the number of resource
+			if (a_shared.last_feature == Feature::VS_ext_ownPlane && (update.count == 15 || update.count == 16))
+			{
+				//default for update.count == 16
+				uint32_t text_num = 10;
+				uint32_t depth_num = 12;
+				if (update.count == 15)
+				{
+					text_num = 9;
+					depth_num = 11;
+				}
+	
+				// in some case the resource view handle is null, skip these cases
+				if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0)
+				{
+
+					// to retrieve infos for pushing texture in bind_pipeline
+					current_PlaneMask_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "PlaneMask");
+				}
+
+	
+				if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[depth_num].handle != 0)
+				{
+
+					// to retrieve infos for pushing texture in bind_pipeline
+					current_depth_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, depth_num, "Depth");
+				}
+
+				
+			}
+
 			// stop tracking
-			track_for_depthStencil = false;
+			track_for_planeMask = false;
 		}
 
 

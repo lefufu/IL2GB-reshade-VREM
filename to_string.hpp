@@ -588,21 +588,8 @@ inline auto to_string(reshade::api::pipeline_subobject_type value) {
 	case reshade::api::pipeline_subobject_type::unknown:                 return "unknown";
 	}
 }
-/*
-inline auto to_string(const uint32_t action) {
-	switch (action) {
-	default: return "NDef";
-	case action_replace: return "replace";
-	case action_skip: return "skip";
-	case action_log: return "log";
-	case action_identify: return "identify";
-	case action_injectText: return "injectText";
-	case action_count: return "count";
-	case action_injectCB: return "injectCB";
-	};
-}
-*/
 
+/*
 struct ActionFlag {
 	uint32_t value;
 	const char* name;
@@ -621,6 +608,7 @@ static const ActionFlag action_flags[] = {
 	{ 0b1000000000, "action_get_text" },
 	
 };
+*/
 
 inline auto to_string(const uint32_t action)
 {
@@ -641,16 +629,13 @@ inline auto to_string(const uint32_t action)
 	return ss.str();
 }
 
-inline auto to_string(Feature feature) {
-	switch (feature) {
-	default: return "NDef";
-	case Feature::Null: return "Null";
-	case Feature::PS_ownPlane: return "PS_ownPlane";
-	case Feature::VS_ext_ownPlane: return "VS_ext_ownPlane";
-	case Feature::PS_global: return "PS_global";
-	case Feature::VS_global: return "VS_global";
-	case Feature::PS_external: return "PS_external";
-
+inline auto to_string(Feature feature) 
+{
+	if (debug_feature_name.find(feature) != debug_feature_name.end()) {
+		return debug_feature_name[feature];
+	}
+	else {
+		return std::string("NDef");
 	}
 }
 

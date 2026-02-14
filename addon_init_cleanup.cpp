@@ -46,7 +46,6 @@
 #include <filesystem>
 
 #include "loader_addon_shared.h"
-#include "VREM_settings.h"
 #include "addon_logs.h"
 #include "addon_objects.h"
 #include "addon_functions.h"
@@ -66,41 +65,40 @@ bool frame_started = false;     // au moins un bind_pipeline vu
 
 
 // for logging shader_resource_view in push_descriptors() to get depthStencil 
-bool track_for_depthStencil = false;
-bool depthStencil_copy_started = false;
+// bool track_for_planeMask = false;
 // current Depth Stencil handle
-uint64_t current_PlaneMask_handle = 0;
+// uint64_t current_PlaneMask_handle = 0;
+// uint64_t current_depth_handle = 0;
 
 // track render target
 // bool track_for_render_target = false;
-uint64_t current_RTV_handle;
-saved_RenderTargetView last_RTV_saved;
+// uint64_t current_RTV_handle;
+// saved_RenderTargetView last_RTV_saved;
 
 // to skip draw call if some shader are to be skipped
 bool do_not_draw = false;
 
-std::unordered_map<std::string, int> settings_mapping = {
-	{"set_default", SET_DEFAULT}
-};
-
-
+/*
 // definition of action triggered by shaders/pipeline
 std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 {
 	
 	// ** get maks for own plane, t8 should be OK
 	//own plane texture
-	{0xf7fce9a6, Shader_Definition(action_log | action_get_text, Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	{0xf7fce9a6, Shader_Definition(action_log | action_get_text | action_dump, Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
 	{0xde747357, Shader_Definition(action_log, Feature::PS_ownPlane, L"", 0, {SET_DEFAULT})},
 	// external only
 	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
 	
 	//global PS (for control at first)
 	// {0xdf640d43, Shader_Definition(action_log | action_dump, Feature::VS_global, L"", 0, {SET_DEFAULT})},
-	{0x9f694be6, Shader_Definition(action_replace_bind|action_injectText, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT})},
+	{0x9f694be6, Shader_Definition(action_replace_bind |action_injectText, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG})},
 	
+	//sight PS
+	{0x45983fba, Shader_Definition(action_replace_bind , Feature::PS_sight, L"sight_PS.cso", 0, {SET_SIGHT})},
 	
 };
+*/
 
 //
 // structure to contain shaders/pipeline to process, regarding mod option selected
@@ -164,10 +162,15 @@ extern "C" {
 		//to trace compilation of technique
 		a_shared.technique_compiled = false;
 
+		a_shared.flag_texture_dump = false;
+
 		a_shared.VREM_setting[SET_DEFAULT] = 0;
 
 		// parse the shader list to load all shader codes and store codes in shader_code_cache (if not done)
 		read_all_shader_code();
+
+		//intialize the counters
+		intialize_counters();
 
         // reshade::log::message(reshade::log::level::info,"DCS VREM: register done...");
     }
@@ -211,7 +214,7 @@ extern "C" {
 			log_cleanup_texture();
 #endif
 			delete_texture_resources(g_shared_state->device);
-			a_shared.saved_PlaneMask.clear();
+			a_shared.copied_textures.clear();
 			a_shared.technique_vector.clear();
 
 			g_shared_state->PSshader_index = 0;						  

@@ -47,10 +47,21 @@
 #include <unordered_map>
 
 #include "addon_injection.h"
-#include "VREM_settings.h"
+//#include "VREM_settings.h"
+#include "loader_addon_shared.h"
 
+extern SharedState* g_shared_state;
+extern bool addon_init;
+
+#ifdef _DEBUG
 #define DEBUG_LOGS 1
+#else
+#define DEBUG_LOGS 0
+#endif
 
+//*****************************************************************************
+// mod parameters
+// 
 // number of CB modified by VREM (used for an array allocation)
 static const int NUMBER_OF_MODIFIED_CB = 2;
 
@@ -64,9 +75,6 @@ static const int CPERFRAME_CB_NB = 1;
 // CB index in saved layout for VREM settings
 static const int SETTINGS_CB_NB = 0;
 
-// size of the constant buffer containing all mod parameters, to be injected in shaders
-static const int CBSIZE = 44;
-
 // maximum size of all CB
 static const int MAX_CBSIZE = 152;
 
@@ -79,7 +87,6 @@ static const int MAX_CBSIZE = 152;
 
 // size of CB
 #define CPERFRAME_SIZE 152 //in float
-// #define DEF_UNIFORM_SIZE 68 //in float
 
 // only one value to save for CPerFrame
 static const int  GATMINTENSITY_SAVE = 0;
@@ -87,7 +94,7 @@ static const int  GCOCKPITIBL_X_SAVE = 1;
 static const int  GCOCKPITIBL_Y_SAVE = 1;
 
 
-
+//*****************************************************************************
 // for techniques
 #define MAXNAMECHAR 30
 #define DEPTH_NAME "DepthBufferTex"
@@ -105,6 +112,8 @@ constexpr size_t CHAR_BUFFER_SIZE = 256;
 constexpr uint32_t CONSTANT_HASH = 0x00000001;
 constexpr const wchar_t* CONSTANT_COLOR_NAME = L"full_red.cso";
 
+
+//*****************************************************************************
 //mod actions (not as a class for easier use of &)
 // 
 //replace = the shader will be replaced by a modded one during init
@@ -128,6 +137,28 @@ static const uint32_t action_dump = 0b100000000;
 // get texture 
 static const uint32_t action_get_text = 0b1000000000;
 
+//for logging and debugging : mapping between action flag and name for display
+struct ActionFlag {
+	uint32_t value;
+	const char* name;
+};
+
+static const ActionFlag action_flags[] = {
+	{ action_replace, "replace" },
+	{ action_skip, "skip" },
+	{ action_log, "log" },
+	{ action_identify, "identify" },
+	{ action_injectText, "injectText" },
+	{ action_count, "count" },
+	{ action_replace_bind, "replace_bind" },
+	{ action_injectCB, "injectCB" },
+	{ action_dump, "dump" },
+	{ action_get_text, "action_get_text" },
+
+};
+
+
+//*****************************************************************************
 // mod features
 enum class Feature : uint32_t
 {
@@ -139,6 +170,8 @@ enum class Feature : uint32_t
 	PS_global = 3,
 	VS_global = 4,
 	PS_external = 5,
+	PS_sight = 6,
+	PS_sun = 7,
 	//old things for compatibility
 	// Rotor : disable rotor when in cockpit view
 	Rotor = 100,
@@ -176,6 +209,42 @@ enum class Feature : uint32_t
 	Sky = 220
 };
 
+// mapping between technique name and feature for debug display
+inline std::unordered_map<Feature, std::string> debug_feature_name = {
+	{Feature::PS_ownPlane, "PS_ownPlane"},
+	{Feature::VS_ext_ownPlane, "VS_ext_ownPlane"},
+	{Feature::PS_global, "PS_global"},
+	{Feature::VS_global, "VS_global"},
+	{Feature::PS_external, "PS_external"},
+	{Feature::PS_sight, "PS_sight"},
+	{Feature::PS_sun, "PS_sun"},
+};
+
+//*****************************************************************************
+// mod settings
+#define VREM_SETTINGS_NAME "VREM_settings.fx"
+
+// mapping SETTINGS value are in get_settings_from_uniforms (used to filter activie pipelines)
+static const int SETTINGS_SIZE = 11;
+
+constexpr uint8_t SET_DEFAULT = 0;
+constexpr uint8_t SET_SIGHT = 1;
+constexpr uint8_t SET_MASK = 2;
+//will have to be cleaned up later
+constexpr uint8_t SET_COLOR = 3;
+constexpr uint8_t SET_MISC = 4;
+constexpr uint8_t SET_NS430 = 5;
+constexpr uint8_t SET_REFLECT = 6;
+constexpr uint8_t SET_NVG = 7;
+constexpr uint8_t SET_EFFECTS = 8;
+constexpr uint8_t SET_FPS_LIMIT = 9;
+constexpr uint8_t SET_DEBUG = 10;
+// !!!
+// update mapping between technique name and feature at bottom of the file
+
+//*****************************************************************************
+// not to be modified : declaration of class & objects used for the mod logic and shared between functions
+// 
 // structure to contain actions to process shader/pipeline
 struct Shader_Definition {
 	uint32_t action; //what is to be done for the pipeline/shader
@@ -234,7 +303,7 @@ struct resourceview_trace {
 struct resource_DS_copy {
 	bool copied = false;
 	reshade::api::resource texresource = {};
-	reshade::api::resource_view texresource_view_planeMask = {};
+	reshade::api::resource_view texresource_view = {};
 	//reshade::api::resource_view texresource_view_stencil = {};
 };
 
@@ -254,13 +323,9 @@ struct technique_trace {
 	int quad_view_target; // 0 : all, 1 Outer, 2 Innner
 };
 
-
-// size of the table containing all mod settings to be read from uniforms and define which shader are active
-//static const int SETTINGS_SIZE = 10;
-// #define MAXVIEWSPERDRAW 6
-
 struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 {
+
 	// DX11 pipeline_layout for VREM CB (only used if thet need to be modified)
 	reshade::api::pipeline_layout saved_pipeline_layout_CB[NUMBER_OF_MODIFIED_CB];
 
@@ -303,8 +368,8 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	reshade::api::pipeline_layout saved_pipeline_layout_RV = {};
 	// reshade::api::descriptor_table_update update;
 
-	//resource for depthStencil copy
-	std::unordered_map<uint64_t, resource_DS_copy> saved_PlaneMask = {};
+	//resource for texture copy
+	std::unordered_map<uint64_t, resource_DS_copy> copied_textures = {};
 
 	// for constant buffer modification
 	float dest_CB_array[NUMBER_OF_MODIFIED_CB][MAX_CBSIZE];
@@ -381,18 +446,64 @@ extern bool request_capture;   // demande utilisateur
 extern bool flag_capture;      // capture ACTIVE (ex-capturing)
 extern bool frame_started;     // au moins un bind_pipeline vu
 
+// to skip draw call if some shader are to be skipped
+extern bool do_not_draw;
+
+//*****************************************************************************
+// add here variables to track and handle texture copy or technique injection
+// 
 // for logging shader_resource_view in push_descriptors() to get depthStencil 
-extern bool track_for_depthStencil;
+// extern bool track_for_planeMask;
+inline bool track_for_planeMask = false;
 // current depth Stencil handle
-extern uint64_t current_PlaneMask_handle;
+inline uint64_t current_PlaneMask_handle = 0;
+inline uint64_t current_depth_handle =0;
 
 // track render target
 // extern bool track_for_render_target; 
 // current render target view handle
-extern saved_RenderTargetView last_RTV_saved;
-extern uint64_t current_RTV_handle;
+inline saved_RenderTargetView last_RTV_saved;
+inline uint64_t current_RTV_handle = 0;
 
-// to skip draw call if some shader are to be skipped
-extern bool do_not_draw;
+//*****************************************************************************
+// definition of action triggered by shaders/pipeline
+inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
+{
 
-extern bool depthStencil_copy_started;
+	// ** get maks for own plane, t8 should be OK
+	//own plane texture
+	{0xf7fce9a6, Shader_Definition(action_log | action_get_text | action_dump, Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	{0xde747357, Shader_Definition(action_log, Feature::PS_ownPlane, L"", 0, {SET_DEFAULT})},
+	// external only
+	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
+
+	//global PS (for control at first)
+	// {0xdf640d43, Shader_Definition(action_log | action_dump, Feature::VS_global, L"", 0, {SET_DEFAULT})},
+	{0x9f694be6, Shader_Definition(action_replace_bind | action_injectText, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG})},
+
+	//sight PS
+	{0x45983fba, Shader_Definition(action_replace_bind , Feature::PS_sight, L"sight_PS.cso", 0, {SET_SIGHT})},
+
+	// sun halo
+	{0x27fca33b, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_sun, L"mask_sun.cso", 0, {SET_MASK})},
+	
+
+};
+
+//*****************************************************************************
+// mapping between variable name in technique and variable in CB to inject in shader
+
+// settings
+inline std::unordered_map<std::string, int> settings_mapping = {
+	{"set_default", SET_DEFAULT},
+	{"set_sight", SET_SIGHT},
+	{"set_mask", SET_MASK }
+};
+
+//variables 
+static const std::unordered_map<std::string, float*> var_mapping = {
+	{"var_debugMask", &a_shared.cb_inject_values.testFlag},
+	{"var_sightFactor", &a_shared.cb_inject_values.sightFactor},
+	{"var_mask_sun", &a_shared.cb_inject_values.maskSun},
+};
+

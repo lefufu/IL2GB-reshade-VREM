@@ -44,7 +44,6 @@
 #include <reshade.hpp>
 #include <vector>
 #include <unordered_map>
-#include "VREM_settings.h"
 #include "addon_functions.h"
 #include "addon_logs.h"
 #include "to_string.hpp"

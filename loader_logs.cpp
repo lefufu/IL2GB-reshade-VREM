@@ -45,6 +45,7 @@
 #include "to_string.hpp"
 
 #include "loader_addon_shared.h"
+//#include "addon_objects.h"
 
 extern SharedState g_shared_state_l;
 // extern SharedState* g_shared_state;

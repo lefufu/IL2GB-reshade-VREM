@@ -45,7 +45,6 @@
 #include <thread>
 
 #include "loader_addon_shared.h"
-#include "VREM_settings.h"
 #include "addon_functions.h"
 #include "addon_logs.h"
 
@@ -60,7 +59,6 @@ void intialize_counters()
     a_shared.count_display = 0;
 
     a_shared.cb_inject_values.mapMode = 1.0;
-    depthStencil_copy_started = false;
     do_not_draw = false;
     a_shared.cb_inject_values.GUItodraw = 0.0;
 
@@ -79,7 +77,7 @@ void intialize_counters()
 
     // initialize flags for texture copy
     current_PlaneMask_handle = 0;
-    for (auto& [handle, ds_copy] : a_shared.saved_PlaneMask) {
+    for (auto& [handle, ds_copy] : a_shared.copied_textures) {
         ds_copy.copied = false;
     }
 
@@ -156,6 +154,7 @@ extern "C" {
             request_capture = false;
             flag_capture = true;
             frame_started = true;
+            a_shared.flag_texture_dump = false;
 #if _DEBUG_LOGS
             log_start_capture_frame();
             log_shader_def_list();

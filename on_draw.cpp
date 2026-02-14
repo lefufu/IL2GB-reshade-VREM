@@ -49,7 +49,6 @@
 #include "loader_addon_shared.h"
 #include "addon_functions.h"
 #include "addon_objects.h"
-#include "VREM_settings.h"
 #include "addon_logs.h"
 
 #include "to_string.hpp"
@@ -63,13 +62,13 @@ using namespace reshade::api;
 static void clear_tracking_flags()
 {
 
-	// if (a_shared.track_for_depthStencil || a_shared.track_for_NS430 || a_shared.do_not_draw)
-	if (track_for_depthStencil || do_not_draw)
+	// if (a_shared.track_for_planeMask || a_shared.track_for_NS430 || a_shared.do_not_draw)
+	if (track_for_planeMask || do_not_draw)
 	{
 #if _DEBUG_LOGS  
 		log_reset_tracking();
 #endif
-		track_for_depthStencil = false;
+		track_for_planeMask = false;
 		//a_shared.track_for_NS430 = false;
 		do_not_draw = false;
 	}
@@ -108,7 +107,7 @@ extern "C" {
 		// log
 		if (g_shared_state->shader_hunter && flag_capture) log_ondraw(vertex_count, instance_count, first_vertex, first_instance);
 #endif		
-		if (!track_for_depthStencil && !do_not_draw && !a_shared.render_effect) return false;
+		if (!track_for_planeMask && !do_not_draw && !a_shared.render_effect && !a_shared.flag_texture_dump) return false;
 		
 		bool skip = false;
 		if (do_not_draw) skip = true;
@@ -139,7 +138,7 @@ extern "C" {
 		// log
 		if (g_shared_state->shader_hunter && flag_capture) log_on_draw_indexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 #endif		
-		if (!track_for_depthStencil && !do_not_draw && !a_shared.render_effect) return false;
+		if (!track_for_planeMask && !do_not_draw && !a_shared.render_effect && !a_shared.flag_texture_dump) return false;
 
 		bool skip = false;
 		if (do_not_draw) skip = true;
@@ -174,7 +173,7 @@ extern "C" {
 		// log
 		if (g_shared_state->shader_hunter && flag_capture) log_on_drawOrDispatch_indirect(type, buffer, offset, draw_count, stride);
 #endif
-		if (!track_for_depthStencil && !do_not_draw && !a_shared.render_effect) return false;
+		if (!track_for_planeMask && !do_not_draw && !a_shared.render_effect && !a_shared.flag_texture_dump) return false;
 		
 		bool skip = false;
 		if (do_not_draw) skip = true;

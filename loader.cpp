@@ -45,6 +45,8 @@
 #include "loader_addon_shared.h"
 #include "loader_on_event.hpp"
 
+#include "addon_objects.h"
+
 //local variables
 VREMHotReloader* g_reloader = nullptr;
 static bool g_reload_in_progress = false;
@@ -52,6 +54,10 @@ static bool g_reload_requested = false;
 
 
 SharedState g_shared_state_l;
+#ifdef _DEBUG
+//not used, just ot avoid link issue
+struct addon_shared a_shared; 
+#endif 
 
 //****************************************************************
 // addon infos
@@ -234,6 +240,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         // intialization is doing mapping between exported VREM function and the function used in "register_event"
         // if fuction are not exported in addon there will be no call
 //#ifdef _DEBUG
+
         g_reloader = new VREMHotReloader(addonPath.string());
         //copy path for saving textures or CB in addon
         wcscpy_s(g_shared_state_l.g_vrem_base_path, basePath.wstring().c_str());

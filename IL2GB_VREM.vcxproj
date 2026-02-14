@@ -53,7 +53,6 @@
     <ClInclude Include="export_CB.hpp" />
     <ClInclude Include="export_texture.hpp" />
     <ClInclude Include="to_string.hpp" />
-    <ClInclude Include="VREM_settings.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

@@ -92,9 +92,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VREM_settings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="addon_functions.h">
       <Filter>Header Files</Filter>
     </ClInclude>

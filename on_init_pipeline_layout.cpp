@@ -49,7 +49,6 @@
 #include "loader_addon_shared.h"
 #include "addon_functions.h"
 #include "addon_objects.h"
-#include "VREM_settings.h"
 #include "addon_logs.h"
 
 #include "to_string.hpp"

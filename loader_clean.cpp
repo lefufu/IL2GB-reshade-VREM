@@ -43,6 +43,7 @@
 
 #include "loader_addon_shared.h"
 #include "loader_logs.h"
+//#include "addon_objects.h"
 
 extern SharedState g_shared_state_l;
 

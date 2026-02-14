@@ -50,22 +50,15 @@
 #include <filesystem>
 
 #include "loader_addon_shared.h"
-#include "VREM_settings.h"
 #include "addon_logs.h"
+
 
 static PersistentPipelineData* g_persistent = nullptr;
 
-// static bool addon_init = false;
-// bool addon_init = false;
-// SharedState* g_shared_state = nullptr;
-
-static int s_fps_limit = 0;
-static std::chrono::high_resolution_clock::time_point s_last_time_point;
-
 //*******************************************************************************
-// do map uniform name/value in a array an index to make usage of settings faster 
+// map uniform name/value in a array to make usage of settings faster and /or map them to CB injected to shaders
 // mapping values are in VREM_settings.h
-// float VREM_setting[CB_SETTINGS_SIZE] = { 0 };
+// mmaping for CB variable is at bottom of the function.
 
 using namespace reshade::api;
 
@@ -81,10 +74,6 @@ struct UniformInfo {
             std::memcmp(data.data(), other.data.data(), data.size()) != 0;
     }
 };
-
-
-// static bool overlay_is_open = false;
-// static bool was_open_last_frame = false;
 
 //*******************************************************************************
 // retrieve VREM settings from uniform of VREM_settings technique
@@ -163,18 +152,12 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
             {
                 a_shared.VREM_setting[settings_mapping[uniform_name]] = uniform_value;
             }
-            //else
+            
+			//update CB variable if name is defined in variable_mapping
+            auto it = var_mapping.find(uniform_name);
+            if (it != var_mapping.end())
             {
-				// uniform value should be a value to be injected in shaders
-                if (uniform_name == "cb_test_color")
-                {
-                    a_shared.cb_inject_values.testFlag = uniform_value;
-                }
-                else if ( uniform_name == "var_rotor") a_shared.cb_inject_values.rotorFlag = uniform_value;
-                else if (uniform_name == "var_label") a_shared.cb_inject_values.maskLabels = uniform_value;
-                else if (uniform_name == "flag_fps") a_shared.cb_inject_values.testGlobal = uniform_value;
-                else if (uniform_name == "var_haze_factor") a_shared.cb_inject_values.hazeReduction = uniform_value;
-                else if (uniform_name == "var_reflection") a_shared.cb_inject_values.gCockpitIBL = uniform_value;
+                *(it->second) = uniform_value;
             }
         });
 }

@@ -91,6 +91,7 @@ extern void log_destroy_CBlayout( uint64_t layout_handle);
 extern void log_increase_count_display();
 extern void log_not_increase_draw_count();
 extern void log_start_monitor(std::string texture_name);
+extern void log_stop_monitor(std::string texture_name);
 extern void log_mirror_view();
 extern void log_push_descriptor(shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update);
 extern void log_creation_start(std::string texture_name);

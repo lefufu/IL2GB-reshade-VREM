@@ -1,35 +1,53 @@
 //
-// debug shader for VREM : display depth or stencil buffer
+// settings for VREM
 //
-// 2025/01 							Lefuneste.
+// 2026/01 							Lefuneste.
 //
 // https://forum.dcs.world/topic/356128-reshade-vr-enhancer-mod-vrem/#comment-5503216
 
 #include "ReShade.fxh"
 #include "ReShadeUI.fxh"
-
-//====================================================================
-// ReShade GUI Widget Test Technique
-// Test de tous les types de widgets GUI disponibles dans ReShade
-//====================================================================
-
-uniform int fps_limit <
+//*************************
+// DO NOT CHANGE THIS ENTRY, IT IS USED TO TRIGGER THE MOD
+uniform float set_default <
+	hidden = true;
+> = 1.0;
+//*************************
+//sight
+// flag for the section
+uniform bool set_sight <
+    ui_label = "Enable sigth options (reload)";
+    ui_tooltip = "enable sight changes)";
+    ui_category = "1. Sight";
+> = false;
+uniform float var_sightFactor <
     ui_type = "slider";
-    ui_label = "set fps";
-    ui_tooltip = "0 = no limit";
-    ui_category = "1. fps";
-    ui_min = 0;
-    ui_max = 90;
-    ui_step = 1;
-> = 0;
+    ui_label = "set sight strength factor";
+    ui_tooltip = "1.0: default, 5.0: 5x";
+    ui_category = "1. Sight";
+    ui_min = 1.0;
+    ui_max = 5.0;
+    ui_step = 0.1;
+> = 1.0;
+//*************************
+// mask
+// flag for the section
 
-uniform bool flag_fps <
-    ui_label = "for testing";
-    ui_tooltip = "boolean";
-    ui_category = "2. test";
+// debug section
+// flag for the section
+uniform bool set_mask <
+    ui_label = "Enable masking options (reload)";
+    ui_tooltip = "mak enhancement (sun, icons)";
+    ui_category = "2. Mask.";
+> = false;
+//display mask
+uniform bool var_mask_sun <
+    ui_label = "Mask sun halo";
+    ui_tooltip = "Mask sun halo";
+    ui_category = "2. Mask.";
 > = false;
 
-
+/*
 uniform int cb_test_color <
     ui_type = "combo";
     ui_label = "color for fixed color";
@@ -38,11 +56,7 @@ uniform int cb_test_color <
     ui_items = "value 1\0value 2\0value 3\0value 4\0";
 > = 0;
 
-uniform bool set_misc <
-    ui_label = "Enable misc. effects";
-    ui_tooltip = "enable miscellaneous options (haze,...)";
-    ui_category = "5. Misc.";
-> = true;
+
 
 uniform bool var_label <
     ui_label = "Label masking";
@@ -75,14 +89,22 @@ uniform bool set_effects <
     ui_tooltip = "enable rendering of technique in VR displays";
     ui_category = "6. Effects.";
 > = true;
+*/
+/*
+uniform bool var_save_cso <
+    ui_label = "save .cso for all shaders";
+    ui_tooltip = "save .cso for all shaders at game launch (need restart)";
+    ui_category = "7. Debug";
+> = true;
+*/
 
 
-
-uniform float set_default <
-	//hidden = true;
-> = 1.0;
 
 /*
+//====================================================================
+// ReShade GUI Widget Test Technique
+// Test de tous les types de widgets GUI disponibles dans ReShade
+//====================================================================
 
 // 1. SLIDERS (int et float)
 //--------------------------------------------------------------------

@@ -49,23 +49,26 @@ static const int CPERFRAME_INDEX = 6;
 // texture number to be injected in the shaders for depth/stencil
 static const int RVINDEX = 3;
 
+// size of ShaderInjectData
+static const int CBSIZE = 44;
+
 // Must be 32bit aligned
 struct ShaderInjectData {
 	float testFlag; //0.x
-	float rotorFlag; //0.y
+	float sightFactor; //0.y
 	float testGlobal; //0.z
-	float disable_video_IHADSS; //0.w
+	float maskSun; //0.w
 	float count_display; //1.x
-	float mapMode = 1.0; //1.y
+	float mapMode; //1.y
 	float VRMode; //1.z
 	float maskLabels; //1.w
 	float hazeReduction; //2.x => used in asm !
 	float noReflect; //2.y
 	float cockpitSat; //2.z
-	float cockpitMul=1.0; //2.w
+	float cockpitMul; //2.w
 	float cockpitAdd; //3.x
 	float extSat; //3.y
-	float extMul = 1.0; //3.z
+	float extMul; //3.z
 	float extAdd; //3.w
 	float colorFlag; //4.x
 	float fSharpenIntensity; //4.y
@@ -77,8 +80,8 @@ struct ShaderInjectData {
 	float Iterations; //5.w
 	float Grain; //6.x
 	float frame_counter; //6.y
-	float AAxFactor = 1.0; //6.z => to be injected in shaders, contain all super and under sampling values, at the opposite of MSAAxfactor only for technique and only for MSAA
-	float AAyFactor = 1.0; //6.w => to be injected in shaders, at the opposite of MSAAyfactor only for technique, at the opposite of MSAAxfactor only for technique and only for MSAA
+	float AAxFactor; //6.z => to be injected in shaders, contain all super and under sampling values, at the opposite of MSAAxfactor only for technique and only for MSAA
+	float AAyFactor; //6.w => to be injected in shaders, at the opposite of MSAAyfactor only for technique, at the opposite of MSAAxfactor only for technique and only for MSAA
 	float IHADSSxOffset; //7.x
 	float IHADSSBoresight; //7.y
 	float IHADSSNoLeft; //7.z
