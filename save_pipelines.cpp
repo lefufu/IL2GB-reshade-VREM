@@ -89,6 +89,13 @@ void save_pipeline_in_list(
     temp_pipe.ps_hash = 0;
     temp_pipe.subobject_count = subobject_count;
 
+    //handle some invalid pipelines
+    if (subobject_count > MAX_PIPELINE_OBJECTS)
+    {
+        log_error_too_many_objectsl(pipeline, subobject_count);
+        return;
+    }
+
     // Init default values
     temp_pipe.topology = reshade::api::primitive_topology::triangle_list;
     temp_pipe.depth_stencil_format = reshade::api::format::unknown;

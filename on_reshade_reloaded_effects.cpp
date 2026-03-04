@@ -73,7 +73,7 @@ bool  get_uniform_and_techniques(effect_runtime* runtime) {
 		filtered_pipeline.clear();
 		
 		// read techniques activated to use them later for technique rendering in VR
-		if (a_shared.VREM_setting[SET_EFFECTS])
+		if (a_shared.VREM_setting[SET_TECHNIQUE])
 		{
 			enumerateTechniques(runtime);
 #if _DEBUG_LOGS
@@ -97,8 +97,13 @@ extern "C" {
 	VREM_EXPORT void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)
 	{
 
+		//reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects started");
+
 		// should work only for reload
 		bool status = get_uniform_and_techniques(runtime);
+
+		//reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects ended");
+
 	}
 #ifdef _DEBUG
 }

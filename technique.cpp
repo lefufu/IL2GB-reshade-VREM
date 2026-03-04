@@ -49,13 +49,15 @@
 #include "addon_functions.h"
 #include "addon_objects.h"
 #include "addon_logs.h"
-// #include "CDataFile.h"
+#include "CDataFile.h"
 
 static size_t g_charBufferSize;
 static char g_charBuffer[CHAR_BUFFER_SIZE];
 static bool technique_status;
 
 extern SharedState* g_shared_state;
+
+CDataFile technique_iniFile;
 
 //*******************************************************************************************************
 /// <summary>
@@ -156,28 +158,55 @@ void init_preprocess(effect_runtime* runtime)
     }
 }
 
-/*
+
 
 // *******************************************************************************************************
 /// <summary>
 /// save technique status in the ini file
 /// </summary>
 /// 
-void save_technique_status(std::string technique_name, std::string effect_name, bool technique_status, int quad_view_target)
+void save_technique_status(std::string technique_name, std::string effect_name, bool VR_technique_status, int quad_view_target)
 {
-    extern CDataFile technique_iniFile;
-
-    technique_iniFile.SetBool(technique_name, technique_status, "", "technique");
+    technique_iniFile.SetBool(technique_name, VR_technique_status, "", "technique");
 }
 
+// *******************************************************************************************************
+/// <summary>
+/// save all technique status in the ini file
+/// </summary>
+/// 
+void save_all_technique_status()
+{
+    
+    reshade::log::message(reshade::log::level::info, "****** addon - save_all_technique_status => launch save *******");
+    std::stringstream s;
+    s << "technique_iniFileName=" << technique_iniFileName << "; ";
+    reshade::log::message(reshade::log::level::info, s.str().c_str());
+    s.clear();
+    
+    for (auto& entry : g_shared_state->technique_vector)
+    {
+        save_technique_status(entry.name, entry.eff_name, entry.VR_technique_status, 0);
+        std::stringstream s;
+        s << "save_technique_status, name = " << entry.name << "; ";
+        reshade::log::message(reshade::log::level::info, s.str().c_str());
+    }
 
+    s << "save status : " << g_shared_state->technique_enabled << "; ";
+    reshade::log::message(reshade::log::level::info, s.str().c_str());
+
+    technique_iniFile.SetBool("technique_enabled", g_shared_state->technique_enabled, "", "technique");
+
+    technique_iniFile.SetFileName(technique_iniFileName);
+    technique_iniFile.Save();
+}
 // *******************************************************************************************************
 /// <summary>
 /// read the technique status in the .ini file
 /// </summary>
 bool read_technique_status_from_file(std::string name)
 {
-    extern CDataFile technique_iniFile;
+ 
     bool status;
 
     if (name == VR_ONLY_EFFECT)
@@ -190,7 +219,7 @@ bool read_technique_status_from_file(std::string name)
 
 }
 
-*/
+
 // *******************************************************************************************************
 /// <summary>
 /// enumerate technique : call a function for all techniques
@@ -198,19 +227,18 @@ bool read_technique_status_from_file(std::string name)
 void enumerateTechniques(effect_runtime* runtime)
 {
     
-    if (a_shared.VREM_setting[SET_EFFECTS])
+    //if (a_shared.VREM_setting[SET_TECHNIQUE])
+	if (g_shared_state->technique_enabled)
     {
-        //extern CDataFile technique_iniFile;
-
         //purge the technique vector
-        a_shared.technique_vector.clear();
+         g_shared_state->technique_vector.clear();
 
         // init flags for texture or uniform injection
         a_shared.uniform_needed = false;
         //shared_data.texture_needed = false;
 
         // load the technique file, as status of technique are not relevant
-        // technique_iniFile.Load(technique_iniFileName);
+        technique_iniFile.Load(technique_iniFileName);
 
 
         // Pass the logging function as the callback
@@ -227,33 +255,10 @@ void enumerateTechniques(effect_runtime* runtime)
             g_charBufferSize = CHAR_BUFFER_SIZE;
             rt->get_technique_effect_name(technique, g_charBuffer, &g_charBufferSize);
             std::string eff_name(g_charBuffer);
-
-            // get the "VREM "VR only" empty technique (used to ensure to have at least 1 active technique and make runtime->enumerate_techniques called
-            /* if (name == VR_ONLY_NAME)
-            {
-                a_shared.VR_only_technique_handle = technique;
-                //disable technique if not VR only
-                if (!a_shared.VRonly_technique)
-                    rt->set_technique_state(a_shared.VR_only_technique_handle, false);
-            }
-            */
-            /*
-            // if shared_data.VRonly_technique is set, the technique state will not be used, instead the status will be read from the technique .ini file
-            if (shared_data.VRonly_technique)
-            {
-                technique_status = read_technique_status_from_file(name);
-                // activate the technique, as it may be keep off from previous game session and it need to be activated before the 3D window at least once per session
-                if (technique_status && shared_data.count_draw == 0)
-                {
-                    rt->set_technique_state(technique, true);
-                }
-
-            }
-            else */
-                technique_status = rt->get_technique_state(technique);
+			 technique_status = rt->get_technique_state(technique);
 
             // add technique in vector if active
-            if (technique_status)
+            //if (technique_status)
             {
 
                 //check if shader is containing a VREM texture (¨DEPTH' or 'STENCIL') or other options in GUI that need stencil
@@ -272,31 +277,16 @@ void enumerateTechniques(effect_runtime* runtime)
 
 
                 // add the technique in the vector
-                a_shared.technique_vector.push_back({ technique, name, eff_name , technique_status, QV_target });
+				bool VRtechnique_status = read_technique_status_from_file(name);
+                g_shared_state->technique_vector.push_back({ technique, name, eff_name , VRtechnique_status, technique_status,QV_target });
 #if _DEBUG_LOGS
                 //log 
                 log_technique_info(rt, technique, name, eff_name, technique_status, QV_target, has_depth_or_stencil);
 #endif
 
             }
-            // log_technique_info(rt, technique, name, eff_name, technique_status, -1, false);
-            // save changes only if VROnly is not set
-            /* if (!shared_data.VRonly_technique)
-            {
-                save_technique_status(name, eff_name, technique_status, shared_data.effect_target_QV);
-            } */
-
+  
             });
-        //save technique list
-        /*
-        if (!shared_data.VRonly_technique)
-        {
-
-            technique_iniFile.SetFileName(technique_iniFileName);
-            technique_iniFile.Save();
-        }
-        */
-
     }
 }
 
@@ -359,13 +349,13 @@ void reEnableAllTechnique(bool save_flag) {
 /// <summary>
 /// Render effect 
 /// </summary>
-void render_effect(short int display_to_use, command_list* cmd_list) {
+void render_technique(short int display_to_use, command_list* cmd_list) {
 
     // do not engage effect if render target view is not identified 
     if (g_shared_state->debug && flag_capture)
     {
         std::stringstream s;
-        s << "addon - render_effect(): engage effect, last_RTV_saved.copied =  " << last_RTV_saved.copied << ";";
+        s << "***** addon - render_technique(): engage technique, last_RTV_saved.copied =  " << last_RTV_saved.copied << ";";
         reshade::log::message(reshade::log::level::info, s.str().c_str());
     }
 
@@ -380,9 +370,9 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
             // update DEPTH texture
             // shared_data.render_target_view[display_to_use].depth_exported_for_technique = true;
             // g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.depth_view[display_to_use].texresource_view, shared_data.depth_view[display_to_use].texresource_view);
-            g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.copied_textures[current_PlaneMask_handle].texresource_view, a_shared.copied_textures[current_PlaneMask_handle].texresource_view);
+            g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.copied_textures[current_depth_handle].texresource_view, a_shared.copied_textures[current_depth_handle].texresource_view);
             // update STENCIL texture
-            //g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_PlaneMask_handle].texresource_view_stencil, a_shared.copied_textures[current_PlaneMask_handle].texresource_view_stencil);
+            g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_PlaneMask_handle].texresource_view, a_shared.copied_textures[current_PlaneMask_handle].texresource_view);
 #if _DEBUG_LOGS
             log_export_texture(display_to_use);
 #endif
@@ -391,16 +381,16 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
         // render all activated techniques if not 2D mirror or in 2D (reshade is already rendering the effect) 
         // if (shared_data.cb_inject_values.VRMode)
         {
-            for (int i = 0; i < a_shared.technique_vector.size(); ++i)
+            for (int i = 0; i < g_shared_state->technique_vector.size(); ++i)
             {
                
                 bool buffer_exported = false;
 
                 // render if QV target are relevant for the technique 
-                if ((display_to_use <= 1 && a_shared.technique_vector[i].quad_view_target == QVOUTER) ||
-                    (display_to_use > 1 && a_shared.technique_vector[i].quad_view_target == QVINNER) ||
-                    (a_shared.technique_vector[i].quad_view_target == QVALL)
-                    )
+               /* if ((display_to_use <= 1 && g_shared_state->technique_vector[i].quad_view_target == QVOUTER) ||
+                    (display_to_use > 1 && g_shared_state->technique_vector[i].quad_view_target == QVINNER) ||
+                    (g_shared_state->technique_vector[i].quad_view_target == QVALL) 
+                    ) */
                 {
                     // send mask and global preprocessor definition
                     // if (!a_shared.render_target_view[display_to_use].compiled)
@@ -428,18 +418,19 @@ void render_effect(short int display_to_use, command_list* cmd_list) {
                     }
 
                     // render all activated techniques if not 2D mirror or in 2D (reshade is already rendering the effect) 
-                    if (a_shared.cb_inject_values.VRMode)
+                    // if (a_shared.cb_inject_values.VRMode)
+                    if (g_shared_state->technique_vector[i].VR_technique_status)
                     {
                         // engage effect (will be compiled at the first launch)
-                        g_shared_state->runtime->render_technique(a_shared.technique_vector[i].technique, cmd_list, last_RTV_saved.RV, last_RTV_saved.RV);
+                       g_shared_state->runtime->render_technique(g_shared_state->technique_vector[i].technique, cmd_list, last_RTV_saved.RV, last_RTV_saved.RV);
 #if _DEBUG_LOGS
-                        log_effect(a_shared.technique_vector[i], cmd_list, last_RTV_saved.RV);
+                        log_effect(g_shared_state->technique_vector[i], cmd_list, last_RTV_saved.RV);
 #endif
                     }
                 }
             }
         }
-        a_shared.render_effect = false;
+        
 
         /*
         // push back the outer texture instead of inner or wrong eye for effect in mirror view

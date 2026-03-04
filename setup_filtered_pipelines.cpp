@@ -89,12 +89,26 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 	filtered_pipeline.reserve(g_shared_state->VREM_pipelines.saved_pipelines.size());
 	std::optional<Shader_Definition> shader_def_opt;
 
+	/*
+	std::stringstream s;
+	s << "g_shared_state->VREM_pipelines.saved_pipelines.size() =" << g_shared_state->VREM_pipelines.saved_pipelines.size() << ";";
+	reshade::log::message(reshade::log::level::info, s.str().c_str());
+	*/
+
+	int i = 0;
 	// parse the list of saved pipelines to identify which one to keep regarding mod settings
 	for (auto& p : g_shared_state->VREM_pipelines.saved_pipelines)
 	{
 		
+		/* std::stringstream s;
+		s << "p.hash =" << p.hash << ";";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+		s.clear();
+		*/
+
 		// Validate pipeline handle
 		if (p.pipeline.handle == 0) {
+			// reshade::log::message(reshade::log::level::info, "*** addon - handle null");
 			continue;
 		}
 		
@@ -102,8 +116,13 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 		bool to_be_filtered = false;
 		// check if the shader hash is in the mod list
 
+
+		// reshade::log::message(reshade::log::level::info, "*** addon - check if not already added");
+
 		// check if not already added
 		auto filtered_pipe = filtered_pipeline.find(p.pipeline.handle);
+
+		// reshade::log::message(reshade::log::level::info, "*** addon - after find");
 		if (filtered_pipe != filtered_pipeline.end()) {
 #if _DEBUG_LOGS
 			// pipeline is already in the list, do nothing
@@ -116,10 +135,16 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 		else {
 			// add pipeline in the filtered list
 
+			// reshade::log::message(reshade::log::level::info, "*** addon - add pipeline in the filtered list");
+
 			shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
+
+			i++;
 
 			if (shader_def_opt.has_value())
 			{
+
+				//reshade::log::message(reshade::log::level::info, "*** addon - process pipeline");
 
 				bool active = check_if_active_option(shader_def_opt.value());
 #if _DEBUG_LOGS
@@ -161,14 +186,14 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 			}
 		}
 
-
 		//create constant color pipeline for hunting by using the first PS pipeline and the has corresponding to constant color .cso
 		if (p.pipeline.handle == a_shared.first_PS_pipeline_handle)
 		{
-			
+	
 			uint32_t hash_color[1] = { CONSTANT_HASH };
 			a_shared.cloned_constant_color_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, hash_color);
 		}
+
 	}
 
 	return false;

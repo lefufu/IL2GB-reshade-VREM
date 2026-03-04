@@ -53,6 +53,114 @@
 
 using namespace reshade::api;
 
+//*******************************************************************************************************
+// for hunting
+void log_hunting(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
+{
+#ifdef _DEBUG
+	// log for shader hunting
+	if (g_shared_state->shader_hunter)
+	{
+#if _DEBUG_LOGS
+		log_hunting_push_descriptor(cmd_list, stages, layout, param_index, update);
+#endif
+
+	}
+	/*
+	if (g_shared_state->debug_log && flag_capture && a_shared.flag_texture_dump)
+	{
+		std::stringstream s;
+		s << "addon - vrem_on_push_descriptors : a_shared.flag_texture_dump = " << a_shared.flag_texture_dump << ", update.type = " << to_string(update.type) << "; ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}*/
+
+	//export textures for hunting if requested
+	if (flag_capture && a_shared.flag_texture_dump && g_shared_state->save_texture_flag && update.type == descriptor_type::shader_resource_view)
+	{
+		TextureExporter g_exporter;
+		g_exporter.export_descriptors(
+			cmd_list,
+			stages,
+			layout,
+			param_index,
+			update,
+			a_shared.ps_hash_for_text_dump,
+			a_shared.count_display
+		);
+		/*
+		if (g_shared_state->debug_log && flag_capture)
+		{
+			std::stringstream s;
+			s << "addon - vrem_on_push_descriptors : should dump textures, param_index = " << param_index << "; ";
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+		}*/
+
+	}
+
+	if (flag_capture && a_shared.flag_cb_dump && g_shared_state->save_cb_flag && update.type == descriptor_type::constant_buffer)
+	{
+		ConstantBufferExporter cb_exporter;
+		cb_exporter.export_constant_buffers(
+			cmd_list,
+			stages,
+			layout,
+			param_index,
+			update,
+			a_shared.ps_hash_for_cb_dump,
+			a_shared.count_display,
+			true // true = export en .txt (lisible), false = .bin (binaire)
+		);
+
+	}
+
+#endif
+}
+
+//*******************************************************************************************************
+// injection of texture 
+void inject_texture(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
+{
+#if _DEBUG_LOGS
+	//log infos
+	log_push_descriptor(stages, layout, param_index, update);
+#endif
+
+	// get mask from ext plane  PS, filter by the number of resource
+	if (a_shared.last_feature == Feature::VS_ext_ownPlane && (update.count == 15 || update.count == 16))
+	{
+		//default for update.count == 16
+		uint32_t text_num = 10;
+		uint32_t depth_num = 12;
+		if (update.count == 15)
+		{
+			text_num = 9;
+			depth_num = 11;
+		}
+
+		// in some case the resource view handle is null, skip these cases
+		if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0)
+		{
+
+			// to retrieve infos for pushing texture in bind_pipeline
+			current_PlaneMask_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "PlaneMask");
+		}
+
+
+		if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[depth_num].handle != 0)
+		{
+
+			// to retrieve infos for pushing texture in bind_pipeline
+			current_depth_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, depth_num, "Depth");
+		}
+
+
+	}
+
+	// stop tracking
+	track_for_planeMask = false;
+}
+
+
 #ifdef _DEBUG
 extern "C" {
 #endif
@@ -62,146 +170,49 @@ extern "C" {
 	VREM_EXPORT  void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 	{
 
-#ifdef _DEBUG
-		// log for shader hunting
-		if (g_shared_state->shader_hunter)
-		{
-#if _DEBUG_LOGS
-			log_hunting_push_descriptor(cmd_list, stages, layout, param_index, update);
-#endif
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors started");
+		// for hunting mod only
+		log_hunting(cmd_list, stages, layout, param_index, update);
 
-		}
-		/*
-		if (g_shared_state->debug_log && flag_capture && a_shared.flag_texture_dump)
-		{
-			std::stringstream s;
-			s << "addon - vrem_on_push_descriptors : a_shared.flag_texture_dump = " << a_shared.flag_texture_dump << ", update.type = " << to_string(update.type) << "; ";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-		}*/
-
-		//export textures for hunting if requested
-		if (flag_capture && a_shared.flag_texture_dump && g_shared_state->save_texture_flag && update.type == descriptor_type::shader_resource_view)
-		{
-			TextureExporter g_exporter;
-			g_exporter.export_descriptors(
-				cmd_list,
-				stages,
-				layout,
-				param_index,
-				update,
-				a_shared.ps_hash_for_text_dump,
-				a_shared.count_display
-			);
-			/*
-			if (g_shared_state->debug_log && flag_capture)
-			{
-				std::stringstream s;
-				s << "addon - vrem_on_push_descriptors : should dump textures, param_index = " << param_index << "; ";
-				reshade::log::message(reshade::log::level::info, s.str().c_str());
-			}*/
-
-		}
-
-		if (flag_capture && a_shared.flag_cb_dump && g_shared_state->save_cb_flag && update.type == descriptor_type::constant_buffer)
-		{
-			ConstantBufferExporter cb_exporter;
-			cb_exporter.export_constant_buffers(
-				cmd_list,
-				stages,
-				layout,
-				param_index,
-				update,
-				a_shared.ps_hash_for_cb_dump,
-				a_shared.count_display,
-				true // true = export en .txt (lisible), false = .bin (binaire)
-			);
-
-		}
-
-#endif
 		// ********** to be updated for later effects
 		// to limit processing only when a tracking is setup 
-		// if (!a_shared.render_effect && !track_for_planeMask && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
-		if (!track_for_planeMask) return;
-
+		// if (!a_shared.render_technique && !track_for_planeMask && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
+		if (!track_for_planeMask && !a_shared.render_technique)
+		{
+			//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended (no track)");
+			return;
+		}
 
 		// display_to_use = 0 => outer left, 1 = outer right, 2 = Inner left, 3 = inner right.
 		short int display_to_use = a_shared.count_display - 1;
 
 		// render effect part
 		// do not engage effect if option not selected and not in cockpit
-		if (a_shared.render_effect && a_shared.VREM_setting[SET_EFFECTS] && !a_shared.cb_inject_values.mapMode && a_shared.draw_passed)
+		// if (a_shared.render_technique && a_shared.VREM_setting[SET_TECHNIQUE] && !a_shared.cb_inject_values.mapMode && a_shared.draw_passed)
+		if (a_shared.render_technique   && a_shared.draw_passed && a_shared.VREM_setting[SET_TECHNIQUE])
 		{
-			render_effect(display_to_use, cmd_list);
+			/*
+			if (a_shared.render_technique && flag_capture) reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors => requesting rendering");
+			std::stringstream s;
+			s << "addon - vrem_on_push_descriptors(): launch engage effect, last_RTV_saved.copied =  " << last_RTV_saved.copied << ", display_to_use=" << display_to_use << ";";
+			if (flag_capture) reshade::log::message(reshade::log::level::info, s.str().c_str());
+			*/
+			
+			render_technique(display_to_use, cmd_list);
+			a_shared.render_technique = false;
 		}
 
-		//handle only shader_resource_view when needed
-		// handle mask => 18 textures for the shader !
-		// if (track_for_planeMask && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel && update.count == 18) 
+		// inject texture part
+		//
 		if (track_for_planeMask && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel)
 		{
-#if _DEBUG_LOGS
-			//log infos
-			log_push_descriptor(stages, layout, param_index, update);
-#endif
-			/*
-			// get mask from onw plane  PS, filter by the number of resource
-			if (a_shared.last_feature == Feature::VS_ext_ownPlane && (update.count == 18 || update.count == 17))
-			{
-
-				// in some case the resource view handle is null, skip these cases
-				if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[8].handle != 0)
-				{
-					// to retrieve infos for pushing texture in bind_pipeline
-					current_PlaneMask_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, 8, "PlaneMask");
-				}
-			}
-			*/
-
-			// get mask from ext plane  PS, filter by the number of resource
-			if (a_shared.last_feature == Feature::VS_ext_ownPlane && (update.count == 15 || update.count == 16))
-			{
-				//default for update.count == 16
-				uint32_t text_num = 10;
-				uint32_t depth_num = 12;
-				if (update.count == 15)
-				{
-					text_num = 9;
-					depth_num = 11;
-				}
-	
-				// in some case the resource view handle is null, skip these cases
-				if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0)
-				{
-
-					// to retrieve infos for pushing texture in bind_pipeline
-					current_PlaneMask_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "PlaneMask");
-				}
-
-	
-				if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[depth_num].handle != 0)
-				{
-
-					// to retrieve infos for pushing texture in bind_pipeline
-					current_depth_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, depth_num, "Depth");
-				}
-
-				
-			}
-
-			// stop tracking
-			track_for_planeMask = false;
+			inject_texture(cmd_list, stages, layout, param_index, update);
 		}
 
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended");
 
-		/*if (g_shared_state->debug && flag_capture && a_shared.render_effect)
-		{
-			std::stringstream s;
-			s << "addon - vrem_on_push_descriptors : a_shared.render_effect : " << a_shared.render_effect << ", a_shared.VREM_setting[SET_EFFECTS] : " << a_shared.VREM_setting[SET_EFFECTS] << ", a_shared.cb_inject_values.mapMode : " << a_shared.cb_inject_values.mapMode << ", a_shared.draw_passed : " << a_shared.draw_passed << "; ";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-		}*/
-		
-		//handle CB modification
+		/*
+		//handle CB modification (not relvant of I2 but keep for future DCS VREM2 mod)
 		// CB cPerFrame is generated once at the beginning of the frame, it is not needed to use a dedicated shader to track the push_descriptor command
 		if ((a_shared.cb_inject_values.hazeReduction != 1.0 || a_shared.cb_inject_values.gCockpitIBL != 1.0) && a_shared.VREM_setting[SET_MISC])
 		{
@@ -227,6 +238,7 @@ extern "C" {
 
 			}
 		}
+		*/
 	}
 #ifdef _DEBUG
 }

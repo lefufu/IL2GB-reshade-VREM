@@ -61,6 +61,8 @@ extern void log_constant_buffer_mapping_error(std::string CB_name);
 extern void log_error_unsuported_format(const resource_desc& desc, const std::string& filepath);
 extern void log_error_srv_handle_null(const std::string& filepath);
 extern void log_error_txt_handle_null(const std::string& filepath);
+extern void log_error_too_many_objectsl(reshade::api::pipeline pipeline, uint32_t subobject_count);
+extern void log_empy_render_target();
 
 
 #if _DEBUG_LOGS 
@@ -98,7 +100,7 @@ extern void log_creation_start(std::string texture_name);
 extern void log_resource_created(std::string texture_name, device* dev, resource_desc check_new_res, uint64_t handle);
 extern void log_copy_texture(std::string texture_name, uint64_t handle);
 extern void log_resource_view_created(std::string texture_name, device* dev, resource_view res_view, uint64_t handle);
-extern void log_texture_injected(std::string texture_name, uint64_t handle, int drawindex);
+extern void log_texture_injected(std::string texture_name, uint64_t handle);
 extern void log_create_RVlayout();
 extern void log_reset_tracking();
 extern void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);

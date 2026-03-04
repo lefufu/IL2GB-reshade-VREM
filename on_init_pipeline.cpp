@@ -97,6 +97,7 @@ extern "C" {
 	{
 		// save needed pipelines as init_pipeline is called once per game launch
 		// only shader types defined in ALLOWED_SHADERS are saved
+
 		save_pipeline_in_list(device, layout, subobjectCount, subobjects, pipelineHandle);
 
 		// if init_pipeline after creation of filtered pipeline list, request an update

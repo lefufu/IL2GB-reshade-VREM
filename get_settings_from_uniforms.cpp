@@ -51,9 +51,12 @@
 
 #include "loader_addon_shared.h"
 #include "addon_logs.h"
-
+#include "addon_functions.h"
+#include "CDataFile.h"			  
 
 static PersistentPipelineData* g_persistent = nullptr;
+
+extern CDataFile technique_iniFile;
 
 //*******************************************************************************
 // map uniform name/value in a array to make usage of settings faster and /or map them to CB injected to shaders
@@ -84,6 +87,15 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
     std::string name = VREM_SETTINGS_NAME;
     const char* effect_name = name.c_str();
 
+    //reshade::log::message(reshade::log::level::info, "addon - get_settings_from_uniforms started");
+
+   // load the technique file, as status of technique are not relevant
+    technique_iniFile.Load(technique_iniFileName);
+
+    // if flag is defined read it 
+    std::string raw = technique_iniFile.GetString("technique_enabled", "technique");
+    if (!raw.empty()) g_shared_state->technique_enabled = technique_iniFile.GetBool("technique_enabled", "technique");
+
     runtime->enumerate_uniform_variables(effect_name,
         [&](effect_runtime* rt, effect_uniform_variable var) {
             char name_buffer[256];
@@ -96,7 +108,7 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
             UniformInfo info;
             info.name = uniform_name;
             info.variable = var;
-            format uniform_format;
+            reshade::api::format uniform_format;
             uint32_t out_row, out_colomns, out_array_length;
             float uniform_value = 0;
 
@@ -110,38 +122,38 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
             {
                 switch (uniform_format)
                 {
-                case format::r32_typeless:
-                {
-                    bool value;
-                    rt->get_uniform_value_bool(var, &value, 1, 0);
-                    uniform_value = value;
-                    break;
-                }
+                    case format::r32_typeless:
+                    {
+                        bool value;
+                        rt->get_uniform_value_bool(var, &value, 1, 0);
+                        uniform_value = value;
+                        break;
+                    }
 
-                case format::r32_uint:
-                {
-                    uint32_t value;
-                    rt->get_uniform_value_uint(var, &value, 1, 0);
-                    uniform_value = value;
-                    break;
-                }
+                    case format::r32_uint:
+                    {
+                        uint32_t value;
+                        rt->get_uniform_value_uint(var, &value, 1, 0);
+                        uniform_value = value;
+                        break;
+                    }
 
-                case format::r32_sint:
-                {
-                    int32_t value;
-                    rt->get_uniform_value_int(var, &value, 1, 0);
-                    uniform_value = value;
-                    break;
-                }
+                    case format::r32_sint:
+                    {
+                        int32_t value;
+                        rt->get_uniform_value_int(var, &value, 1, 0);
+                        uniform_value = value;
+                        break;
+                    }
 
-                case format::r32_float:
-                {
-                    float value;
-                    rt->get_uniform_value_float(var, &value, 1, 0);
-                    uniform_value = value;
-                    break;
+                    case format::r32_float:
+                    {
+                        float value;
+                        rt->get_uniform_value_float(var, &value, 1, 0);
+                        uniform_value = value;
+                        break;
 
-                }
+                    }
                 }
             }
 
@@ -160,5 +172,17 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
                 *(it->second) = uniform_value;
             }
         });
+
+    // sync technique state with g_shared_state
+	g_shared_state->technique_enabled = a_shared.VREM_setting[SET_TECHNIQUE];
+
+    //save technique settings in file if requested
+    if (g_shared_state->request_update_file)
+    {
+        g_shared_state->request_update_file = false;
+        save_all_technique_status();
+    }
+
+    // reshade::log::message(reshade::log::level::info, "addon - get_settings_from_uniforms ended");
 }
 

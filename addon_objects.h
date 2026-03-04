@@ -62,6 +62,9 @@ extern bool addon_init;
 //*****************************************************************************
 // mod parameters
 // 
+//name of ini file to save techniques status
+inline std::string technique_iniFileName = "techniques.ini";
+
 // number of CB modified by VREM (used for an array allocation)
 static const int NUMBER_OF_MODIFIED_CB = 2;
 
@@ -123,7 +126,7 @@ static const uint32_t action_skip = 0b000000010;
 //log : the shader will trigger logging of resources 
 static const uint32_t action_log = 0b000000100;
 //identify : the shader will be used to identify a configuration of the game (eg VR,..)
-static const uint32_t action_identify = 0b000001000;
+static const uint32_t action_track_RT = 0b000001000;
 //inject Texture : the shader need to have textures pushed as additional parameters 
 static const uint32_t action_injectText = 0b000010000;
 //inject count : the shader will trigger call count 
@@ -136,6 +139,8 @@ static const uint32_t action_injectCB = 0b010000000;
 static const uint32_t action_dump = 0b100000000;
 // get texture 
 static const uint32_t action_get_text = 0b1000000000;
+// get texture 
+static const uint32_t action_renderTechnique = 0b10000000000;
 
 //for logging and debugging : mapping between action flag and name for display
 struct ActionFlag {
@@ -147,13 +152,14 @@ static const ActionFlag action_flags[] = {
 	{ action_replace, "replace" },
 	{ action_skip, "skip" },
 	{ action_log, "log" },
-	{ action_identify, "identify" },
+	{ action_track_RT, "technique" },
 	{ action_injectText, "injectText" },
 	{ action_count, "count" },
 	{ action_replace_bind, "replace_bind" },
 	{ action_injectCB, "injectCB" },
 	{ action_dump, "dump" },
 	{ action_get_text, "action_get_text" },
+	{ action_renderTechnique, "action_renderTechnique" },
 
 };
 
@@ -172,6 +178,8 @@ enum class Feature : uint32_t
 	PS_external = 5,
 	PS_sight = 6,
 	PS_sun = 7,
+	PS_VRMirror = 8,
+	PS_preGlobal = 9,
 	//old things for compatibility
 	// Rotor : disable rotor when in cockpit view
 	Rotor = 100,
@@ -183,8 +191,6 @@ enum class Feature : uint32_t
 	GetStencil = 400,
 	// IHADSS : handle feature for AH64 IHADSS
 	IHADSS = 500,
-	// define if VRMode
-	VRMode = 600,
 	// define if view is in welcome screen or map
 	mapMode = 700,
 	// haze control
@@ -199,8 +205,6 @@ enum class Feature : uint32_t
 	NVG = 130,
 	//GUI 
 	GUI = 140,
-	// Reshade effects
-	Effects = 150,
 	// Testing : for testing purpose
 	Testing = 200,
 	// VS of 2nd global color change PS
@@ -218,6 +222,8 @@ inline std::unordered_map<Feature, std::string> debug_feature_name = {
 	{Feature::PS_external, "PS_external"},
 	{Feature::PS_sight, "PS_sight"},
 	{Feature::PS_sun, "PS_sun"},
+	{Feature::PS_VRMirror, "PS_VRMirror"},
+	{Feature::PS_preGlobal, "PS_preGlobal"},
 };
 
 //*****************************************************************************
@@ -225,20 +231,22 @@ inline std::unordered_map<Feature, std::string> debug_feature_name = {
 #define VREM_SETTINGS_NAME "VREM_settings.fx"
 
 // mapping SETTINGS value are in get_settings_from_uniforms (used to filter activie pipelines)
+// !!! a_shared.VREM_setting[SET_TECHNIQUE] is duplicated in loader_addon_shared as technique list is managed in imgui !!!
+
 static const int SETTINGS_SIZE = 11;
 
 constexpr uint8_t SET_DEFAULT = 0;
 constexpr uint8_t SET_SIGHT = 1;
 constexpr uint8_t SET_MASK = 2;
+constexpr uint8_t SET_TECHNIQUE = 8;
+constexpr uint8_t SET_DEBUG = 10;
 //will have to be cleaned up later
-constexpr uint8_t SET_COLOR = 3;
 constexpr uint8_t SET_MISC = 4;
 constexpr uint8_t SET_NS430 = 5;
 constexpr uint8_t SET_REFLECT = 6;
 constexpr uint8_t SET_NVG = 7;
-constexpr uint8_t SET_EFFECTS = 8;
 constexpr uint8_t SET_FPS_LIMIT = 9;
-constexpr uint8_t SET_DEBUG = 10;
+
 // !!!
 // update mapping between technique name and feature at bottom of the file
 
@@ -314,6 +322,7 @@ struct saved_RenderTargetView {
 	uint32_t height = 0;
 };
 
+/*  
 // for technique settings
 struct technique_trace {
 	effect_technique technique;
@@ -322,6 +331,7 @@ struct technique_trace {
 	bool technique_status;
 	int quad_view_target; // 0 : all, 1 Outer, 2 Innner
 };
+*/  
 
 struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 {
@@ -350,7 +360,7 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 
 	bool track_for_render_target = false;
 
-	bool render_effect = false;
+	bool render_technique = false;
 	bool draw_passed = false;
 	uint32_t count_draw = 0;
 
@@ -391,7 +401,7 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 
 	//for techniques
 	//map of technique selected 
-	std::vector<technique_trace> technique_vector;
+	//std::vector<technique_trace> technique_vector;
 	// to share uniform / texture only if needed
 	bool uniform_needed = false;
 	bool texture_needed = false;
@@ -477,10 +487,15 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// external only
 	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
 
-	//global PS (for control at first)
-	// {0xdf640d43, Shader_Definition(action_log | action_dump, Feature::VS_global, L"", 0, {SET_DEFAULT})},
-	{0x9f694be6, Shader_Definition(action_replace_bind | action_injectText, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG})},
+	//global PS before the one below, used to get render target
+	{0xe2d95d7a, Shader_Definition(action_track_RT, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
 
+	//global PS for image modification (last PS), used to set eye, display mask for debug. Its render target is used for effect
+	{0x9f694be6, Shader_Definition(action_replace_bind | action_injectText | action_log | action_renderTechnique, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG, SET_TECHNIQUE })},
+
+	//VR mirror
+	{0x39aa3616, Shader_Definition(action_log, Feature::PS_VRMirror, L"", 0, {SET_DEFAULT})},
+	
 	//sight PS
 	{0x45983fba, Shader_Definition(action_replace_bind , Feature::PS_sight, L"sight_PS.cso", 0, {SET_SIGHT})},
 
@@ -497,7 +512,9 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 inline std::unordered_map<std::string, int> settings_mapping = {
 	{"set_default", SET_DEFAULT},
 	{"set_sight", SET_SIGHT},
-	{"set_mask", SET_MASK }
+	{"set_mask", SET_MASK },
+	{"set_technique", SET_TECHNIQUE },
+	{"set_debug", SET_DEBUG },
 };
 
 //variables 
@@ -505,5 +522,6 @@ static const std::unordered_map<std::string, float*> var_mapping = {
 	{"var_debugMask", &a_shared.cb_inject_values.testFlag},
 	{"var_sightFactor", &a_shared.cb_inject_values.sightFactor},
 	{"var_mask_sun", &a_shared.cb_inject_values.maskSun},
+	{"var_sightEye", &a_shared.cb_inject_values.sightEye},
 };
 

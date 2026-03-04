@@ -74,8 +74,10 @@ static void clear_tracking_flags()
 	}
 
 	// shared_data.track_for_CB[DEF_UNIFORMS_CB_NB] = false;
-
 	a_shared.draw_passed = true;
+
+	// if (a_shared.render_technique && flag_capture) reshade::log::message(reshade::log::level::info, "***** addon - ondraw*() => requesting rendering");
+
 #ifdef _DEBUG
 	//to stop texture and buffer dump
 	a_shared.flag_texture_dump = false;
@@ -95,19 +97,20 @@ extern "C" {
 	{
 /*
 #ifdef _DEBUG
-		if (g_shared_state->save_rt_flag && flag_capture)
+		//dump render target if capture button is active, to help shader hunting and technique setup
+		if (g_shared_state->save_rt_flag && flag_capture && a_shared.track_for_render_target)
 		{
 			save_render_target(commandList);
 		}
 #endif
 */
-		// reshade::log::message(reshade::log::level::info, "Addon - vrem_on_draw");
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw started");
 
 #if _DEBUG_LOGS
 		// log
 		if (g_shared_state->shader_hunter && flag_capture) log_ondraw(vertex_count, instance_count, first_vertex, first_instance);
 #endif		
-		if (!track_for_planeMask && !do_not_draw && !a_shared.render_effect && !a_shared.flag_texture_dump) return false;
+		if (!track_for_planeMask && !do_not_draw && !a_shared.render_technique && !a_shared.flag_texture_dump) return false;
 		
 		bool skip = false;
 		if (do_not_draw) skip = true;
@@ -117,6 +120,8 @@ extern "C" {
 #endif	
 		// clear tracking flags
 		clear_tracking_flags();
+
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw ended");
 		return skip;
 	}
 
@@ -132,13 +137,13 @@ extern "C" {
 		}
 #endif
 */
-		// reshade::log::message(reshade::log::level::info, "Addon - vrem_on_draw_indexed");
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed started");
 
 #if _DEBUG_LOGS
 		// log
 		if (g_shared_state->shader_hunter && flag_capture) log_on_draw_indexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 #endif		
-		if (!track_for_planeMask && !do_not_draw && !a_shared.render_effect && !a_shared.flag_texture_dump) return false;
+		if (!track_for_planeMask && !do_not_draw && !a_shared.render_technique && !a_shared.flag_texture_dump) return false;
 
 		bool skip = false;
 		if (do_not_draw) skip = true;
@@ -149,7 +154,7 @@ extern "C" {
 		// clear trackign flags
 		clear_tracking_flags();
 
-
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed ended");
 
 		return skip;
 	}
@@ -167,13 +172,13 @@ extern "C" {
 		}
 #endif
 */
-		// reshade::log::message(reshade::log::level::info, "Addon - vrem_on_drawOrDispatch_indirect");
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed started");
 
 #if _DEBUG_LOGS
 		// log
 		if (g_shared_state->shader_hunter && flag_capture) log_on_drawOrDispatch_indirect(type, buffer, offset, draw_count, stride);
 #endif
-		if (!track_for_planeMask && !do_not_draw && !a_shared.render_effect && !a_shared.flag_texture_dump) return false;
+		if (!track_for_planeMask && !do_not_draw && !a_shared.render_technique && !a_shared.flag_texture_dump) return false;
 		
 		bool skip = false;
 		if (do_not_draw) skip = true;
@@ -183,6 +188,8 @@ extern "C" {
 #endif
 		// clear trackign flags
 		clear_tracking_flags();
+
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed ended");
 
 		return skip;
 

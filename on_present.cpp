@@ -62,7 +62,7 @@ void intialize_counters()
     do_not_draw = false;
     a_shared.cb_inject_values.GUItodraw = 0.0;
 
-    a_shared.render_effect = false;
+    a_shared.render_technique = false;
     a_shared.track_for_render_target = false;
 
     a_shared.last_feature = Feature::Null;
@@ -92,6 +92,7 @@ extern "C" {
     VREM_EXPORT void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
     {
        
+        //reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present started");
         // not used, 
         reshade::api::device* device = runtime->get_device();
         g_shared_state->device = device;
@@ -128,7 +129,6 @@ extern "C" {
 #endif
         } 
         
-
         // Fin de capture seulement si une frame réelle a commencé
         if (flag_capture && frame_started)
         {
@@ -168,6 +168,8 @@ extern "C" {
 
 		//force capture for testing
         // flag_capture = true;
+
+        //reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present ending");
     }
 
 #ifdef _DEBUG

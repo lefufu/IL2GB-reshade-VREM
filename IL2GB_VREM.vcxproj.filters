@@ -90,6 +90,9 @@
     <ClCompile Include="save_render_target.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CDataFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="addon_functions.h">

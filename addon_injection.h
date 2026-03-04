@@ -63,7 +63,7 @@ struct ShaderInjectData {
 	float VRMode; //1.z
 	float maskLabels; //1.w
 	float hazeReduction; //2.x => used in asm !
-	float noReflect; //2.y
+	float sightEye; //2.y
 	float cockpitSat; //2.z
 	float cockpitMul; //2.w
 	float cockpitAdd; //3.x

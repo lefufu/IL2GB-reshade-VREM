@@ -46,12 +46,12 @@
 #include "loader_on_event.hpp"
 
 #include "addon_objects.h"
+#include "CDataFile.h"
 
 //local variables
 VREMHotReloader* g_reloader = nullptr;
 static bool g_reload_in_progress = false;
 static bool g_reload_requested = false;
-
 
 SharedState g_shared_state_l;
 #ifdef _DEBUG
@@ -78,7 +78,7 @@ extern void vrem_cleanup(PersistentPipelineData* persistent_data);
 
 //****************************************************************
 // GUI for reshade addon
-static void draw_settings(reshade::api::effect_runtime*)
+static void draw_settings(reshade::api::effect_runtime* runtime)
 {
 #ifdef _DEBUG
     // reload button
@@ -177,8 +177,63 @@ static void draw_settings(reshade::api::effect_runtime*)
     ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1), "RELEASE MODE - Hot reload & debug messages disabled");
     ImGui::Separator();
 #endif
+    // display technique options
+    ImGui::Separator();
+    ImGui::Text("Render technique in a dedicated rendering step and not on the last draw");
+    ImGui::Text("(to avoid processing of GUI elements or mask displayed on GUI elements : map,..) ");
+    ImGui::Text("tick option 'render technique in VR' in VREM Mod settings ");
+
+    /*if (ImGui::Checkbox("Enable non global technique ", &g_shared_state_l.technique_enabled))
+    {
+        // save technique status in file (in get_settings_from_uniform)
+        g_shared_state_l.request_update_file = true;
+        reshade::log::message(reshade::log::level::info, "****** loader - change flag for technique => request save *******");
+    } */
+
+    // ImGui::Text("size of vector technique: %d", g_shared_state_l.technique_vector.size());
+    if (g_shared_state_l.technique_enabled)
+    {
+        for (auto& entry : g_shared_state_l.technique_vector)
+        {
+
+            // bool current_status = runtime->get_technique_state(entry.technique);
+
+            ImGui::BeginDisabled(entry.reshade_technique_status);
+
+            // Affiche "effect_name :: technique_name"
+            std::string label = entry.eff_name + " :: " + entry.name;
+
+            if (ImGui::Checkbox(label.c_str(), &entry.VR_technique_status))
+            {
+                // save technique status in file (in get_settings_from_uniform)
+                g_shared_state_l.request_update_file = true;
+                reshade::log::message(reshade::log::level::info, "****** loader - change status of technique => request save *******");
+            }
+            ImGui::EndDisabled();
+        }
+    }
 }
 
+// *******************************************************************************************************
+/// Called for every technique change => set refresh of technique
+/// 
+bool on_reshade_set_technique_state(effect_runtime* runtime, effect_technique technique, bool enabled) {
+
+    // request update of shader if not VR only
+    if (g_shared_state_l.technique_enabled)
+        // shared_data.button_technique = true;
+        //SHOULD SET STATE OF TECHNIQUE HERE => NEED TO HAVE A MAP INSTEAD OF A VECTOR TO FIND THE TECHNIQUE IN THE VECTOR AND UPDATE IT
+         for (auto& entry : g_shared_state_l.technique_vector)
+         {
+             if (entry.technique == technique)
+             {
+                 entry.reshade_technique_status = enabled;
+             }
+		 }
+
+    // let things as requested
+    return false;
+}
 //****************************************************************
 // to trace overalay is opened
 static bool reshade_open_overlay(reshade::api::effect_runtime* runtime, bool open, reshade::api::input_source source)
@@ -286,6 +341,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::reshade_overlay>(vrem_on_reshade_overlay); 
         reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(vrem_on_reshade_reloaded_effects); 
 #endif
+		reshade::register_event<reshade::addon_event::reshade_set_technique_state>(on_reshade_set_technique_state);																										   
         //reshade::register_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline); 
         // register event : call of addon exported functions (see loader_on_event.hpp)
         // reshade::register_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
@@ -334,7 +390,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::reshade_overlay>(vrem_on_reshade_overlay);
         reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(vrem_on_reshade_reloaded_effects);
 #endif
-        //reshade::unregister_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline);
+        reshade::unregister_event<reshade::addon_event::reshade_set_technique_state>(on_reshade_set_technique_state);
+		//reshade::unregister_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline);
         // unregister event : call of addon exported functions (see loader_on_event.hpp)
         // reshade::unregister_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
         // reshade::unregister_event<reshade::addon_event::reshade_present>(on_reshade_present);

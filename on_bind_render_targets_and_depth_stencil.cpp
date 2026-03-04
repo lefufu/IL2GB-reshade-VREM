@@ -63,41 +63,50 @@ extern "C" {
 	VREM_EXPORT void vrem_on_bind_render_targets_and_depth_stencil(command_list* cmd_list, uint32_t count, const resource_view* rtvs, resource_view dsv)
 	{
 
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_render_targets_and_depth_stencil started");
+
 #ifdef _DEBUG
-		// Sauvegarder le premier render target
+		// Save the first render target view for technique rendering if not already done
 		if (count > 0 && rtvs != nullptr && flag_capture)
 		{
 			a_shared.g_current_rtv = rtvs[0];
 		}
 
 #endif
-		// reshade::log::message(reshade::log::level::info, "Addon - vrem_on_bind_render_targets_and_depth_stencil");
-
 		// copy render target if tracking	
-		if (a_shared.track_for_render_target && a_shared.count_display > -1 && !a_shared.cb_inject_values.mapMode && count > 0 && (a_shared.VREM_setting[SET_EFFECTS]))
+		// if (a_shared.track_for_render_target && a_shared.count_display > -1 && !a_shared.cb_inject_values.mapMode && count > 0 && (a_shared.VREM_setting[SET_TECHNIQUE]))
+		if (a_shared.track_for_render_target && a_shared.count_display > -1 &&  count > 0 && a_shared.VREM_setting[SET_TECHNIQUE])
 		{
 
-			saved_RenderTargetView RTView;
-			// only first render target view to get
-			device* dev = cmd_list->get_device();
-			resource scr_resource = dev->get_resource_from_view(rtvs[0]);
-			resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
-
-			// get information of render target
-			/*RTView.RV = rtvs[0];
-			RTView.copied = true;
-			RTView.width = src_resource_desc.texture.width;
-			RTView.height = src_resource_desc.texture.height;
-			current_RTV_handle = rtvs[0].handle;
-			a_shared.saved_RenderTargetViews.emplace(current_RTV_handle, RTView);
+			/* if (flag_capture) reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_render_targets_and_depth_stencil : tracking");
+			std::stringstream s;
+			s << "rtvs[0].handle=" << rtvs[0].handle << "; ";
+			if (flag_capture)  reshade::log::message(reshade::log::level::info, s.str().c_str());
 			*/
-			last_RTV_saved.copied = true;
-			last_RTV_saved.RV = rtvs[0];
-			last_RTV_saved.width = src_resource_desc.texture.width;
-			last_RTV_saved.height = src_resource_desc.texture.height;
+
+			//hanlde cases with rendere target null
+			if (rtvs[0].handle != 0)
+			{
+
+				saved_RenderTargetView RTView;
+				// only first render target view to get
+				device* dev = cmd_list->get_device();
+				resource scr_resource = dev->get_resource_from_view(rtvs[0]);
+				resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
+
+				// if (flag_capture)  reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_render_targets_and_depth_stencil : resources found");
+
+				// get information of render target
+				last_RTV_saved.copied = true;
+				last_RTV_saved.RV = rtvs[0];
+				last_RTV_saved.width = src_resource_desc.texture.width;
+				last_RTV_saved.height = src_resource_desc.texture.height;
 #if _DEBUG_LOGS  			
-			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
+				log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
 #endif			
+			}
+			else
+				log_empy_render_target();
 		}
 
 		// log for shader hunting
@@ -107,6 +116,8 @@ extern "C" {
 			log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
 #endif
 		}
+
+		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_render_targets_and_depth_stencil ended");
 	}
 #ifdef _DEBUG
 }

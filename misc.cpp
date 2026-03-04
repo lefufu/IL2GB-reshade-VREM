@@ -98,7 +98,6 @@ std::optional<Shader_Definition> is_in_mod_hash(uint32_t hash[], uint32_t subobj
 
 	for (uint32_t i = 0; i < subobject_count; i++)
 	{
-		
 		auto it = shader_by_hash.find(hash[i]);
 		if (it != shader_by_hash.end()) {
 			foundShader = it->second;

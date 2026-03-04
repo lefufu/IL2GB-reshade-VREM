@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CDataFile.cpp" />
     <ClCompile Include="clone_pipeline.cpp" />
     <ClCompile Include="addon_init_cleanup.cpp" />
     <ClCompile Include="constant_buffer.cpp" />

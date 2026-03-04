@@ -286,7 +286,7 @@ void create_RV_pipeline_layout(device* device)
 
 // *******************************************************************************************************
 // inject a texture in bind_pipeline
-void inject_texture(command_list* commandList, uint32_t stot, uint64_t text_handle, std::string text_name, uint32_t count_displayVS)
+void inject_texture(command_list* commandList, uint32_t stot, uint64_t text_handle, std::string text_name)
 {
 	reshade::api::descriptor_table_update update;
 
@@ -301,6 +301,6 @@ void inject_texture(command_list* commandList, uint32_t stot, uint64_t text_hand
 
 	// log infos
 #if _DEBUG_LOGS  
-	log_texture_injected(text_name, text_handle, count_displayVS);
+	log_texture_injected(text_name, text_handle);
 #endif
 }

@@ -118,7 +118,10 @@ extern "C" {
         SharedState* shared_state
     )
     {
-        // set the g_shared_state vaiable of the addon to the variable shared by the launcher
+        
+		// reshade::log::message(reshade::log::level::info, "addon - vrem_init started");
+		
+		// set the g_shared_state vaiable of the addon to the variable shared by the launcher
         g_shared_state = shared_state;
 
 		// device is null when called
@@ -162,9 +165,11 @@ extern "C" {
 		//to trace compilation of technique
 		a_shared.technique_compiled = false;
 
+		// some init to do once per library launch
 		a_shared.flag_texture_dump = false;
 
 		a_shared.VREM_setting[SET_DEFAULT] = 0;
+		a_shared.cb_inject_values.VRMode = 0;
 
 		// parse the shader list to load all shader codes and store codes in shader_code_cache (if not done)
 		read_all_shader_code();
@@ -172,6 +177,7 @@ extern "C" {
 		//intialize the counters
 		intialize_counters();
 
+		//reshade::log::message(reshade::log::level::info, "addon - vrem_init ended");
         // reshade::log::message(reshade::log::level::info,"DCS VREM: register done...");
     }
 
@@ -215,7 +221,7 @@ extern "C" {
 #endif
 			delete_texture_resources(g_shared_state->device);
 			a_shared.copied_textures.clear();
-			a_shared.technique_vector.clear();
+			g_shared_state->technique_vector.clear();
 
 			g_shared_state->PSshader_index = 0;						  
 			g_shared_state->PSshader_list.clear();
