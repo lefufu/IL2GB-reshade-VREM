@@ -1,3 +1,0 @@
-﻿D:\utils\visual_studio\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(524,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-  loader.cpp
-  VREM_launcher.vcxproj -> G:\jeux\DCS World OpenBeta\bin-mt\VREM_launcher.addon
