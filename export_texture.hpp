@@ -221,7 +221,7 @@ public:
                 // Exporter la texture
                 if (save_texture(dev, cmd_list, tex, filepath.string())) {
 
-                    log_exported_texture(filepath.string());
+                    log_exported_texture(filepath.string(), dev, tex, srv);
                 }
             }
         }

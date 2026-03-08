@@ -80,10 +80,10 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 	device* dev = cmd_list->get_device();
 
 	// get resource info 
-	reshade::api::resource_view src_resource_view_planeMask;
-	src_resource_view_planeMask = static_cast<const reshade::api::resource_view*>(update.descriptors)[dec_number];
+	reshade::api::resource_view src_resource_view_texture;
+	src_resource_view_texture = static_cast<const reshade::api::resource_view*>(update.descriptors)[dec_number];
 
-	resource scr_resource = dev->get_resource_from_view(src_resource_view_planeMask);
+	resource scr_resource = dev->get_resource_from_view(src_resource_view_texture);
 	resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
 
 	// create target resource once per game session, for each source resource 
@@ -97,7 +97,7 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 
 		// create a new single ressource containing stencil and depth
 #if _DEBUG_LOGS
-		log_creation_start("PlaneMask");
+		log_creation_start(textName);
 #endif
 
 		bool status = dev->create_resource(src_resource_desc, nullptr, resource_usage::shader_resource, &text_copy.texresource, nullptr);
@@ -109,7 +109,7 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 		else
 		{
 			// create resources view on the copied resource
-			text_copy.texresource_view = copy_resource_view(dev, src_resource_view_planeMask, text_copy.texresource);
+			text_copy.texresource_view = copy_resource_view(dev, src_resource_view_texture, text_copy.texresource);
 
 			if (text_copy.texresource_view.handle != 0)
 			{
@@ -154,7 +154,7 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 	}
 	return scr_resource.handle;
 }
-
+/*
 // *******************************************************************************************************
 /// copy_plane_mask()
 /// <summary>
@@ -240,6 +240,7 @@ bool copy_plane_mask(command_list* cmd_list, shader_stage stages, pipeline_layou
 	}
 	return true;
 }
+*/
 
 // *******************************************************************************************************
 void delete_texture_resources(device* device)
@@ -261,7 +262,7 @@ void create_RV_pipeline_layout(device* device)
 
 	if (a_shared.saved_pipeline_layout_RV.handle == 0)
 	{
-		// create a new pipeline_layout for just 1 rsource view to be updated by push_constant(), RV number defined in RVINDEX
+		// create a new pipeline_layout for resource view to be updated by push_constant(), RV number defined in RVINDEX
 		reshade::api::descriptor_range srv_range;
 		srv_range.dx_register_index = RVINDEX;
 		srv_range.count = UINT32_MAX;

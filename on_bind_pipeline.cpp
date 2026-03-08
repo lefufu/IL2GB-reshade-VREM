@@ -87,7 +87,7 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 	if (it->second.feature == Feature::PS_ownPlane)
 	{
 		// stop tracking resource
-		track_for_planeMask = false;
+		track_for_texture = false;
 		a_shared.flag_texture_dump = false;
 
 		// as same VS is called two time, do not get texture for later call (external)
@@ -103,7 +103,7 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 	if (it->second.feature == Feature::PS_external)
 	{
 		// for security in case of (2 call for the same VS)
-		track_for_planeMask = false;
+		track_for_texture = false;
 
 		// as same VS is called two time, do not get texture for later call
 		a_shared.not_track_mask_anymore = true;
@@ -222,6 +222,13 @@ void process_action_injectText(command_list* commandList, std::unordered_map<uin
 			//inject depth texture, if slot = 1 => t4 as 3 is defined in pipeline_layout
 			inject_texture(commandList, 1, current_depth_handle, "Depth");
 		}
+
+		// photo texture in shader
+		if (it->second.feature == Feature::PS_global && a_shared.copied_textures[current_Photo_handle].copied)
+		{
+			//inject photo texture, if slot = 2 => t5 as 3 is defined in pipeline_layout
+			inject_texture(commandList, 2, current_Photo_handle, "Photo");
+		}
 	}
 }
 
@@ -261,10 +268,11 @@ void process_action_replace(command_list* commandList, pipeline_stage stages, pi
 // setup flags to get texture
 void process_action_action_get_text(std::unordered_map<uint64_t, Shader_Definition>::iterator it)
 {
+	// track stencil and depth
 	if (it->second.feature == Feature::VS_ext_ownPlane && !a_shared.not_track_mask_anymore)
 	{
 		//set flag to get mask texture at next push_descriptors
-		track_for_planeMask = true;
+		track_for_texture = true;
 
 #if _DEBUG_LOGS  
 		// log infos
@@ -272,16 +280,32 @@ void process_action_action_get_text(std::unordered_map<uint64_t, Shader_Definiti
 #endif
 
 	}
+
+	// track photo texture
+	if (it->second.feature == Feature::VS_ownPlane)
+	{
+		//set flag to get mask texture at next push_descriptors
+		track_for_texture = true;
+
+#if _DEBUG_LOGS  
+		// log infos
+		log_start_monitor("photo");
+#endif
+
+	}
+
+	a_shared.last_feature = it->second.feature;
 }
 
 //*******************************************************************************
 // setup flags to dump  textures
 void process_action_action_dump_text(std::unordered_map<uint64_t, Shader_Definition>::iterator it)
 {
-	if (it->second.feature == Feature::VS_ext_ownPlane && !a_shared.not_track_mask_anymore)
+	// if (it->second.feature == Feature::VS_ext_ownPlane && !a_shared.not_track_mask_anymore)
+	if (!a_shared.not_track_mask_anymore)
 	{
 		//set flag to get mask texture at next push_descriptors
-		track_for_planeMask = true;
+		track_for_texture = true;
 
 #if _DEBUG_LOGS  
 		// log infos
@@ -289,7 +313,7 @@ void process_action_action_dump_text(std::unordered_map<uint64_t, Shader_Definit
 #endif
 		//dump textures at next push_descriptors
 		a_shared.flag_texture_dump = true;
-		a_shared.ps_hash_for_text_dump = 0xf7fce9a6;
+		a_shared.ps_hash_for_text_dump = 0x0;
 	}
 }
 
@@ -425,7 +449,8 @@ extern "C" {
 		
 		// optimize performance by reducing processing to ALLOWED_STAGES
 		if ((static_cast<uint32_t>(stages) & static_cast<uint32_t>(ALLOWED_STAGES)) == 0) return;
-		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline started");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline started");
+#endif
 
 #ifdef _DEBUG		
 		//for rt dump engage dump at next draw only if change of PS
@@ -452,7 +477,8 @@ extern "C" {
 			
 			on_bind_pipeline_hunting(commandList, stages, pipelineHandle);
 			// skip processing if shader hunting
-			//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended (hunting)");
+#if _DEBUG_CRASH  reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended (hunting)");
+#endif
 			return;
 		}
 #endif
@@ -461,7 +487,8 @@ extern "C" {
 
 		if (it == filtered_pipeline.end()) [[likely]]
 		{
-			//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended (not used)");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended (not used)");
+#endif
 			return;
 		}
 		{
@@ -505,7 +532,8 @@ extern "C" {
 			a_shared.last_feature = it->second.feature;
 		}
 
-		//is it 
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended");
+#endif
 	}
 #ifdef _DEBUG
 }

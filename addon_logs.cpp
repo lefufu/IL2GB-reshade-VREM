@@ -520,7 +520,7 @@ void log_copy_texture(std::string texture_name, uint64_t handle)
 	if (g_shared_state->debug_log && flag_capture)
 	{
 		std::stringstream s;
-		s << " = >  resource and view(s) copied for" << texture_name << ", src res.hande = " << std::hex << handle << ", for draw (" << a_shared.count_display << ");";
+		s << " = >  resource and view(s) copied for " << texture_name << ", src res.hande = " << std::hex << handle << ", for draw (" << a_shared.count_display << ");";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 
 	}
@@ -571,7 +571,7 @@ void log_reset_tracking()
 
 void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
-	if ((g_shared_state->debug_log && flag_capture && (track_for_planeMask || a_shared.track_for_NS430 || a_shared.render_technique || g_shared_state->shader_hunter)) )
+	if ((g_shared_state->debug_log && flag_capture && (track_for_texture || a_shared.track_for_NS430 || a_shared.render_technique || g_shared_state->shader_hunter)) )
 	{
 		std::stringstream s;
 		s << "draw(" << vertex_count << ", " << instance_count << ", " << first_vertex << ", " << first_instance << ")";
@@ -581,7 +581,7 @@ void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_v
 
 		if (g_shared_state->shader_hunter) return;
 
-		s << "track_for_depthStencil=" << track_for_planeMask << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_technique << "; ";
+		s << "track_for_depthStencil=" << track_for_texture << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_technique << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -592,7 +592,7 @@ void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_v
 
 void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 {
-	if ((g_shared_state->debug_log && flag_capture && (track_for_planeMask || a_shared.track_for_NS430 || a_shared.render_technique || g_shared_state->shader_hunter)))
+	if ((g_shared_state->debug_log && flag_capture && (track_for_texture || a_shared.track_for_NS430 || a_shared.render_technique || g_shared_state->shader_hunter)))
 	{
 		std::stringstream s;
 		s << "draw_indexed(" << index_count << ", " << instance_count << ", " << first_index << ", " << vertex_offset << ", " << first_instance << ")";
@@ -600,7 +600,7 @@ void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t
 
 		if (g_shared_state->shader_hunter) return;
 
-		s << "track_for_depthStencil=" << track_for_planeMask << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_technique << "; ";
+		s << "track_for_depthStencil=" << track_for_texture << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_technique << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -610,7 +610,7 @@ void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t
 
 void log_on_drawOrDispatch_indirect(indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride)
 {
-	if ((g_shared_state->debug_log && flag_capture && (track_for_planeMask || a_shared.track_for_NS430 || a_shared.render_technique || g_shared_state->shader_hunter)))
+	if ((g_shared_state->debug_log && flag_capture && (track_for_texture || a_shared.track_for_NS430 || a_shared.render_technique || g_shared_state->shader_hunter)))
 	{
 		std::stringstream s;
 		s << "draw_indexed_indirect(" << (void*)buffer.handle << ", " << offset << ", " << draw_count << ", " << stride << ")";
@@ -618,7 +618,7 @@ void log_on_drawOrDispatch_indirect(indirect_command type, resource buffer, uint
 
 		if (g_shared_state->shader_hunter) return;
 
-		s << "track_for_depthStencil=" << track_for_planeMask << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_technique << "; ";
+		s << "track_for_depthStencil=" << track_for_texture << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_technique << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -694,6 +694,18 @@ void log_effect_requested()
 	}
 }
 
+
+void log_inject_preprocessor()
+{
+	if (g_shared_state->debug_log && flag_capture)
+	{
+		std::stringstream s;
+		s << "addon - on_push_descriptors() : inject pre_processor variables ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+}
+
+}
+
 void log_preprocessor(std::string name, float targetValue, bool update, bool status, float readedValue, bool inFrame, uint16_t step, short int display_to_use)
 {
 
@@ -726,23 +738,36 @@ void log_preprocessor(std::string name, float targetValue, bool update, bool sta
 
 }
 
-void log_technique_info(effect_runtime* runtime, effect_technique technique, std::string& name, std::string& eff_name, bool technique_status, int QV_target, bool has_texture)
+void log_technique_info(effect_runtime* runtime, effect_technique technique, std::string& name, std::string& eff_name, bool VR_technique_status, bool reshade_technique_status, int QV_target, bool has_texture, std::vector<uniform_mapping>& tech_uniforms)
 {
-
 	if (g_shared_state->debug_log)
 	{
 		std::stringstream s;
-		s << "init of technique in vector, Technique Name: " << name << ", Effect Name: " << eff_name << ", Technique status : " << technique_status << ", QV_target : " << QV_target << "; ";
+		s << "init of technique in vector, Technique Name: " << name << ", Effect Name: " << eff_name << ", VR_technique_status : " << VR_technique_status <<  ", reshade_technique_status : " << reshade_technique_status << ", QV_target : " << QV_target << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
+
 		if (has_texture)
 			reshade::log::message(reshade::log::level::info, "   Has DEPTH or STENCIL");
 		else
 			reshade::log::message(reshade::log::level::info, "   Do not have DEPTH or STENCIL");
 
+		if (tech_uniforms.empty())
+		{
+			reshade::log::message(reshade::log::level::info, "   No VREM uniforms");
+		}
+		else
+		{
+			for (const auto& u : tech_uniforms)
+			{
+				s << "   VREM uniform: " << u.name << ", value: " << *u.vrem_variable << "; ";
+				reshade::log::message(reshade::log::level::info, s.str().c_str());
+				s.str("");
+				s.clear();
+			}
+		}
 	}
-
 }
 
 void log_export_texture(short int display_to_use)
@@ -981,7 +1006,7 @@ void log_error_map_data()
 }
 
 
-void log_exported_texture(std::string text_path)
+void log_exported_texture(std::string text_path, device* dev, resource tex, resource_view srv)
 {
 	
 	if (g_shared_state->debug_log)
@@ -989,6 +1014,21 @@ void log_exported_texture(std::string text_path)
 		std::stringstream s;
 		s << "addon - Exported texture: " << text_path;
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
+		s.str("");
+		s.clear();
+		reshade::api::resource_desc desc = dev->get_resource_desc(tex);
+		s << "addon - width =" << desc.texture.width << ", height =" << desc.texture.height << ", depth =" << desc.texture.depth_or_layers << ", mips =" << desc.texture.levels << ", samples =" << desc.texture.samples << ";";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+		s.str("");
+		s.clear();
+		//A finir !
+		reshade::api::resource_view_desc view_desc = dev->get_resource_view_desc(srv);
+
+		s << "addon - resource view format =" << to_string(view_desc.format) << ", first_mip =" << view_desc.texture.first_level << ", mip_count =" << view_desc.texture.level_count << ", first_layer =" << view_desc.texture.first_layer << ", layer_count =" << view_desc.texture.layer_count << ";";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+		s.str("");
+		s.clear();
+	
 	}
 
 }

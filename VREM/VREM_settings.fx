@@ -29,6 +29,20 @@ uniform float var_sightFactor <
     ui_max = 5.0;
     ui_step = 0.1;
 > = 1.0;
+
+uniform int var_sightEye <
+    ui_type = "combo";
+    ui_label = "Sight Eye";
+    ui_tooltip = "Choose the eye to display sight";
+    ui_category = "1. Sight";
+    ui_items = 
+    "All\0"
+	"Left\0"
+    "Right\0"
+    ;
+> = 0;
+
+
 //*************************
 // mask
 // flag for the section
@@ -52,6 +66,12 @@ uniform bool set_technique <
     ui_tooltip = "enable rendering of technique in VR displays";
     ui_category = "6. Effects.";
 > = true;
+
+uniform bool var_debugMask <
+    ui_label = "display mask in PS";
+    ui_tooltip = "display mask in PS";
+    ui_category = "9. Debug.";
+> = false;
 
 /*
 uniform int cb_test_color <

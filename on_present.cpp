@@ -92,7 +92,8 @@ extern "C" {
     VREM_EXPORT void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
     {
        
-        //reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present started");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present started");
+#endif
         // not used, 
         reshade::api::device* device = runtime->get_device();
         g_shared_state->device = device;
@@ -169,7 +170,8 @@ extern "C" {
 		//force capture for testing
         // flag_capture = true;
 
-        //reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present ending");
+#if _DEBUG_CRASH  reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present ending");
+#endif
     }
 
 #ifdef _DEBUG

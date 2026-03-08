@@ -80,7 +80,7 @@ extern void read_all_shader_code();
 extern void delete_cloned_pipelines(reshade::api::device* dev);
 extern void create_modified_CB_layout(reshade::api::device* device, int cbindex, std::string CB_name, int layout_number);
 extern void create_all_modified_CB_layout(reshade::api::device* device);
-extern bool copy_plane_mask(reshade::api::command_list* cmd_list, reshade::api::shader_stage stages, reshade::api::pipeline_layout layout, uint32_t param_index, const reshade::api::descriptor_table_update& update);
+//extern bool copy_plane_mask(reshade::api::command_list* cmd_list, reshade::api::shader_stage stages, reshade::api::pipeline_layout layout, uint32_t param_index, const reshade::api::descriptor_table_update& update);
 extern void delete_texture_resources(reshade::api::device* device);
 extern void create_RV_pipeline_layout(reshade::api::device* device);
 extern void init_preprocess(effect_runtime* runtime);
@@ -96,3 +96,4 @@ extern uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stag
 extern void inject_texture(command_list* commandList, uint32_t stot, uint64_t text_handle, std::string text_name);
 extern void intialize_counters();
 extern void save_all_technique_status();
+extern void pure_technique_vector();

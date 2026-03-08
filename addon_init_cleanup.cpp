@@ -65,7 +65,7 @@ bool frame_started = false;     // au moins un bind_pipeline vu
 
 
 // for logging shader_resource_view in push_descriptors() to get depthStencil 
-// bool track_for_planeMask = false;
+// bool track_for_texture = false;
 // current Depth Stencil handle
 // uint64_t current_PlaneMask_handle = 0;
 // uint64_t current_depth_handle = 0;
@@ -119,7 +119,8 @@ extern "C" {
     )
     {
         
-		// reshade::log::message(reshade::log::level::info, "addon - vrem_init started");
+#if _DEBUG_CRASH		 reshade::log::message(reshade::log::level::info, "addon - vrem_init started"); 
+#endif
 		
 		// set the g_shared_state vaiable of the addon to the variable shared by the launcher
         g_shared_state = shared_state;
@@ -171,13 +172,18 @@ extern "C" {
 		a_shared.VREM_setting[SET_DEFAULT] = 0;
 		a_shared.cb_inject_values.VRMode = 0;
 
+		a_shared.technique_status_loaded = false;
+
+		a_shared.first_PS_pipeline_handle = 0;
+
 		// parse the shader list to load all shader codes and store codes in shader_code_cache (if not done)
 		read_all_shader_code();
 
 		//intialize the counters
 		intialize_counters();
 
-		//reshade::log::message(reshade::log::level::info, "addon - vrem_init ended");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "addon - vrem_init ended");
+#endif
         // reshade::log::message(reshade::log::level::info,"DCS VREM: register done...");
     }
 
@@ -221,7 +227,9 @@ extern "C" {
 #endif
 			delete_texture_resources(g_shared_state->device);
 			a_shared.copied_textures.clear();
-			g_shared_state->technique_vector.clear();
+			pure_technique_vector();
+
+			g_shared_state->preprocessor_exported = false;
 
 			g_shared_state->PSshader_index = 0;						  
 			g_shared_state->PSshader_list.clear();

@@ -63,6 +63,8 @@
 #define _DEBUG_LOGS 0
 #endif
 
+#define _DEBUG_CRASH 0
+
 using namespace reshade::api;
 
 // handled pipeline types
@@ -127,6 +129,13 @@ struct PersistentPipelineData {
     std::vector<save_pipeline> saved_pipelines;
 };
 
+// for technique uniform mapping
+struct uniform_mapping {
+    std::string name;
+    float* vrem_variable;
+	effect_uniform_variable unif_variable;
+};
+
 
 // for technique settings
 struct technique_trace {
@@ -135,6 +144,7 @@ struct technique_trace {
     std::string eff_name;
     bool VR_technique_status;
 	bool reshade_technique_status;
+    std::vector<uniform_mapping> uniform;
     int quad_view_target; // 0 : all, 1 Outer, 2 Innner
 };
 // Structure to hold shared variables
@@ -192,5 +202,7 @@ struct SharedState {
     bool technique_enabled = false;
     std::vector<technique_trace> technique_vector;
     bool request_update_file = false;
+    bool no_double = true;
+	bool preprocessor_exported = false;
     
 };

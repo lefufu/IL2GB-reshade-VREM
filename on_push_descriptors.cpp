@@ -118,12 +118,14 @@ void log_hunting(command_list* cmd_list, shader_stage stages, pipeline_layout la
 
 //*******************************************************************************************************
 // injection of texture 
-void inject_texture(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
+void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 {
 #if _DEBUG_LOGS
 	//log infos
 	log_push_descriptor(stages, layout, param_index, update);
 #endif
+
+	device* dev = cmd_list->get_device();
 
 	// get mask from ext plane  PS, filter by the number of resource
 	if (a_shared.last_feature == Feature::VS_ext_ownPlane && (update.count == 15 || update.count == 16))
@@ -156,8 +158,34 @@ void inject_texture(command_list* cmd_list, shader_stage stages, pipeline_layout
 
 	}
 
+	// get photo texture, it should be T4
+	if (a_shared.last_feature == Feature::VS_ownPlane )
+	{
+		uint32_t text_num = 4;
+		// get only texture when needed (widht = 1024, format = bc2_unorm)
+		// get resource info 
+		reshade::api::resource_view src_resource_view_texture;
+		src_resource_view_texture = static_cast<const reshade::api::resource_view*>(update.descriptors)[text_num];
+		resource scr_resource = dev->get_resource_from_view(src_resource_view_texture);
+		resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
+
+		reshade::api::resource_view_desc view_desc = dev->get_resource_view_desc(src_resource_view_texture);
+
+		if (src_resource_desc.texture.width == 1024 && view_desc.format == reshade::api::format::bc2_unorm)
+		{
+			//copy texture
+			// in some case the resource view handle is null, skip these cases
+			if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0)
+			{
+
+				// to retrieve infos for pushing texture in bind_pipeline
+				current_Photo_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "Photo");
+			}
+		}
+	}
+
 	// stop tracking
-	track_for_planeMask = false;
+	track_for_texture = false;
 }
 
 
@@ -170,16 +198,18 @@ extern "C" {
 	VREM_EXPORT  void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 	{
 
-		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors started");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors started");
+#endif
 		// for hunting mod only
 		log_hunting(cmd_list, stages, layout, param_index, update);
 
 		// ********** to be updated for later effects
 		// to limit processing only when a tracking is setup 
-		// if (!a_shared.render_technique && !track_for_planeMask && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
-		if (!track_for_planeMask && !a_shared.render_technique)
+		// if (!a_shared.render_technique && !track_for_texture && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
+		if (!track_for_texture && !a_shared.render_technique)
 		{
-			//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended (no track)");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended (no track)");
+#endif
 			return;
 		}
 
@@ -187,58 +217,24 @@ extern "C" {
 		short int display_to_use = a_shared.count_display - 1;
 
 		// render effect part
-		// do not engage effect if option not selected and not in cockpit
-		// if (a_shared.render_technique && a_shared.VREM_setting[SET_TECHNIQUE] && !a_shared.cb_inject_values.mapMode && a_shared.draw_passed)
-		if (a_shared.render_technique   && a_shared.draw_passed && a_shared.VREM_setting[SET_TECHNIQUE])
+		// do not engage effect if option not selected 
+		if (a_shared.render_technique && a_shared.draw_passed && a_shared.VREM_setting[SET_TECHNIQUE])
 		{
-			/*
-			if (a_shared.render_technique && flag_capture) reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors => requesting rendering");
-			std::stringstream s;
-			s << "addon - vrem_on_push_descriptors(): launch engage effect, last_RTV_saved.copied =  " << last_RTV_saved.copied << ", display_to_use=" << display_to_use << ";";
-			if (flag_capture) reshade::log::message(reshade::log::level::info, s.str().c_str());
-			*/
-			
+		
 			render_technique(display_to_use, cmd_list);
 			a_shared.render_technique = false;
 		}
 
 		// inject texture part
 		//
-		if (track_for_planeMask && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel)
+		if (track_for_texture && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel)
 		{
-			inject_texture(cmd_list, stages, layout, param_index, update);
+			get_texture(cmd_list, stages, layout, param_index, update);
 		}
 
-		//reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended");
+#endif
 
-		/*
-		//handle CB modification (not relvant of I2 but keep for future DCS VREM2 mod)
-		// CB cPerFrame is generated once at the beginning of the frame, it is not needed to use a dedicated shader to track the push_descriptor command
-		if ((a_shared.cb_inject_values.hazeReduction != 1.0 || a_shared.cb_inject_values.gCockpitIBL != 1.0) && a_shared.VREM_setting[SET_MISC])
-		{
-
-
-			if (update.type == descriptor_type::constant_buffer && update.binding == CPERFRAME_INDEX && update.count == 1 && stages == shader_stage::pixel)
-			{
-
-				bool error = read_constant_buffer(cmd_list, update, "CPerFrame", 0, a_shared.dest_CB_array[CPERFRAME_CB_NB], CPERFRAME_SIZE);
-				if (!error)
-				{
-
-					// copy original value for gAtmIntensity
-					a_shared.orig_values[CPERFRAME_CB_NB][GATMINTENSITY_SAVE] = a_shared.dest_CB_array[CPERFRAME_CB_NB][FOG_INDEX];
-
-					// copy original value for gCockpitIBL.xy
-					a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_X_SAVE] = a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_X];
-					a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_Y_SAVE] = a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_Y];
-
-
-					a_shared.CB_copied[CPERFRAME_CB_NB] = true;
-				}
-
-			}
-		}
-		*/
 	}
 #ifdef _DEBUG
 }

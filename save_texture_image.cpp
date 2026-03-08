@@ -124,7 +124,7 @@ static void unpack_bc4_value(uint8_t alpha_0, uint8_t alpha_1, uint32_t alpha_in
 		break;
 	}
 }
-
+// ************************************************************************************************************
 bool save_texture_image(const resource_desc &desc, const subresource_data &data, const std::string& filepath)
 {
 
@@ -573,6 +573,50 @@ bool save_texture_image(const resource_desc &desc, const subresource_data &data,
 							dst[1] = static_cast<uint8_t>(g8);
 							dst[2] = 0;
 							dst[3] = 255;
+						}
+					}
+					break;
+
+				case format::bc2_typeless:
+				case format::bc2_unorm:
+				case format::bc2_unorm_srgb:
+					for (size_t block_y = 0; block_y < block_count_y; ++block_y, data_p += data.row_pitch)
+					{
+						for (size_t block_x = 0; block_x < block_count_x; ++block_x)
+						{
+							const uint8_t* const src = data_p + block_x * 16;
+
+							// BC2 : 8 octets d'alpha explicite (4 bits par pixel) + 8 octets de couleur BC1
+							// Les 8 premiers octets contiennent 16 valeurs alpha de 4 bits chacune
+							const uint64_t alpha_data = *reinterpret_cast<const uint64_t*>(src);
+
+							// Les 8 octets suivants sont identiques à BC1
+							const uint16_t color_0 = *reinterpret_cast<const uint16_t*>(src + 8);
+							const uint16_t color_1 = *reinterpret_cast<const uint16_t*>(src + 10);
+							const uint32_t color_i = *reinterpret_cast<const uint32_t*>(src + 12);
+
+							uint8_t color_0_rgb[3];
+							unpack_r5g6b5(color_0, color_0_rgb);
+							uint8_t color_1_rgb[3];
+							unpack_r5g6b5(color_1, color_1_rgb);
+
+							for (int y = 0; y < 4; ++y)
+							{
+								for (int x = 0; x < 4; ++x)
+								{
+									uint8_t* const dst = rgba_pixel_data.data() + ((block_y * 4 + y) * desc.texture.width + (block_x * 4 + x)) * 4;
+
+									// Décodage de la couleur RGB (comme BC1, mais toujours non-dégénéré)
+									unpack_bc1_value(color_0_rgb, color_1_rgb, (color_i >> (2 * (y * 4 + x))) & 0x3, dst, true);
+
+									// Décodage de l'alpha (4 bits par pixel)
+									const int pixel_index = y * 4 + x;
+									const uint8_t alpha_4bit = static_cast<uint8_t>((alpha_data >> (4 * pixel_index)) & 0xF);
+
+									// Conversion de 4 bits vers 8 bits (0-15 -> 0-255)
+									dst[3] = static_cast<uint8_t>((alpha_4bit * 255 + 7) / 15);
+								}
+							}
 						}
 					}
 					break;

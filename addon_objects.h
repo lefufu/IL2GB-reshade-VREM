@@ -180,6 +180,7 @@ enum class Feature : uint32_t
 	PS_sun = 7,
 	PS_VRMirror = 8,
 	PS_preGlobal = 9,
+	VS_ownPlane = 10,
 	//old things for compatibility
 	// Rotor : disable rotor when in cockpit view
 	Rotor = 100,
@@ -224,6 +225,8 @@ inline std::unordered_map<Feature, std::string> debug_feature_name = {
 	{Feature::PS_sun, "PS_sun"},
 	{Feature::PS_VRMirror, "PS_VRMirror"},
 	{Feature::PS_preGlobal, "PS_preGlobal"},
+	{Feature::VS_ownPlane, "VS_ownPlane"},
+	
 };
 
 //*****************************************************************************
@@ -321,17 +324,6 @@ struct saved_RenderTargetView {
 	uint32_t width = 0;
 	uint32_t height = 0;
 };
-
-/*  
-// for technique settings
-struct technique_trace {
-	effect_technique technique;
-	std::string name;
-	std::string eff_name;
-	bool technique_status;
-	int quad_view_target; // 0 : all, 1 Outer, 2 Innner
-};
-*/  
 
 struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 {
@@ -438,10 +430,12 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	bool flag_cb_dump = false;
 	uint32_t ps_hash_for_cb_dump = 0;
 
-	//for dumping all render targets
+	// render targets
 	resource_view g_current_rtv = {};
 	uint32_t draw_counter = 0;
 	uint32_t last_pipeline_hash_PS = 0;
+	bool technique_status_loaded = false;
+
 };
 
 extern struct addon_shared a_shared;
@@ -463,11 +457,12 @@ extern bool do_not_draw;
 // add here variables to track and handle texture copy or technique injection
 // 
 // for logging shader_resource_view in push_descriptors() to get depthStencil 
-// extern bool track_for_planeMask;
-inline bool track_for_planeMask = false;
+// extern bool track_for_texture;
+inline bool track_for_texture = false;
 // current depth Stencil handle
 inline uint64_t current_PlaneMask_handle = 0;
 inline uint64_t current_depth_handle =0;
+inline uint64_t current_Photo_handle = 0;
 
 // track render target
 // extern bool track_for_render_target; 
@@ -482,10 +477,13 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 
 	// ** get maks for own plane, t8 should be OK
 	//own plane texture
-	{0xf7fce9a6, Shader_Definition(action_log | action_get_text | action_dump, Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	{0xf7fce9a6, Shader_Definition(action_log | action_get_text, Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	//cockpit
+	{0x63ba565f, Shader_Definition(action_log| action_get_text | action_dump, Feature::VS_ownPlane, L"", 0, {SET_DEFAULT})},
 	{0xde747357, Shader_Definition(action_log, Feature::PS_ownPlane, L"", 0, {SET_DEFAULT})},
 	// external only
 	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
+
 
 	//global PS before the one below, used to get render target
 	{0xe2d95d7a, Shader_Definition(action_track_RT, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
@@ -523,5 +521,7 @@ static const std::unordered_map<std::string, float*> var_mapping = {
 	{"var_sightFactor", &a_shared.cb_inject_values.sightFactor},
 	{"var_mask_sun", &a_shared.cb_inject_values.maskSun},
 	{"var_sightEye", &a_shared.cb_inject_values.sightEye},
+	{"unif_display", &a_shared.cb_inject_values.count_display},
+	//test
+	{"unif_test", &a_shared.cb_inject_values.sightEye},
 };
-

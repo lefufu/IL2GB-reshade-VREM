@@ -87,15 +87,24 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
     std::string name = VREM_SETTINGS_NAME;
     const char* effect_name = name.c_str();
 
-    //reshade::log::message(reshade::log::level::info, "addon - get_settings_from_uniforms started");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "addon - get_settings_from_uniforms started");
+#endif
 
    // load the technique file, as status of technique are not relevant
     technique_iniFile.Load(technique_iniFileName);
 
+    // read techhique settings
     // if flag is defined read it 
-    std::string raw = technique_iniFile.GetString("technique_enabled", "technique");
-    if (!raw.empty()) g_shared_state->technique_enabled = technique_iniFile.GetBool("technique_enabled", "technique");
 
+    if (!a_shared.technique_status_loaded)
+    {
+        std::string raw = technique_iniFile.GetString("technique_enabled", "technique");
+        if (!raw.empty()) g_shared_state->technique_enabled = technique_iniFile.GetBool("technique_enabled", "technique");
+
+        raw = technique_iniFile.GetString("technique_enabled", "technique");
+        if (!raw.empty()) g_shared_state->no_double = technique_iniFile.GetBool("no_double", "technique");
+		a_shared.technique_status_loaded = true;
+    }
     runtime->enumerate_uniform_variables(effect_name,
         [&](effect_runtime* rt, effect_uniform_variable var) {
             char name_buffer[256];
@@ -183,6 +192,7 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
         save_all_technique_status();
     }
 
-    // reshade::log::message(reshade::log::level::info, "addon - get_settings_from_uniforms ended");
+#if _DEBUG_CRASH  reshade::log::message(reshade::log::level::info, "addon - get_settings_from_uniforms ended");
+#endif
 }
 

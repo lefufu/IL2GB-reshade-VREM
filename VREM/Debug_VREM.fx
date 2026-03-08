@@ -13,6 +13,8 @@
 //****************************************
 // GUI
 
+uniform float unif_test;
+
 uniform int display_mode <
     ui_type = "combo";
     ui_label = "Mode";
@@ -118,6 +120,8 @@ float3 Ps_VREM_Test(float4 position : SV_Position, float2 texcoord : TEXCOORD) :
 			output = ori;
 		}
 	
+	if (unif_test == 1.0) output.x += 0.5;
+	//output.x =1.0;
 	
 	return output;
 	

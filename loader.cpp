@@ -179,9 +179,9 @@ static void draw_settings(reshade::api::effect_runtime* runtime)
 #endif
     // display technique options
     ImGui::Separator();
-    ImGui::Text("Render technique in a dedicated rendering step and not on the last draw");
+    ImGui::Text("Integrate the technique into the game's render pipeline and not on the last draw");
     ImGui::Text("(to avoid processing of GUI elements or mask displayed on GUI elements : map,..) ");
-    ImGui::Text("tick option 'render technique in VR' in VREM Mod settings ");
+    ImGui::Text("tick option 'Technique into the game's render pipeline' in VREM Mod settings ");
 
     /*if (ImGui::Checkbox("Enable non global technique ", &g_shared_state_l.technique_enabled))
     {
@@ -193,6 +193,13 @@ static void draw_settings(reshade::api::effect_runtime* runtime)
     // ImGui::Text("size of vector technique: %d", g_shared_state_l.technique_vector.size());
     if (g_shared_state_l.technique_enabled)
     {
+		// handle double injection issue : if tehcnique is active for end of draw it will not be displayed into the game's render pipeline
+        if (ImGui::Checkbox("Disable technique injection if effect is active", &g_shared_state_l.no_double))
+        {
+            // save technique status in file (in get_settings_from_uniform)
+            g_shared_state_l.request_update_file = true;
+        }
+        
         for (auto& entry : g_shared_state_l.technique_vector)
         {
 

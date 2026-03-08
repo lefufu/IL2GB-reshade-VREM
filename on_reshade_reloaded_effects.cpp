@@ -97,12 +97,14 @@ extern "C" {
 	VREM_EXPORT void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)
 	{
 
-		//reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects started");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects started");
+#endif
 
 		// should work only for reload
 		bool status = get_uniform_and_techniques(runtime);
 
-		//reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects ended");
+#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects ended");
+#endif
 
 	}
 #ifdef _DEBUG

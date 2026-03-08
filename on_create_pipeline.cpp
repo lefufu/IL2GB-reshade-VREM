@@ -121,7 +121,8 @@ extern "C" {
 		const device_api device_type = device->get_api();
 
 		bool replaced_stages = false;
-
+#if _DEBUG_CRASH  reshade::log::message(reshade::log::level::info, "addon - vrem_on_create_pipeline starting");
+#endif
 		for (uint32_t i = 0; i < subobject_count; ++i)
 		{
 			
@@ -138,6 +139,8 @@ extern "C" {
 			}
 		}
 
+#if _DEBUG_CRASH  reshade::log::message(reshade::log::level::info, "addon - vrem_on_create_pipeline ending");
+#endif
 	// Return whether any shader code was replaced
 	return replaced_stages;
 
