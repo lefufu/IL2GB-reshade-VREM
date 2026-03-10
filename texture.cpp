@@ -296,7 +296,7 @@ void inject_texture(command_list* commandList, uint32_t stot, uint64_t text_hand
 	update.type = reshade::api::descriptor_type::shader_resource_view;
 
 	// push the texture for planeMask, descriptor initialized in copy_texture()
-	update.binding = stot; // if slot =0 => t3 as 3 is defined in pipeline_layout
+	update.binding = stot- RVINDEX; // take into account RVINDEX for slot
 	update.descriptors = &a_shared.copied_textures[text_handle].texresource_view;
 	commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
 

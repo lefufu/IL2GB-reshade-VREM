@@ -159,7 +159,7 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 	}
 
 	// get photo texture, it should be T4
-	if (a_shared.last_feature == Feature::VS_ownPlane )
+	if (a_shared.last_feature == Feature::VS_ownPlane && a_shared.cb_inject_values.photo_on)
 	{
 		uint32_t text_num = 4;
 		// get only texture when needed (widht = 1024, format = bc2_unorm)
@@ -169,11 +169,9 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 		resource scr_resource = dev->get_resource_from_view(src_resource_view_texture);
 		resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
 
-		reshade::api::resource_view_desc view_desc = dev->get_resource_view_desc(src_resource_view_texture);
-
-		if (src_resource_desc.texture.width == 1024 && view_desc.format == reshade::api::format::bc2_unorm)
+		//copy texure having size and mips level, tha last one is the good one!
+		if (src_resource_desc.texture.width == 1024 && src_resource_desc.texture.levels == 11 )
 		{
-			//copy texture
 			// in some case the resource view handle is null, skip these cases
 			if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0)
 			{
@@ -181,6 +179,7 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 				// to retrieve infos for pushing texture in bind_pipeline
 				current_Photo_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "Photo");
 			}
+
 		}
 	}
 

@@ -42,12 +42,8 @@ uniform int var_sightEye <
     ;
 > = 0;
 
-
 //*************************
 // mask
-// flag for the section
-
-// debug section
 // flag for the section
 uniform bool set_mask <
     ui_label = "Enable masking options (reload)";
@@ -60,18 +56,107 @@ uniform bool var_mask_sun <
     ui_tooltip = "Mask sun halo";
     ui_category = "2. Mask.";
 > = false;
-
-uniform bool set_technique <
-    ui_label = "technique in VR";
-    ui_tooltip = "enable rendering of technique in VR displays";
-    ui_category = "6. Effects.";
-> = true;
-
+//debug
 uniform bool var_debugMask <
     ui_label = "display mask in PS";
     ui_tooltip = "display mask in PS";
-    ui_category = "9. Debug.";
+    ui_category = "2. Mask.";
 > = false;
+
+
+//*************************
+// pilot notes
+// flag for the section
+uniform bool set_photo <
+    ui_label = "Enable display of pilot notes (reload)";
+    ui_tooltip = "display 'another pilot notes' on screen or VR";
+    ui_category = "3. Pilot notes";
+> = false;
+
+uniform int photo_dummy <
+    ui_type = "radio";
+    ui_label = " ";
+    ui_text = "press 'k' to toggle on/off the pilot note display";
+    ui_category = "3. Pilot notes";
+> = 0;
+
+uniform float var_photo_scale <
+    ui_type = "slider";
+    ui_label = "set note scale";
+    ui_tooltip = "higher is bigger";
+    ui_category = "3. Pilot notes";
+    ui_min = 0.25;
+    ui_max = 1.0;
+    ui_step = 0.1;
+> = 1.0;
+
+uniform float var_photo_XPOS <
+    ui_type = "slider";
+    ui_label = "set note X position";
+    ui_tooltip = "from 0.0 to 1.0";
+    ui_category = "3. Pilot notes";
+    ui_min = 0.0;
+    ui_max = 1.0;
+    ui_step = 0.1;
+> = 0.1;
+
+uniform float var_photo_YPOS <
+    ui_type = "slider";
+    ui_label = "set note Y position";
+    ui_tooltip = "from 0.0 to 1.0";
+    ui_category = "3. Pilot notes";
+    ui_min = 0.0;
+    ui_max = 1.0;
+    ui_step = 0.1;
+> = 0.1;
+
+//*************************
+// icons
+// flag for the section
+uniform bool set_icon <
+    ui_label = "Enable change on icons (reload)";
+    ui_tooltip = "Enable change on icons ";
+    ui_category = "4. Icons.";
+> = false;
+
+uniform bool var_triangle <
+    ui_label = "disable side triangles";
+    ui_tooltip = "disable side triangles";
+    ui_category = "4. Icons.";
+> = false;
+
+uniform bool var_grey <
+    ui_label = "replace icons and label color by grey";
+    ui_tooltip = "replace icons and label color by grey";
+    ui_category = "4. Icons.";
+> = false;
+
+uniform float var_grey_level <
+    ui_type = "slider";
+    ui_label = "set grey level";
+    ui_tooltip = "0 = black, 1 = white";
+    ui_category = "4. Icons.";
+    ui_min = 0.0;
+    ui_max = 1.0;
+    ui_step = 0.1;
+> = 0.5;
+
+uniform bool var_mask_icon <
+    ui_label = "mask ALL icons by airframe";
+    ui_tooltip = "mask waypoints and other icons";
+    ui_category = "4. Icons.";
+> = false;
+
+//*************************
+// technique
+// flag for the section
+uniform bool set_technique <
+    ui_label = "Enable technique in game pipeline (reload)";
+    ui_tooltip = "enable rendering of technique in game pipeline";
+    ui_category = "6. Technique.";
+> = false;
+
+
 
 /*
 uniform int cb_test_color <

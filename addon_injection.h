@@ -61,15 +61,15 @@ struct ShaderInjectData {
 	float count_display; //1.x
 	float mapMode; //1.y
 	float VRMode; //1.z
-	float maskLabels; //1.w
-	float hazeReduction; //2.x => used in asm !
-	float sightEye; //2.y
-	float cockpitSat; //2.z
-	float cockpitMul; //2.w
-	float cockpitAdd; //3.x
-	float extSat; //3.y
-	float extMul; //3.z
-	float extAdd; //3.w
+	float sightEye; //1.w
+	float photo_scale; //2.x 
+	float photo_XPOS; //2.y
+	float photo_YPOS; //2.z
+	float photo_on; //2.w
+	float disable_triangle; //3.x
+	float grey_icons; //3.y
+	float grey_level; //3.z
+	float mask_icon; //3.w
 	float colorFlag; //4.x
 	float fSharpenIntensity; //4.y
 	float lumaFactor; //4.z

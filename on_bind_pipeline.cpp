@@ -83,6 +83,7 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 #endif
 	}
 
+	/*
 	// PS for ego plane : stop collecting textures for mask
 	if (it->second.feature == Feature::PS_ownPlane)
 	{
@@ -98,7 +99,7 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 		log_stop_monitor("ego plane mask");
 #endif
 
-	}
+	} */
 
 	if (it->second.feature == Feature::PS_external)
 	{
@@ -212,22 +213,22 @@ void process_action_injectText(command_list* commandList, std::unordered_map<uin
 	auto it_mask = a_shared.copied_textures.find(current_PlaneMask_handle);
 	if (it_mask != a_shared.copied_textures.end())
 	{
-		// stencil depth textures in shaders 
-		if ((it->second.feature == Feature::PS_global || it->second.feature == Feature::PS_sun) && a_shared.copied_textures[current_PlaneMask_handle].copied)
+		// stencil & depth textures in shaders 
+		if ((it->second.feature == Feature::PS_global || it->second.feature == Feature::PS_sun || it->second.feature == Feature::PS_icon || it->second.feature == Feature::PS_icon_text) && a_shared.copied_textures[current_PlaneMask_handle].copied)
 		{
 
-			//inject mask texture, if slot =0 => t3 as 3 is defined in pipeline_layout
-			inject_texture(commandList, 0, current_PlaneMask_handle, "PlaneMask");
+			//inject mask texture in t3
+			inject_texture(commandList, 3, current_PlaneMask_handle, "PlaneMask");
 
-			//inject depth texture, if slot = 1 => t4 as 3 is defined in pipeline_layout
-			inject_texture(commandList, 1, current_depth_handle, "Depth");
+			//inject depth texture in t4
+			inject_texture(commandList, 4, current_depth_handle, "Depth");
 		}
 
-		// photo texture in shader
-		if (it->second.feature == Feature::PS_global && a_shared.copied_textures[current_Photo_handle].copied)
+		// photo texture in shader in t5
+		if ((it->second.feature == Feature::PS_global || it->second.feature == Feature::PS_VR_GUI) && a_shared.copied_textures[current_Photo_handle].copied)
 		{
-			//inject photo texture, if slot = 2 => t5 as 3 is defined in pipeline_layout
-			inject_texture(commandList, 2, current_Photo_handle, "Photo");
+			//inject photo texture
+			inject_texture(commandList, 5, current_Photo_handle, "Photo");
 		}
 	}
 }
@@ -281,8 +282,8 @@ void process_action_action_get_text(std::unordered_map<uint64_t, Shader_Definiti
 
 	}
 
-	// track photo texture
-	if (it->second.feature == Feature::VS_ownPlane)
+	// track photo texture, copty texture once per key press
+	if (it->second.feature == Feature::VS_ownPlane && a_shared.cb_inject_values.photo_on)
 	{
 		//set flag to get mask texture at next push_descriptors
 		track_for_texture = true;
@@ -309,11 +310,31 @@ void process_action_action_dump_text(std::unordered_map<uint64_t, Shader_Definit
 
 #if _DEBUG_LOGS  
 		// log infos
-		log_start_monitor("VS plane&ext : request text. dump");
+		log_start_monitor("Request text. dump");
 #endif
 		//dump textures at next push_descriptors
 		a_shared.flag_texture_dump = true;
 		a_shared.ps_hash_for_text_dump = 0x0;
+	}
+}
+
+//*******************************************************************************
+// setup flags to dump  CB
+void process_action_action_dump_CB(std::unordered_map<uint64_t, Shader_Definition>::iterator it)
+{
+	// if (it->second.feature == Feature::VS_ext_ownPlane && !a_shared.not_track_mask_anymore)
+	if (!a_shared.not_track_mask_anymore)
+	{
+		//set flag to get mask texture at next push_descriptors
+		track_for_texture = true;
+
+#if _DEBUG_LOGS  
+		// log infos
+		log_start_monitor("Request CB. dump");
+#endif
+		//dump textures at next push_descriptors
+		a_shared.flag_cb_dump = true;
+		a_shared.ps_hash_for_cb_dump = 0x0;
 	}
 }
 
@@ -354,7 +375,7 @@ void process_action_action_renderTechnique(std::unordered_map<uint64_t, Shader_D
 void process_action_action_action_injectCB(command_list* commandList, std::unordered_map<uint64_t, Shader_Definition>::iterator it)
 {
 	// inject constant buffer other than the one containing VREM setting
-
+	/*
 	//CPERFRAME/haze for global illumination :  need to modify value for haze but set orgi. value for reflection
 	if (it->second.feature == Feature::GetStencil && a_shared.CB_copied[CPERFRAME_CB_NB] && a_shared.VREM_setting[SET_MISC])
 	{
@@ -381,6 +402,7 @@ void process_action_action_action_injectCB(command_list* commandList, std::unord
 		// last_replaced_shader = pipelineHandle.handle;
 		a_shared.last_feature = it->second.feature;
 	}
+	*/
 
 	//CPERFRAME/haze for other shaders :  need to keep orig. value
 	if (it->second.feature == Feature::Sky && a_shared.CB_copied[CPERFRAME_CB_NB] && a_shared.VREM_setting[SET_MISC])
@@ -517,7 +539,9 @@ extern "C" {
 
 			//dump texture (debug only)
 #ifdef _DEBUG
-			if ((it->second.action & action_dump) && flag_capture) process_action_action_dump_text(it);
+			if ((it->second.action & action_dump) && flag_capture && g_shared_state->save_texture_flag) process_action_action_dump_text(it);
+			if ((it->second.action & action_dump) && flag_capture && g_shared_state->save_cb_flag) process_action_action_dump_CB(it);
+
 #endif
 			// setup flag for tracking render target for technique
 			if (it->second.action & action_track_RT) process_action_action_trackRT(it);

@@ -181,6 +181,10 @@ enum class Feature : uint32_t
 	PS_VRMirror = 8,
 	PS_preGlobal = 9,
 	VS_ownPlane = 10,
+	PS_VR_GUI = 11,
+	PS_icon_text = 12,
+	PS_icon = 13,
+	VS_dump = 99,
 	//old things for compatibility
 	// Rotor : disable rotor when in cockpit view
 	Rotor = 100,
@@ -226,6 +230,9 @@ inline std::unordered_map<Feature, std::string> debug_feature_name = {
 	{Feature::PS_VRMirror, "PS_VRMirror"},
 	{Feature::PS_preGlobal, "PS_preGlobal"},
 	{Feature::VS_ownPlane, "VS_ownPlane"},
+	{Feature::PS_icon, "PS_icon"},
+	{Feature::PS_icon_text, "PS_icon_text"},	
+	{Feature::VS_dump, "VS_dump"},
 	
 };
 
@@ -241,6 +248,8 @@ static const int SETTINGS_SIZE = 11;
 constexpr uint8_t SET_DEFAULT = 0;
 constexpr uint8_t SET_SIGHT = 1;
 constexpr uint8_t SET_MASK = 2;
+constexpr uint8_t SET_PHOTO = 3;
+constexpr uint8_t SET_ICON = 4;
 constexpr uint8_t SET_TECHNIQUE = 8;
 constexpr uint8_t SET_DEBUG = 10;
 //will have to be cleaned up later
@@ -252,6 +261,12 @@ constexpr uint8_t SET_FPS_LIMIT = 9;
 
 // !!!
 // update mapping between technique name and feature at bottom of the file
+
+//*****************************************************************************
+// Key mapping
+//pilote note on/off: K
+static const uint32_t VK_PILOTE_NOTE = 0x4B;
+static const uint32_t VK_PILOTE_NOTE_MOD = VK_SHIFT;
 
 //*****************************************************************************
 // not to be modified : declaration of class & objects used for the mod logic and shared between functions
@@ -479,8 +494,8 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	//own plane texture
 	{0xf7fce9a6, Shader_Definition(action_log | action_get_text, Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
 	//cockpit
-	{0x63ba565f, Shader_Definition(action_log| action_get_text | action_dump, Feature::VS_ownPlane, L"", 0, {SET_DEFAULT})},
-	{0xde747357, Shader_Definition(action_log, Feature::PS_ownPlane, L"", 0, {SET_DEFAULT})},
+	{0x63ba565f, Shader_Definition(action_log| action_get_text, Feature::VS_ownPlane, L"", 0, {SET_PHOTO})},
+	// {0xde747357, Shader_Definition(action_log, Feature::PS_ownPlane, L"", 0, {SET_DEFAULT})},
 	// external only
 	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
 
@@ -500,6 +515,17 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// sun halo
 	{0x27fca33b, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_sun, L"mask_sun.cso", 0, {SET_MASK})},
 	
+	//VR GUI
+	{0x7379c02c, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_VR_GUI, L"VR_GUI_PS.cso", 0, {SET_PHOTO})},
+	
+	// icons
+	{0x8c76b5ee, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_icon, L"icon_PS.cso", 0, {SET_ICON})},
+	// icon text
+	{0xdcb7b073, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_icon_text, L"icon_text_PS.cso", 0, {SET_ICON})},
+
+	//to dump textures
+	//{0x31cdcd18, Shader_Definition(action_dump , Feature::VS_dump, L"", 0, {SET_ICON})},
+	
 
 };
 
@@ -513,14 +539,29 @@ inline std::unordered_map<std::string, int> settings_mapping = {
 	{"set_mask", SET_MASK },
 	{"set_technique", SET_TECHNIQUE },
 	{"set_debug", SET_DEBUG },
+	{"set_photo", SET_PHOTO },
+	{"set_icon", SET_ICON },
 };
 
 //variables 
 static const std::unordered_map<std::string, float*> var_mapping = {
+	//to read settings
+	//mask
+	{"var_mask_sun",& a_shared.cb_inject_values.maskSun },
 	{"var_debugMask", &a_shared.cb_inject_values.testFlag},
+	//sight
 	{"var_sightFactor", &a_shared.cb_inject_values.sightFactor},
-	{"var_mask_sun", &a_shared.cb_inject_values.maskSun},
 	{"var_sightEye", &a_shared.cb_inject_values.sightEye},
+	// pilot note
+	{"var_photo_scale", &a_shared.cb_inject_values.photo_scale},
+	{"var_photo_XPOS", &a_shared.cb_inject_values.photo_XPOS},
+	{"var_photo_YPOS", &a_shared.cb_inject_values.photo_YPOS},
+	{"var_triangle", &a_shared.cb_inject_values.disable_triangle},
+	{"var_grey", &a_shared.cb_inject_values.grey_icons},
+	{"var_grey_level", &a_shared.cb_inject_values.grey_level},
+	{"var_mask_icon", &a_shared.cb_inject_values.mask_icon},
+	
+	// to share variables from addon to technique 
 	{"unif_display", &a_shared.cb_inject_values.count_display},
 	//test
 	{"unif_test", &a_shared.cb_inject_values.sightEye},

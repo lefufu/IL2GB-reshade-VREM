@@ -73,14 +73,66 @@ void intialize_counters()
 
     a_shared.not_track_mask_anymore = false;
 
-    // a_shared.CB_copied[CPERFRAME_CB_NB] = false;
-
     // initialize flags for texture copy
     current_PlaneMask_handle = 0;
     for (auto& [handle, ds_copy] : a_shared.copied_textures) {
         ds_copy.copied = false;
     }
 
+
+}
+
+
+// *******************************************************************************************************
+// handle all key press outside imgui shortcut
+//
+void handle_keypress(effect_runtime* runtime)
+{
+
+    /*
+    //example on handling "hold" feature => effect is triggered only when key is pressed
+    if (runtime->is_key_down(VK_F1) && runtime->is_key_down(VK_SHIFT))
+    {
+        shared_data.cb_inject_values.testGlobal = 1.0;
+    }
+    else
+    {
+        shared_data.cb_inject_values.testGlobal = 0.0;
+    }
+
+
+    //example on toggling on/off 
+    // default ALT+F6 toggle on/off video in IHADSS
+    if (runtime->is_key_pressed(shared_data.vk_TADS_video) && runtime->is_key_down(shared_data.vk_TADS_video_mod))
+    {
+        // Toggle the value of disable_video_IHADSS between 0.0 and 1.0
+        if (shared_data.cb_inject_values.disable_video_IHADSS == 1.0)
+        {
+            shared_data.cb_inject_values.disable_video_IHADSS = 0.0;
+        }
+        else if (shared_data.cb_inject_values.disable_video_IHADSS == 0.0)
+        {
+            shared_data.cb_inject_values.disable_video_IHADSS = 1.0;
+        }
+    }
+*/
+
+    // go through textures for pilot note 
+    /*
+    if (runtime->is_key_down(VK_PILOTE_NOTE) && runtime->is_key_down(VK_PILOTE_NOTE_MOD) && a_shared.VREM_setting[SET_PHOTO])
+    {
+        photo_selected_index = photo_selected_index+1;
+        if (photo_selected_index > photo_max_index) photo_selected_index = 0;
+    } */
+ 
+
+    // display pilot note 
+    if (runtime->is_key_down(VK_PILOTE_NOTE) && a_shared.VREM_setting[SET_PHOTO])
+        a_shared.cb_inject_values.photo_on = 1.0;
+    else
+    {
+        a_shared.cb_inject_values.photo_on = 0.0;
+    }
 
 }
 
@@ -129,8 +181,13 @@ extern "C" {
             log_waiting_setting();
 #endif
         } 
-        
-        // Fin de capture seulement si une frame réelle a commencé
+
+        // handle key press to toggle features not managed by imgui (eg TADS picture removed)
+        handle_keypress(runtime);
+
+#ifdef _DEBUG
+
+		// handle capture frame button press 
         if (flag_capture && frame_started)
         {
             flag_capture = false;
@@ -161,7 +218,7 @@ extern "C" {
             log_shader_def_list();
 #endif
 
-#ifdef _DEBUG
+
 			// if shader hunter mode : clean list of PS
 			if (g_shared_state->shader_hunter)  g_shared_state->PSshader_list.clear();
 #endif

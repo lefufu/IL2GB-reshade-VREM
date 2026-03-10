@@ -78,27 +78,6 @@ bool frame_started = false;     // au moins un bind_pipeline vu
 // to skip draw call if some shader are to be skipped
 bool do_not_draw = false;
 
-/*
-// definition of action triggered by shaders/pipeline
-std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
-{
-	
-	// ** get maks for own plane, t8 should be OK
-	//own plane texture
-	{0xf7fce9a6, Shader_Definition(action_log | action_get_text | action_dump, Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
-	{0xde747357, Shader_Definition(action_log, Feature::PS_ownPlane, L"", 0, {SET_DEFAULT})},
-	// external only
-	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
-	
-	//global PS (for control at first)
-	// {0xdf640d43, Shader_Definition(action_log | action_dump, Feature::VS_global, L"", 0, {SET_DEFAULT})},
-	{0x9f694be6, Shader_Definition(action_replace_bind |action_injectText, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG})},
-	
-	//sight PS
-	{0x45983fba, Shader_Definition(action_replace_bind , Feature::PS_sight, L"sight_PS.cso", 0, {SET_SIGHT})},
-	
-};
-*/
 
 //
 // structure to contain shaders/pipeline to process, regarding mod option selected
@@ -181,6 +160,13 @@ extern "C" {
 
 		//intialize the counters
 		intialize_counters();
+
+		//for photo 
+		/*
+		photo_max_index = 0;
+		photo_current_index = 0;
+		photo_selected_index = 0;
+		*/
 
 #if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "addon - vrem_init ended");
 #endif
