@@ -128,8 +128,6 @@ extern "C" {
 			shader_def.hash = hash;
 		}
 
-        //TODO : init mod params
-
 		// to avoid doing things before 3D rendering started
 		bool cockpit_rendering_started = false;
 
@@ -147,9 +145,11 @@ extern "C" {
 
 		// some init to do once per library launch
 		a_shared.flag_texture_dump = false;
+		a_shared.flag_cb_dump = false;
 
 		a_shared.VREM_setting[SET_DEFAULT] = 0;
-		a_shared.cb_inject_values.VRMode = 0;
+		
+		a_shared.cb_inject_values.max_display = 0;
 
 		a_shared.technique_status_loaded = false;
 
@@ -160,13 +160,6 @@ extern "C" {
 
 		//intialize the counters
 		intialize_counters();
-
-		//for photo 
-		/*
-		photo_max_index = 0;
-		photo_current_index = 0;
-		photo_selected_index = 0;
-		*/
 
 #if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "addon - vrem_init ended");
 #endif

@@ -485,7 +485,7 @@ void log_resource_created(std::string texture_name, device* dev, resource_desc c
 	}
 }
 
-void log_resource_view_created(std::string texture_name, device* dev, resource_view res_view, uint64_t handle)
+void log_resource_view_created(std::string texture_name, device* dev, resource_view res_view, resource_view res_stencil_view, uint64_t handle)
 {
 	if (g_shared_state->debug_log)
 	{
@@ -511,6 +511,30 @@ void log_resource_view_created(std::string texture_name, device* dev, resource_v
 		}
 		s << ";";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
+		s.str("");
+		s.clear();
+
+		if (res_stencil_view.handle != 0)
+		{
+			s << "addon - create stencil resource view for " << texture_name << ":, type: " << to_string(res_desc.type) << ", src handle =" << std::hex << handle << ", draw =" << a_shared.count_display;
+
+			switch (res_desc.type) {
+			default:
+			case reshade::api::resource_view_type::unknown:
+				s << "!!! error: resource_type not texture* !!!";
+				break;
+
+			case reshade::api::resource_view_type::texture_1d:
+			case reshade::api::resource_view_type::texture_2d:
+			case reshade::api::resource_view_type::texture_3d:
+			case reshade::api::resource_view_type::texture_2d_multisample:
+				s << ", res. view format: " << to_string(res_desc.format);
+				break;
+			}
+			s << ";";
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+
+		}
 	}
 }
 
@@ -526,13 +550,22 @@ void log_copy_texture(std::string texture_name, uint64_t handle)
 	}
 }
 
-void log_texture_injected(std::string texture_name, uint64_t handle)
+void log_texture_injected(std::string texture_name, uint64_t handle, bool depth_stencil, uint32_t slot)
 {
 	if (g_shared_state->debug_log && flag_capture)
 	{
 		std::stringstream s;
-		s << " => on_bind_pipeline : " << texture_name << ", src text. handle = " << std::hex << handle << ", textures injected for draw index : ";
+		s << " => on_bind_pipeline : " << texture_name << ", src text. handle = " << std::hex << handle;
+		if (!depth_stencil)
+		{
+			s << ", texture injected at slot " << slot << " for draw index : ";
+		}
+		else
+		{
+			s << ", depth texture and stencil injected at slots " << slot << ", " << slot+1 << " for draw index : ";
+		}
 		s << a_shared.count_display << ";";
+
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }

@@ -68,20 +68,24 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 	{
 		a_shared.count_display += 1;
 		a_shared.cb_inject_values.count_display = a_shared.count_display;
+		if (a_shared.cb_inject_values.max_display < a_shared.count_display)
+			a_shared.cb_inject_values.max_display = a_shared.count_display;
+
 #if _DEBUG_LOGS  
 		// log infos
 		log_increase_count_display();
 #endif
 	}
 
-	//trace VR mode
+	//trace VR mode (not working)
+	/*
 	if (it->second.feature == Feature::PS_VRMirror)
 	{
-		a_shared.cb_inject_values.VRMode = 1.0;
+		a_shared.cb_inject_values.max_display = 1.0;
 #if _DEBUG_LOGS  
 		log_mirror_view();
 #endif
-	}
+	}*/
 
 	/*
 	// PS for ego plane : stop collecting textures for mask
@@ -100,7 +104,7 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 #endif
 
 	} */
-
+	/*
 	if (it->second.feature == Feature::PS_external)
 	{
 		// for security in case of (2 call for the same VS)
@@ -112,7 +116,7 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 
 		//dump textures at next push_descriptors
 		a_shared.flag_texture_dump = false;
-	}
+	}*/
 
 
 	// PS for GUI : set flag
@@ -187,9 +191,9 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 	}
 
 	// PS for mirror view : setup VR mode
-	if (it->second.feature == Feature::VRMode)
+	if (it->second.feature == Feature::max_display)
 	{
-		a_shared.cb_inject_values.VRMode = 1.0;
+		a_shared.cb_inject_values.max_display = 1.0;
 		// identify which view was used before mirror view
 		// defaut
 		a_shared.mirror_VR = 0;
@@ -220,15 +224,16 @@ void process_action_injectText(command_list* commandList, std::unordered_map<uin
 			//inject mask texture in t3
 			inject_texture(commandList, 3, current_PlaneMask_handle, "PlaneMask");
 
-			//inject depth texture in t4
-			inject_texture(commandList, 4, current_depth_handle, "Depth");
+			//inject depth texture in t4 and t5 
+			inject_texture(commandList, 4, current_depth_handle, "Depth and stencil");
+
 		}
 
-		// photo texture in shader in t5
+		// photo texture in shader in t6
 		if ((it->second.feature == Feature::PS_global || it->second.feature == Feature::PS_VR_GUI) && a_shared.copied_textures[current_Photo_handle].copied)
 		{
 			//inject photo texture
-			inject_texture(commandList, 5, current_Photo_handle, "Photo");
+			inject_texture(commandList, 6, current_Photo_handle, "Photo");
 		}
 	}
 }

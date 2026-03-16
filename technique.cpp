@@ -394,9 +394,15 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
         {
             // export DEPTH and STENCIL once for all effects (must be done in 2D too !!)
             // update DEPTH texture
-            g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.copied_textures[current_depth_handle].texresource_view, a_shared.copied_textures[current_depth_handle].texresource_view);
+            if (a_shared.copied_textures[current_depth_handle].texresource_view.handle!=0)
+                g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.copied_textures[current_depth_handle].texresource_view, a_shared.copied_textures[current_depth_handle].texresource_view);
             // update STENCIL texture
-            g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_PlaneMask_handle].texresource_view, a_shared.copied_textures[current_PlaneMask_handle].texresource_view);
+            if (a_shared.copied_textures[current_depth_handle].texresource_view_stencil.handle != 0)
+                g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_depth_handle].texresource_view_stencil, a_shared.copied_textures[current_depth_handle].texresource_view_stencil);
+                // g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_depth_handle].texresource_view_stencil, a_shared.copied_textures[current_depth_handle].texresource_view_stencil);
+            // update MASK texture
+            if (a_shared.copied_textures[current_PlaneMask_handle].texresource_view != 0)
+                g_shared_state->runtime->update_texture_bindings("MASK", a_shared.copied_textures[current_PlaneMask_handle].texresource_view, a_shared.copied_textures[current_PlaneMask_handle].texresource_view);
 #if _DEBUG_LOGS
             log_export_texture(display_to_use);
 #endif

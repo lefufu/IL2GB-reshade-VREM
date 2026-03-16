@@ -89,6 +89,14 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 	// create target resource once per game session, for each source resource 
 	bool resource_found = false;
 
+	if (g_shared_state->debug_log && flag_capture)
+	{
+		std::stringstream s;
+		s << " **** copy_texture_from_desc : entering ;";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+
+	}
+
 	auto it = a_shared.copied_textures.find(scr_resource.handle);
 	if (it == a_shared.copied_textures.end()) {
 
@@ -111,14 +119,36 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 			// create resources view on the copied resource
 			text_copy.texresource_view = copy_resource_view(dev, src_resource_view_texture, text_copy.texresource);
 
+
 			if (text_copy.texresource_view.handle != 0)
 			{
+				//handle depth stencil texture : create the second resource view for the stencil
+				if (src_resource_desc.texture.format == reshade::api::format::r32_g8_typeless ||
+					src_resource_desc.texture.format == reshade::api::format::r32_float_x8_uint ||
+					src_resource_desc.texture.format == reshade::api::format::d32_float_s8_uint)
+				{
+					resource_view_desc stencil_desc = {};
+					stencil_desc.type = resource_view_type::texture_2d;
+					stencil_desc.format = reshade::api::format::x32_float_g8_uint;
+					stencil_desc.texture.level_count = 1;
+					stencil_desc.texture.first_level = 0;
+					stencil_desc.texture.layer_count = 1;
+					stencil_desc.texture.first_layer = 0;
+
+					bool stencil_status = dev->create_resource_view(
+						text_copy.texresource,
+						resource_usage::shader_resource,
+						stencil_desc,
+						&text_copy.texresource_view_stencil
+					);
+				}
+							
 				// store new elements for copied resource
 				a_shared.copied_textures.emplace(scr_resource.handle, text_copy);
 				resource_found = true;
 #if _DEBUG_LOGS
 				log_resource_created(textName, dev, src_resource_desc, scr_resource.handle);
-				log_resource_view_created(textName, dev, text_copy.texresource_view, scr_resource.handle);
+				log_resource_view_created(textName, dev, text_copy.texresource_view, text_copy.texresource_view_stencil, scr_resource.handle);
 #endif
 			}
 		}
@@ -127,6 +157,14 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 	else
 	{
 		resource_found = true;
+	}
+
+	if (g_shared_state->debug_log && flag_capture)
+	{
+		std::stringstream s;
+		s << " **** copy_texture_from_desc : resource_found = " << resource_found << ",a_shared.copied_textures[scr_resource.handle].copied= " << a_shared.copied_textures[scr_resource.handle].copied << ";";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+
 	}
 
 	if (resource_found && !a_shared.copied_textures[scr_resource.handle].copied)
@@ -248,8 +286,13 @@ void delete_texture_resources(device* device)
 	//delete resource and resource view if created 
 
 	for (auto& [handle, ds_copy] : a_shared.copied_textures) {
-		device->destroy_resource_view(ds_copy.texresource_view);
-		device->destroy_resource(ds_copy.texresource);
+		if (ds_copy.texresource_view.handle != 0)
+			device->destroy_resource_view(ds_copy.texresource_view);
+		if (ds_copy.texresource_view_stencil.handle != 0)
+			device->destroy_resource_view(ds_copy.texresource_view_stencil);
+		if (ds_copy.texresource.handle != 0)
+			device->destroy_resource(ds_copy.texresource);
+
 	}
 	a_shared.copied_textures.clear();
 }
@@ -286,8 +329,8 @@ void create_RV_pipeline_layout(device* device)
 }
 
 // *******************************************************************************************************
-// inject a texture in bind_pipeline
-void inject_texture(command_list* commandList, uint32_t stot, uint64_t text_handle, std::string text_name)
+// inject a texture in bind_pipeline, if depth / stencil inject the 2 resources view
+void inject_texture(command_list* commandList, uint32_t slot, uint64_t text_handle, std::string text_name)
 {
 	reshade::api::descriptor_table_update update;
 
@@ -295,13 +338,24 @@ void inject_texture(command_list* commandList, uint32_t stot, uint64_t text_hand
 	update.count = 1;
 	update.type = reshade::api::descriptor_type::shader_resource_view;
 
+	bool depth_stencil = false;
+
 	// push the texture for planeMask, descriptor initialized in copy_texture()
-	update.binding = stot- RVINDEX; // take into account RVINDEX for slot
+	update.binding = slot- RVINDEX; // take into account RVINDEX for slot
 	update.descriptors = &a_shared.copied_textures[text_handle].texresource_view;
 	commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
 
+	//handle depth stencil texture : create the second resource view for the stencil
+	if (a_shared.copied_textures[text_handle].texresource_view_stencil.handle != 0)
+	{
+		update.binding = slot - RVINDEX + 1;
+		update.descriptors = &a_shared.copied_textures[text_handle].texresource_view_stencil;
+		commandList->push_descriptors(reshade::api::shader_stage::pixel, a_shared.saved_pipeline_layout_RV, 0, update);
+		depth_stencil = true;
+	}
+
 	// log infos
 #if _DEBUG_LOGS  
-	log_texture_injected(text_name, text_handle);
+	log_texture_injected(text_name, text_handle, depth_stencil, slot);
 #endif
 }

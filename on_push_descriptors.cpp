@@ -55,7 +55,7 @@ using namespace reshade::api;
 
 //*******************************************************************************************************
 // for hunting
-void log_hunting(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
+void dump_text_cb(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 {
 #ifdef _DEBUG
 	// log for shader hunting
@@ -66,14 +66,7 @@ void log_hunting(command_list* cmd_list, shader_stage stages, pipeline_layout la
 #endif
 
 	}
-	/*
-	if (g_shared_state->debug_log && flag_capture && a_shared.flag_texture_dump)
-	{
-		std::stringstream s;
-		s << "addon - vrem_on_push_descriptors : a_shared.flag_texture_dump = " << a_shared.flag_texture_dump << ", update.type = " << to_string(update.type) << "; ";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-	}*/
-
+	
 	//export textures for hunting if requested
 	if (flag_capture && a_shared.flag_texture_dump && g_shared_state->save_texture_flag && update.type == descriptor_type::shader_resource_view)
 	{
@@ -87,13 +80,7 @@ void log_hunting(command_list* cmd_list, shader_stage stages, pipeline_layout la
 			a_shared.ps_hash_for_text_dump,
 			a_shared.count_display
 		);
-		/*
-		if (g_shared_state->debug_log && flag_capture)
-		{
-			std::stringstream s;
-			s << "addon - vrem_on_push_descriptors : should dump textures, param_index = " << param_index << "; ";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-		}*/
+
 
 	}
 
@@ -110,7 +97,7 @@ void log_hunting(command_list* cmd_list, shader_stage stages, pipeline_layout la
 			a_shared.count_display,
 			true // true = export en .txt (lisible), false = .bin (binaire)
 		);
-
+		
 	}
 
 #endif
@@ -125,6 +112,7 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 	log_push_descriptor(stages, layout, param_index, update);
 #endif
 
+
 	device* dev = cmd_list->get_device();
 
 	// get mask from ext plane  PS, filter by the number of resource
@@ -137,6 +125,14 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 		{
 			text_num = 9;
 			depth_num = 11;
+		}
+
+		if (g_shared_state->debug_log && flag_capture)
+		{
+			std::stringstream s;
+			s << " **** get_texture : update.count = " << update.count << ", text_num = " << text_num << ", depth_num = " << depth_num << ";";
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+
 		}
 
 		// in some case the resource view handle is null, skip these cases
@@ -199,9 +195,10 @@ extern "C" {
 
 #if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors started");
 #endif
-		// for hunting mod only
-		log_hunting(cmd_list, stages, layout, param_index, update);
-
+#ifdef _DEBUG
+		// for hunting and texture / CB dump
+		dump_text_cb(cmd_list, stages, layout, param_index, update);
+#endif
 		// ********** to be updated for later effects
 		// to limit processing only when a tracking is setup 
 		// if (!a_shared.render_technique && !track_for_texture && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
@@ -226,6 +223,15 @@ extern "C" {
 
 		// inject texture part
 		//
+
+		if (g_shared_state->debug_log && flag_capture && track_for_texture)
+		{
+			std::stringstream s;
+			s << " **** vrem_on_push_descriptors = >  track_for_texture =  " << track_for_texture << ", update.type = " << to_string(descriptor_type::shader_resource_view) << ";";
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+
+		}
+
 		if (track_for_texture && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel)
 		{
 			get_texture(cmd_list, stages, layout, param_index, update);

@@ -60,7 +60,7 @@ struct ShaderInjectData {
 	float maskSun; //0.w
 	float count_display; //1.x
 	float mapMode; //1.y
-	float VRMode; //1.z
+	float max_display; //1.z
 	float sightEye; //1.w
 	float photo_scale; //2.x 
 	float photo_XPOS; //2.y
@@ -70,9 +70,9 @@ struct ShaderInjectData {
 	float grey_icons; //3.y
 	float grey_level; //3.z
 	float mask_icon; //3.w
-	float colorFlag; //4.x
-	float fSharpenIntensity; //4.y
-	float lumaFactor; //4.z
+	float testVS; //4.x
+	float map_bright; //4.y
+	float night_mode; //4.z
 	float sharpenFlag; //4.w
 	float debandFlag; //5.x
 	float Threshold; //5.y

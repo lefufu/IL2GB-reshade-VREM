@@ -79,6 +79,8 @@ void intialize_counters()
         ds_copy.copied = false;
     }
 
+    //for testing purpose
+    a_shared.cb_inject_values.testVS = 0.0;
 
 }
 
@@ -117,21 +119,33 @@ void handle_keypress(effect_runtime* runtime)
     }
 */
 
-    // go through textures for pilot note 
-    /*
-    if (runtime->is_key_down(VK_PILOTE_NOTE) && runtime->is_key_down(VK_PILOTE_NOTE_MOD) && a_shared.VREM_setting[SET_PHOTO])
-    {
-        photo_selected_index = photo_selected_index+1;
-        if (photo_selected_index > photo_max_index) photo_selected_index = 0;
-    } */
- 
-
     // display pilot note 
     if (runtime->is_key_down(VK_PILOTE_NOTE) && a_shared.VREM_setting[SET_PHOTO])
         a_shared.cb_inject_values.photo_on = 1.0;
     else
     {
         a_shared.cb_inject_values.photo_on = 0.0;
+    }
+
+    // night mode
+    if (runtime->is_key_pressed(VK_NIGHT_MODE) && runtime->is_key_down(VK_NIGHT_MODE_MOD) && a_shared.VREM_setting[SET_MISC])
+    {
+        if (a_shared.cb_inject_values.night_mode == 1.0)
+        {
+            a_shared.cb_inject_values.night_mode = 0.0;
+        }
+        else if (a_shared.cb_inject_values.night_mode == 0.0)
+        {
+            a_shared.cb_inject_values.night_mode = 1.0;
+        }
+    }
+
+    // for testing
+    if (runtime->is_key_down(VK_TEST_VS) && a_shared.VREM_setting[SET_TESTVS])
+        a_shared.cb_inject_values.testVS = 1.0;
+    else
+    {
+        a_shared.cb_inject_values.testVS = 0.0;
     }
 
 }
@@ -182,7 +196,8 @@ extern "C" {
 #endif
         } 
 
-        // handle key press to toggle features not managed by imgui (eg TADS picture removed)
+        //------------------------------------
+        // handle key press to toggle features 
         handle_keypress(runtime);
 
 #ifdef _DEBUG
@@ -213,6 +228,7 @@ extern "C" {
             flag_capture = true;
             frame_started = true;
             a_shared.flag_texture_dump = false;
+            a_shared.flag_cb_dump = false;
 #if _DEBUG_LOGS
             log_start_capture_frame();
             log_shader_def_list();
@@ -221,8 +237,9 @@ extern "C" {
 
 			// if shader hunter mode : clean list of PS
 			if (g_shared_state->shader_hunter)  g_shared_state->PSshader_list.clear();
-#endif
+
         } 
+#endif
 
 		//force capture for testing
         // flag_capture = true;

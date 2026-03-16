@@ -82,6 +82,7 @@ static void clear_tracking_flags()
 	//to stop texture and buffer dump
 	a_shared.flag_texture_dump = false;
 	a_shared.flag_cb_dump = false;
+
 #endif
 
 }
@@ -111,7 +112,7 @@ extern "C" {
 		// log
 		if (g_shared_state->shader_hunter && flag_capture) log_ondraw(vertex_count, instance_count, first_vertex, first_instance);
 #endif		
-		if (!track_for_texture && !do_not_draw && !a_shared.render_technique && !a_shared.flag_texture_dump) return false;
+		if (!track_for_texture && !do_not_draw && !a_shared.render_technique && !a_shared.flag_texture_dump && !a_shared.flag_cb_dump) return false;
 		
 		bool skip = false;
 		if (do_not_draw) skip = true;
@@ -146,7 +147,7 @@ extern "C" {
 		// log
 		if (g_shared_state->shader_hunter && flag_capture) log_on_draw_indexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 #endif		
-		if (!track_for_texture && !do_not_draw && !a_shared.render_technique && !a_shared.flag_texture_dump) return false;
+		if (!track_for_texture && !do_not_draw && !a_shared.render_technique && !a_shared.flag_texture_dump && !a_shared.flag_cb_dump) return false;
 
 		bool skip = false;
 		if (do_not_draw) skip = true;
@@ -167,15 +168,7 @@ extern "C" {
 	// On draw* : skip draw
 	VREM_EXPORT bool vrem_on_drawOrDispatch_indirect(command_list* commandList, indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride)
 	{
-/*
-#ifdef _DEBUG
-		if (g_shared_state->save_rt_flag && flag_capture)
-		{
 
-			save_render_target(commandList);
-		}
-#endif
-*/
 #if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed started");
 #endif
 
@@ -183,7 +176,7 @@ extern "C" {
 		// log
 		if (g_shared_state->shader_hunter && flag_capture) log_on_drawOrDispatch_indirect(type, buffer, offset, draw_count, stride);
 #endif
-		if (!track_for_texture && !do_not_draw && !a_shared.render_technique && !a_shared.flag_texture_dump) return false;
+		if (!track_for_texture && !do_not_draw && !a_shared.render_technique && !a_shared.flag_texture_dump && !a_shared.flag_cb_dump) return false;
 		
 		bool skip = false;
 		if (do_not_draw) skip = true;

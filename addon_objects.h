@@ -184,6 +184,7 @@ enum class Feature : uint32_t
 	PS_VR_GUI = 11,
 	PS_icon_text = 12,
 	PS_icon = 13,
+	VS_test = 98,
 	VS_dump = 99,
 	//old things for compatibility
 	// Rotor : disable rotor when in cockpit view
@@ -233,7 +234,7 @@ inline std::unordered_map<Feature, std::string> debug_feature_name = {
 	{Feature::PS_icon, "PS_icon"},
 	{Feature::PS_icon_text, "PS_icon_text"},	
 	{Feature::VS_dump, "VS_dump"},
-	
+	{Feature::VS_test, "VS_test"},
 };
 
 //*****************************************************************************
@@ -247,26 +248,28 @@ static const int SETTINGS_SIZE = 11;
 
 constexpr uint8_t SET_DEFAULT = 0;
 constexpr uint8_t SET_SIGHT = 1;
-constexpr uint8_t SET_MASK = 2;
+constexpr uint8_t SET_MISC = 2;
 constexpr uint8_t SET_PHOTO = 3;
 constexpr uint8_t SET_ICON = 4;
 constexpr uint8_t SET_TECHNIQUE = 8;
+constexpr uint8_t SET_TESTVS = 9;
 constexpr uint8_t SET_DEBUG = 10;
 //will have to be cleaned up later
-constexpr uint8_t SET_MISC = 4;
 constexpr uint8_t SET_NS430 = 5;
 constexpr uint8_t SET_REFLECT = 6;
 constexpr uint8_t SET_NVG = 7;
-constexpr uint8_t SET_FPS_LIMIT = 9;
-
 // !!!
 // update mapping between technique name and feature at bottom of the file
 
 //*****************************************************************************
 // Key mapping
 //pilote note on/off: K
-static const uint32_t VK_PILOTE_NOTE = 0x4B;
+static const uint32_t VK_PILOTE_NOTE = 0x4B; //'k'
 static const uint32_t VK_PILOTE_NOTE_MOD = VK_SHIFT;
+static const uint32_t VK_TEST_VS = VK_DIVIDE;
+static const uint32_t VK_NIGHT_MODE = 0x55; //'u'
+static const uint32_t VK_NIGHT_MODE_MOD = VK_CONTROL;
+
 
 //*****************************************************************************
 // not to be modified : declaration of class & objects used for the mod logic and shared between functions
@@ -330,7 +333,7 @@ struct resource_DS_copy {
 	bool copied = false;
 	reshade::api::resource texresource = {};
 	reshade::api::resource_view texresource_view = {};
-	//reshade::api::resource_view texresource_view_stencil = {};
+	reshade::api::resource_view texresource_view_stencil = {}; //for depth stencil resource
 };
 
 struct saved_RenderTargetView {
@@ -492,10 +495,10 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 
 	// ** get maks for own plane, t8 should be OK
 	//own plane texture
-	{0xf7fce9a6, Shader_Definition(action_log | action_get_text, Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
-	//cockpit
-	{0x63ba565f, Shader_Definition(action_log| action_get_text, Feature::VS_ownPlane, L"", 0, {SET_PHOTO})},
-	// {0xde747357, Shader_Definition(action_log, Feature::PS_ownPlane, L"", 0, {SET_DEFAULT})},
+	{0xf7fce9a6, Shader_Definition(action_log | action_get_text , Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	//cockpit+test
+	{0x63ba565f, Shader_Definition(action_log| action_get_text| action_replace_bind | action_dump, Feature::VS_ownPlane, L"test_far_VS.cso", 0, {SET_PHOTO, SET_TESTVS })},
+
 	// external only
 	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
 
@@ -513,7 +516,7 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{0x45983fba, Shader_Definition(action_replace_bind , Feature::PS_sight, L"sight_PS.cso", 0, {SET_SIGHT})},
 
 	// sun halo
-	{0x27fca33b, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_sun, L"mask_sun.cso", 0, {SET_MASK})},
+	{0x27fca33b, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_sun, L"mask_sun.cso", 0, {SET_MISC})},
 	
 	//VR GUI
 	{0x7379c02c, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_VR_GUI, L"VR_GUI_PS.cso", 0, {SET_PHOTO})},
@@ -524,9 +527,11 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{0xdcb7b073, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_icon_text, L"icon_text_PS.cso", 0, {SET_ICON})},
 
 	//to dump textures
-	//{0x31cdcd18, Shader_Definition(action_dump , Feature::VS_dump, L"", 0, {SET_ICON})},
-	
+	//{0x6e5b562f, Shader_Definition(action_dump , Feature::VS_dump, L"", 0, {SET_DEFAULT})},
 
+	// test
+	{0x3b7d44c2, Shader_Definition(action_replace_bind , Feature::VS_test, L"test_near_VS.cso", 0, {SET_TESTVS})},
+	
 };
 
 //*****************************************************************************
@@ -536,11 +541,13 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 inline std::unordered_map<std::string, int> settings_mapping = {
 	{"set_default", SET_DEFAULT},
 	{"set_sight", SET_SIGHT},
-	{"set_mask", SET_MASK },
+	{"set_mask", SET_MISC },
 	{"set_technique", SET_TECHNIQUE },
 	{"set_debug", SET_DEBUG },
 	{"set_photo", SET_PHOTO },
 	{"set_icon", SET_ICON },
+	{"set_testVS", SET_TESTVS },
+	
 };
 
 //variables 
@@ -560,6 +567,7 @@ static const std::unordered_map<std::string, float*> var_mapping = {
 	{"var_grey", &a_shared.cb_inject_values.grey_icons},
 	{"var_grey_level", &a_shared.cb_inject_values.grey_level},
 	{"var_mask_icon", &a_shared.cb_inject_values.mask_icon},
+	{"var_map_bright", &a_shared.cb_inject_values.map_bright},
 	
 	// to share variables from addon to technique 
 	{"unif_display", &a_shared.cb_inject_values.count_display},
