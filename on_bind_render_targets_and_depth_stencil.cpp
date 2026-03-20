@@ -45,7 +45,6 @@
 #include <reshade.hpp>
 #include <unordered_map>
 
-
 #include "loader_addon_shared.h"
 #include "addon_functions.h"
 #include "addon_objects.h"
@@ -101,8 +100,7 @@ extern "C" {
 				last_RTV_saved.RV = rtvs[0];
 				last_RTV_saved.width = src_resource_desc.texture.width;
 				last_RTV_saved.height = src_resource_desc.texture.height;
-#if _DEBUG_LOGS  			
-				log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
+#if _DEBUG_LOGS  			cmd_list, count, rtvs, dsv, cmd_list, current_RTV_handle);
 #endif			
 			}
 			else

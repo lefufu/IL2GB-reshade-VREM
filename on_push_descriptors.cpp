@@ -127,14 +127,6 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 			depth_num = 11;
 		}
 
-		if (g_shared_state->debug_log && flag_capture)
-		{
-			std::stringstream s;
-			s << " **** get_texture : update.count = " << update.count << ", text_num = " << text_num << ", depth_num = " << depth_num << ";";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-
-		}
-
 		// in some case the resource view handle is null, skip these cases
 		if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0)
 		{
@@ -168,13 +160,18 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 		//copy texure having size and mips level, tha last one is the good one!
 		if (src_resource_desc.texture.width == 1024 && src_resource_desc.texture.levels == 11 )
 		{
+
 			// in some case the resource view handle is null, skip these cases
-			if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0)
+			if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0 && (a_shared.current_photo_number == a_shared.target_photo_number || a_shared.default_photo_number))
 			{
 
 				// to retrieve infos for pushing texture in bind_pipeline
 				current_Photo_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "Photo");
 			}
+
+			a_shared.current_photo_number = a_shared.current_photo_number + 1;
+			if (a_shared.current_photo_number > a_shared.max_photo_number)
+				a_shared.max_photo_number = a_shared.current_photo_number;
 
 		}
 	}
@@ -193,7 +190,8 @@ extern "C" {
 	VREM_EXPORT  void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 	{
 
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors started");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors started");
 #endif
 #ifdef _DEBUG
 		// for hunting and texture / CB dump
@@ -204,7 +202,8 @@ extern "C" {
 		// if (!a_shared.render_technique && !track_for_texture && ( ((a_shared.cb_inject_values.hazeReduction == 1.0 && a_shared.cb_inject_values.gCockpitIBL == 1.0) && a_shared.VREM_setting[SET_MISC]) || !a_shared.VREM_setting[SET_MISC])  ) return;
 		if (!track_for_texture && !a_shared.render_technique)
 		{
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended (no track)");
+#if _DEBUG_CRASH 
+			reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended (no track)");
 #endif
 			return;
 		}
@@ -222,22 +221,14 @@ extern "C" {
 		}
 
 		// inject texture part
-		//
-
-		if (g_shared_state->debug_log && flag_capture && track_for_texture)
-		{
-			std::stringstream s;
-			s << " **** vrem_on_push_descriptors = >  track_for_texture =  " << track_for_texture << ", update.type = " << to_string(descriptor_type::shader_resource_view) << ";";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-
-		}
-
+	
 		if (track_for_texture && update.type == descriptor_type::shader_resource_view && stages == shader_stage::pixel)
 		{
 			get_texture(cmd_list, stages, layout, param_index, update);
 		}
 
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_push_descriptors ended");
 #endif
 
 	}

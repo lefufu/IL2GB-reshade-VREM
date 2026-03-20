@@ -77,6 +77,16 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 #endif
 	}
 
+	// PS for own plane 
+	if (it->second.feature == Feature::PS_lastGlobal)
+	{
+		a_shared.wait_for_technique = a_shared.wait_for_technique + 1;
+		// log infos
+#if _DEBUG_LOGS  
+		log_start_monitor("Last global");
+#endif
+	}
+
 	//trace VR mode (not working)
 	/*
 	if (it->second.feature == Feature::PS_VRMirror)
@@ -476,7 +486,8 @@ extern "C" {
 		
 		// optimize performance by reducing processing to ALLOWED_STAGES
 		if ((static_cast<uint32_t>(stages) & static_cast<uint32_t>(ALLOWED_STAGES)) == 0) return;
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline started");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline started");
 #endif
 
 #ifdef _DEBUG		
@@ -504,7 +515,8 @@ extern "C" {
 			
 			on_bind_pipeline_hunting(commandList, stages, pipelineHandle);
 			// skip processing if shader hunting
-#if _DEBUG_CRASH  reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended (hunting)");
+#if _DEBUG_CRASH  
+			reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended (hunting)");
 #endif
 			return;
 		}
@@ -514,7 +526,8 @@ extern "C" {
 
 		if (it == filtered_pipeline.end()) [[likely]]
 		{
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended (not used)");
+#if _DEBUG_CRASH 
+			reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended (not used)");
 #endif
 			return;
 		}
@@ -561,7 +574,8 @@ extern "C" {
 			a_shared.last_feature = it->second.feature;
 		}
 
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_pipeline ended");
 #endif
 	}
 #ifdef _DEBUG

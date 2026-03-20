@@ -73,6 +73,10 @@ void intialize_counters()
 
     a_shared.not_track_mask_anymore = false;
 
+    a_shared.wait_for_technique = 0;
+
+    a_shared.current_photo_number = 0;
+
     // initialize flags for texture copy
     current_PlaneMask_handle = 0;
     for (auto& [handle, ds_copy] : a_shared.copied_textures) {
@@ -127,6 +131,15 @@ void handle_keypress(effect_runtime* runtime)
         a_shared.cb_inject_values.photo_on = 0.0;
     }
 
+    // change pilot note index
+    if (runtime->is_key_pressed(VK_PILOTE_NOTE) && runtime->is_key_down(VK_PILOTE_NOTE_MOD) && a_shared.VREM_setting[SET_PHOTO])
+    {
+        a_shared.default_photo_number = false;
+        a_shared.target_photo_number = a_shared.target_photo_number + 1;
+        if (a_shared.target_photo_number > a_shared.max_photo_number)
+            a_shared.target_photo_number = 0;
+    }
+
     // night mode
     if (runtime->is_key_pressed(VK_NIGHT_MODE) && runtime->is_key_down(VK_NIGHT_MODE_MOD) && a_shared.VREM_setting[SET_MISC])
     {
@@ -158,7 +171,8 @@ extern "C" {
     VREM_EXPORT void vrem_on_reshade_present(reshade::api::effect_runtime* runtime)
     {
        
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present started");
+#if _DEBUG_CRASH 
+        reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present started");
 #endif
         // not used, 
         reshade::api::device* device = runtime->get_device();
@@ -244,7 +258,8 @@ extern "C" {
 		//force capture for testing
         // flag_capture = true;
 
-#if _DEBUG_CRASH  reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present ending");
+#if _DEBUG_CRASH  
+        reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present ending");
 #endif
     }
 

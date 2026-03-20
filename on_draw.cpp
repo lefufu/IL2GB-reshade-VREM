@@ -105,7 +105,8 @@ extern "C" {
 		}
 #endif
 */
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw started");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw started");
 #endif
 
 #if _DEBUG_LOGS
@@ -123,7 +124,8 @@ extern "C" {
 		// clear tracking flags
 		clear_tracking_flags();
 
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw ended");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw ended");
 #endif
 		return skip;
 	}
@@ -140,7 +142,8 @@ extern "C" {
 		}
 #endif
 */
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed started");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed started");
 #endif
 
 #if _DEBUG_LOGS
@@ -158,7 +161,8 @@ extern "C" {
 		// clear trackign flags
 		clear_tracking_flags();
 
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed ended");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed ended");
 #endif
 
 		return skip;
@@ -169,7 +173,8 @@ extern "C" {
 	VREM_EXPORT bool vrem_on_drawOrDispatch_indirect(command_list* commandList, indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride)
 	{
 
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed started");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed started");
 #endif
 
 #if _DEBUG_LOGS
@@ -187,7 +192,8 @@ extern "C" {
 		// clear trackign flags
 		clear_tracking_flags();
 
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed ended");
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_draw_indexed ended");
 #endif
 
 		return skip;

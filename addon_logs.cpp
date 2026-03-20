@@ -695,6 +695,8 @@ void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_
 	{
 		std::stringstream s;
 
+		
+
 		s << "addon - bind_render_targets_and_depth_stencil() parameters :";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
@@ -707,10 +709,28 @@ void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_
 		s.str("");
 		s.clear();
 
+		
+		if (rtvs[0].handle != 0)
+		{
+			
+			reshade::api::device* dev = cmd_list->get_device();
+
+			resource scr_resource = dev->get_resource_from_view(rtvs[0]);
+			resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
+
+			if (scr_resource.handle != 0)
+			{
+				s << "    width = " << std::dec << src_resource_desc.texture.width << ", height = " << src_resource_desc.texture.height << "; ";
+				reshade::log::message(reshade::log::level::info, s.str().c_str());
+				s.str("");
+				s.clear();
+			}
+		}
+		
 		if (g_shared_state->shader_hunter) return;
 
 		//s << "    saved_RenderTargetViews[" << std::hex << RTV_handle << "].created, width = " << a_shared.saved_RenderTargetViews[RTV_handle].width <<", height = " << a_shared.saved_RenderTargetViews[RTV_handle].height << ";";
-		s << "    last_RTV_saved updated for handle " << std::hex << last_RTV_saved.RV.handle << ", width = " << last_RTV_saved.width << ", height = " << last_RTV_saved.height << "; ";
+		s << "    last_RTV_saved updated for handle " << std::hex << last_RTV_saved.RV.handle << ", width = " << std::dec << last_RTV_saved.width << ", height = " << last_RTV_saved.height << "; ";
 		extern saved_RenderTargetView last_RTV_saved;
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 
@@ -1135,5 +1155,5 @@ void log_error_too_many_objectsl(reshade::api::pipeline pipeline, uint32_t subob
 
 void log_empy_render_target()
 {
-	reshade::log::message(reshade::log::level::info, "addon - empty render target ignored");
+	if (g_shared_state->debug_log && flag_capture) 	reshade::log::message(reshade::log::level::info, "addon - empty render target ignored");
 }

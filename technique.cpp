@@ -385,15 +385,17 @@ void reEnableAllTechnique(bool save_flag) {
 /// </summary>
 void render_technique(short int display_to_use, command_list* cmd_list) {
 
-    // do not engage effect if render target view is not identified 
-    if (last_RTV_saved.copied)
+    // do not engage effect if render target view is not identified and either in 2D or in VR with enough time to get texture
+    if (last_RTV_saved.copied && ((a_shared.wait_for_technique > FRAME_BEFORE_TECHNIQUE && a_shared.cb_inject_values.max_display >1) || a_shared.cb_inject_values.max_display == 1))
     {
         
         //texture needed defined if at least 1 shader is using DEPTH or STENCIL, computed when reading technique list
         if (a_shared.texture_needed)
         {
+            
             // export DEPTH and STENCIL once for all effects (must be done in 2D too !!)
             // update DEPTH texture
+
             if (a_shared.copied_textures[current_depth_handle].texresource_view.handle!=0)
                 g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.copied_textures[current_depth_handle].texresource_view, a_shared.copied_textures[current_depth_handle].texresource_view);
             // update STENCIL texture
@@ -401,10 +403,11 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
                 g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_depth_handle].texresource_view_stencil, a_shared.copied_textures[current_depth_handle].texresource_view_stencil);
                 // g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_depth_handle].texresource_view_stencil, a_shared.copied_textures[current_depth_handle].texresource_view_stencil);
             // update MASK texture
-            if (a_shared.copied_textures[current_PlaneMask_handle].texresource_view != 0)
+            if (a_shared.copied_textures[current_PlaneMask_handle].texresource_view.handle != 0)
                 g_shared_state->runtime->update_texture_bindings("MASK", a_shared.copied_textures[current_PlaneMask_handle].texresource_view, a_shared.copied_textures[current_PlaneMask_handle].texresource_view);
 #if _DEBUG_LOGS
             log_export_texture(display_to_use);
+
 #endif
         }
 

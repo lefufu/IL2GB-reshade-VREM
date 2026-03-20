@@ -89,14 +89,6 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 	// create target resource once per game session, for each source resource 
 	bool resource_found = false;
 
-	if (g_shared_state->debug_log && flag_capture)
-	{
-		std::stringstream s;
-		s << " **** copy_texture_from_desc : entering ;";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-
-	}
-
 	auto it = a_shared.copied_textures.find(scr_resource.handle);
 	if (it == a_shared.copied_textures.end()) {
 
@@ -159,15 +151,10 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 		resource_found = true;
 	}
 
-	if (g_shared_state->debug_log && flag_capture)
-	{
-		std::stringstream s;
-		s << " **** copy_texture_from_desc : resource_found = " << resource_found << ",a_shared.copied_textures[scr_resource.handle].copied= " << a_shared.copied_textures[scr_resource.handle].copied << ";";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
 
-	}
-
-	if (resource_found && !a_shared.copied_textures[scr_resource.handle].copied)
+	//not working as IL2 is using the same texture for both eyes
+	//if (resource_found && !a_shared.copied_textures[scr_resource.handle].copied)
+	if (resource_found)
 	{
 
 		//flag texture copied to avoid double copy for MSAA because shader is called multiple time for a same "eye rendering" and only first call has good texture

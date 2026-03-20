@@ -155,6 +155,13 @@ extern "C" {
 
 		a_shared.first_PS_pipeline_handle = 0;
 
+		a_shared.wait_for_technique = 0;
+
+		a_shared.current_photo_number = 0;
+		a_shared.max_photo_number = 0;
+		a_shared.target_photo_number = 0;
+		a_shared.default_photo_number = true;
+
 		// parse the shader list to load all shader codes and store codes in shader_code_cache (if not done)
 		read_all_shader_code();
 

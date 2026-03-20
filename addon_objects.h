@@ -91,6 +91,9 @@ static const int MAX_CBSIZE = 152;
 // size of CB
 #define CPERFRAME_SIZE 152 //in float
 
+// number of frame before enabling technique
+#define FRAME_BEFORE_TECHNIQUE 5
+
 // only one value to save for CPerFrame
 static const int  GATMINTENSITY_SAVE = 0;
 static const int  GCOCKPITIBL_X_SAVE = 1;
@@ -152,7 +155,7 @@ static const ActionFlag action_flags[] = {
 	{ action_replace, "replace" },
 	{ action_skip, "skip" },
 	{ action_log, "log" },
-	{ action_track_RT, "technique" },
+	{ action_track_RT, "track render target" },
 	{ action_injectText, "injectText" },
 	{ action_count, "count" },
 	{ action_replace_bind, "replace_bind" },
@@ -184,6 +187,7 @@ enum class Feature : uint32_t
 	PS_VR_GUI = 11,
 	PS_icon_text = 12,
 	PS_icon = 13,
+	PS_lastGlobal = 14,
 	VS_test = 98,
 	VS_dump = 99,
 	//old things for compatibility
@@ -235,6 +239,10 @@ inline std::unordered_map<Feature, std::string> debug_feature_name = {
 	{Feature::PS_icon_text, "PS_icon_text"},	
 	{Feature::VS_dump, "VS_dump"},
 	{Feature::VS_test, "VS_test"},
+	{Feature::PS_lastGlobal, "PS_lastGlobal"},
+	{Feature::PS_VR_GUI, "PS_VR_GUI"},
+	
+	
 };
 
 //*****************************************************************************
@@ -454,6 +462,16 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	uint32_t last_pipeline_hash_PS = 0;
 	bool technique_status_loaded = false;
 
+	//flag to not engage technique too soon
+	uint32_t wait_for_technique = 0;
+
+	//to cycle photos
+	uint32_t current_photo_number = 0;
+	uint32_t max_photo_number = 0;
+	uint32_t target_photo_number = 0;
+	bool default_photo_number = true;
+
+
 };
 
 extern struct addon_shared a_shared;
@@ -495,16 +513,18 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 
 	// ** get maks for own plane, t8 should be OK
 	//own plane texture
-	{0xf7fce9a6, Shader_Definition(action_log | action_get_text , Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	{0xf7fce9a6, Shader_Definition(action_log | action_get_text  , Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
 	//cockpit+test
 	{0x63ba565f, Shader_Definition(action_log| action_get_text| action_replace_bind | action_dump, Feature::VS_ownPlane, L"test_far_VS.cso", 0, {SET_PHOTO, SET_TESTVS })},
 
 	// external only
 	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
 
-
 	//global PS before the one below, used to get render target
 	{0xe2d95d7a, Shader_Definition(action_track_RT, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
+
+	//last global PS, to postpone rendering of technique
+	{0xe2d95d7a, Shader_Definition(action_log, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
 
 	//global PS for image modification (last PS), used to set eye, display mask for debug. Its render target is used for effect
 	{0x9f694be6, Shader_Definition(action_replace_bind | action_injectText | action_log | action_renderTechnique, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG, SET_TECHNIQUE })},
@@ -527,7 +547,7 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{0xdcb7b073, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_icon_text, L"icon_text_PS.cso", 0, {SET_ICON})},
 
 	//to dump textures
-	//{0x6e5b562f, Shader_Definition(action_dump , Feature::VS_dump, L"", 0, {SET_DEFAULT})},
+	//{0xdf640d43, Shader_Definition(action_dump , Feature::VS_dump, L"", 0, {SET_DEFAULT})},
 
 	// test
 	{0x3b7d44c2, Shader_Definition(action_replace_bind , Feature::VS_test, L"test_near_VS.cso", 0, {SET_TESTVS})},

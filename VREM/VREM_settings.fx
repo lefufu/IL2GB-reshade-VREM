@@ -45,22 +45,44 @@ uniform int var_sightEye <
 //*************************
 // mask
 // flag for the section
-uniform bool set_mask <
+uniform bool set_misc <
     ui_label = "Enable masking options (reload)";
     ui_tooltip = "mak enhancement (sun, icons)";
-    ui_category = "2. Mask.";
+    ui_category = "2. Misc.";
 > = false;
 //display mask
 uniform bool var_mask_sun <
     ui_label = "Mask sun halo";
     ui_tooltip = "Mask sun halo";
-    ui_category = "2. Mask.";
+    ui_category = "2. Misc.";
 > = false;
+// night mode for map
+uniform float var_map_bright <
+    ui_type = "slider";
+    ui_label = "set map brigthness";
+    ui_tooltip = "for night flight";
+    ui_category = "2. Misc.";
+    ui_min = 0.25;
+    ui_max = 1.0;
+    ui_step = 0.1;
+> = 1.0;
+uniform int photo_dummy2 <
+    ui_type = "radio";
+    ui_label = " ";
+    ui_text = "press 'LCTRL'+'u' to toggle on/off the night mode for the map";
+    ui_category = "2. Misc.";
+> = 0;
 //debug
-uniform bool var_debugMask <
+uniform int var_debugMask <
+	ui_type = "combo";
     ui_label = "display mask in PS";
-    ui_tooltip = "display mask in PS";
-    ui_category = "2. Mask.";
+    ui_tooltip = "display mask or depth in PS";
+	ui_items = 
+    "normal\0"
+	"mask\0"
+    "depth\0"
+    ;
+    ui_category = "2. Misc.";
 > = false;
 
 
@@ -156,8 +178,15 @@ uniform bool set_technique <
     ui_category = "6. Technique.";
 > = false;
 
-
-
+//*************************
+// for testing
+// flag for the section
+uniform bool set_testVS <
+    ui_label = "for testing only (new dev feature)";
+    ui_tooltip = "for testing only (new feature in dev)";
+	hidden = true;
+    ui_category = "7. Dev.";
+> = false;
 /*
 uniform int cb_test_color <
     ui_type = "combo";

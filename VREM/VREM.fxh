@@ -1,33 +1,72 @@
 //****************************************
 // VREM Uniform variable handled by VREM
 
-//stencil texture 
-// 40 = cockpit
-// 0 = sky
-// 16 <= water < 29
+//MASK texture 
+texture MaskBuffetTex : MASK;
+sampler<float4> MaskBuffer { Texture = MaskBuffetTex; };
+
+// depth texture
+texture DepthBufferTex : DEPTH;
+sampler DepthBuffer { Texture = DepthBufferTex; };
+
+//stencil
 texture StencilBufferTex : STENCIL;
-// sampler<uint4> StencilBuffer { Texture = StencilBufferTex; };
-sampler<float4> StencilBuffer { Texture = StencilBufferTex; };
+sampler<uint4> StencilBuffer { Texture = StencilBufferTex; };
 
-// uniform int VREM_MSAAx < hidden = true; > = MSAAX;
-// uniform int VREM_MSAAy < hidden = true; > = MSAAY;
-// uniform int MSAAX < ui_type = "drag"; ui_label = "BUFFER Width"; ui_min = 0; ui_max = 2; > ;
-// uniform int MSAAY < ui_type = "drag"; ui_label = "BUFFER Width"; ui_min = 0; ui_max = 2; > ;
+#define AIRFRAME 1
+#define COCKPIT 2
+#define SKY 3
+#define WATER 4
+#define GROUND 5
+#define PLANE 6
+#define SIGHT 7
 
-// uniform float MySharedValue < source = "my_custom_source"; >;
 
-uniform int superSX < ui_type = "drag"; ui_label = "totox"; ui_min = 0; ui_max = 2; > = MSAAX;
-uniform int superSY < ui_type = "drag"; ui_label = "totoy"; ui_min = 0; ui_max = 2; > = MSAAY;
+int mak_value(float4 mask, float4 depth)
+{
+    //aiframe
+    int value = 0;
+
+    if (mask.y > 0.1 && mask.y <= 0.4 && mask.w == 0)
+    {
+        value = AIRFRAME;	
+        if (depth.x < 0.001)
+            value = PLANE;
+    } 
+    // cockpit
+    else  if (mask.y > 0.4 && mask.w == 0 && mask.z < 0.9)
+        value = COCKPIT;
+    // sky
+    else if (mask.x == 0 && mask.y == 0 && mask.z == 0 && mask.w == 0)
+    {
+        value = SKY;
+        //P38 mirror on engine 
+        if (depth.x > 0.008)
+            value = AIRFRAME;
+    }
+    //water 
+    else if (mask.y > 0 && mask.w == 1.0)
+        value = WATER;
+    else
+        //ground
+       value = GROUND;
+
+    // cockpit mirror
+	if (depth.x > 0.015)
+        value = COCKPIT;
+
+    return value;
+}
 
 bool is_cockpit(float2 coord)
 {
     bool check = false;
 	
 	float2 coord2;
-	coord2.x = MSAAX * coord.x;
-	coord2.y = MSAAY * coord.y;
+	coord2.x = coord.x;
+	coord2.y = coord.y;
 	
-	uint sampledData = tex2Dlod(StencilBuffer, float4(coord2, 0, 0)).g;
+	uint sampledData = tex2Dlod(MaskBuffer, float4(coord2, 0, 0)).g;
 	
 	if (sampledData == 40)
         check = true;
@@ -35,10 +74,24 @@ bool is_cockpit(float2 coord)
 	return check;
 }
 
+bool is_sight(float2 coord)
+{
+    bool check = false;
+	
+	float2 coord2;
+	coord2.x = coord.x;
+	coord2.y = coord.y;
+	
+	uint sampledData = tex2Dlod(StencilBuffer, float4(coord2, 0, 0)).g;
+	
+	if (sampledData > 4)
+        check = true;
+	
+	return check;
+}
 
-// depth texture
-texture DepthBufferTex : DEPTH;
-sampler DepthBuffer { Texture = DepthBufferTex; };
+
+/*
 
 // target for quad view => 0 : all, 1 Outer, 2 Innner
 uniform int VREMQuadViewTarget <
@@ -53,3 +106,4 @@ uniform int VREMQuadViewTarget <
     ui_type = "combo";
 > = 0;
 
+*/
