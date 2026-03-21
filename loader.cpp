@@ -325,6 +325,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
         reshade::register_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
+        reshade::register_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
 #else
         // Mode Release : pas de reloader
         reshade::log::message(reshade::log::level::info, "VREM Loader: RELEASE MODE - Direct calls");
@@ -378,6 +379,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
         reshade::unregister_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
+        reshade::unregister_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
 #else
         //cleaning of addon variables if no hot reload
         vrem_cleanup(nullptr);

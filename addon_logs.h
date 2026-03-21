@@ -43,6 +43,8 @@
 #pragma once
 
 #include <reshade.hpp>
+#include <filesystem>
+
 #include "loader_addon_shared.h"
 #include "addon_objects.h"
 
@@ -63,6 +65,9 @@ extern void log_error_srv_handle_null(const std::string& filepath);
 extern void log_error_txt_handle_null(const std::string& filepath);
 extern void log_error_too_many_objectsl(reshade::api::pipeline pipeline, uint32_t subobject_count);
 extern void log_empy_render_target();
+extern void log_error_png_not_found(std::filesystem::path dds_path);
+extern void log_error_dds_format(std::filesystem::path dds_path, std::string error);
+extern void log_error_png_resource(std::filesystem::path dds_path, std::string error);
 
 
 #if _DEBUG_LOGS 
@@ -134,4 +139,6 @@ extern void log_error_create_file(std::string path);
 extern void log_error_create_ressource();
 extern void log_exported_CB(std::string path);
 extern void log_inject_preprocessor();
+extern void log_png_loaded(std::filesystem::path dds_path);
+extern void log_init_swapchain(swapchain* swapchain);
 #endif

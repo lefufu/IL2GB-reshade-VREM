@@ -47,7 +47,6 @@
 #include <unordered_map>
 
 #include "addon_injection.h"
-//#include "VREM_settings.h"
 #include "loader_addon_shared.h"
 
 extern SharedState* g_shared_state;
@@ -94,7 +93,10 @@ static const int MAX_CBSIZE = 152;
 // number of frame before enabling technique
 #define FRAME_BEFORE_TECHNIQUE 5
 
-// only one value to save for CPerFrame
+//texture for stopwatch
+inline const wchar_t* STOPWATCH_TEXT_NAME = L"stopwatch.png";
+
+// obsolete : only one value to save for CPerFrame
 static const int  GATMINTENSITY_SAVE = 0;
 static const int  GCOCKPITIBL_X_SAVE = 1;
 static const int  GCOCKPITIBL_Y_SAVE = 1;
@@ -351,6 +353,12 @@ struct saved_RenderTargetView {
 	uint32_t height = 0;
 };
 
+// to read texture from file
+struct AddonText {
+      reshade::api::resource      resource = {  };
+      reshade::api::resource_view rView     = {  };
+ };
+
 struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 {
 
@@ -471,6 +479,9 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	uint32_t target_photo_number = 0;
 	bool default_photo_number = true;
 
+	//stopwatch
+	struct AddonText stopWatchText;
+
 
 };
 
@@ -497,8 +508,10 @@ extern bool do_not_draw;
 inline bool track_for_texture = false;
 // current depth Stencil handle
 inline uint64_t current_PlaneMask_handle = 0;
+//current texture handle
 inline uint64_t current_depth_handle =0;
 inline uint64_t current_Photo_handle = 0;
+inline uint64_t current_StopWatch_handle = 0;
 
 // track render target
 // extern bool track_for_render_target; 

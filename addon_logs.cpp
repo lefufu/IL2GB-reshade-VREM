@@ -42,6 +42,7 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include <reshade.hpp>
+#include <filesystem>
 
 #include "loader_addon_shared.h"
 #include "to_string.hpp"
@@ -470,11 +471,11 @@ void log_resource_created(std::string texture_name, device* dev, resource_desc c
 		case reshade::api::resource_type::texture_2d:
 		case reshade::api::resource_type::texture_3d:
 			s << ", texture format: " << to_string(check_new_res.texture.format);
-			s << ", texture width: " << check_new_res.texture.width;
-			s << ", texture height: " << check_new_res.texture.height;
-			s << ", texture depth: " << check_new_res.texture.depth_or_layers;
-			s << ", texture samples: " << check_new_res.texture.samples;
-			s << ", texture levels: " << check_new_res.texture.levels;
+			s << ", texture width: " << std::dec << check_new_res.texture.width;
+			s << ", texture height: " << std::dec << check_new_res.texture.height;
+			s << ", texture depth: " << std::dec << check_new_res.texture.depth_or_layers;
+			s << ", texture samples: " << std::dec << check_new_res.texture.samples;
+			s << ", texture levels: " << std::dec << check_new_res.texture.levels;
 			s << ", usage: " << to_string(check_new_res.usage);
 			break;
 		}
@@ -1156,4 +1157,45 @@ void log_error_too_many_objectsl(reshade::api::pipeline pipeline, uint32_t subob
 void log_empy_render_target()
 {
 	if (g_shared_state->debug_log && flag_capture) 	reshade::log::message(reshade::log::level::info, "addon - empty render target ignored");
+}
+
+void log_error_png_not_found(std::filesystem::path dds_path)
+{
+	std::stringstream s;
+	s << "addon - png loader : error, png texture file not found, name =" << dds_path.string() << ";";
+	reshade::log::message(reshade::log::level::error, s.str().c_str());
+}
+
+void log_error_dds_format(std::filesystem::path dds_path, std::string error)
+{
+	std::stringstream s;
+	s << "addon - dds loader : error, dds format issue, name =" << dds_path.string() << ", error = " << error << ";";
+	reshade::log::message(reshade::log::level::error, s.str().c_str());
+}
+
+void log_error_png_resource(std::filesystem::path dds_path, std::string error)
+{
+	std::stringstream s;
+	s << "addon - dds loader : error, creating " << error <<", name = " << dds_path.string() << "; ";
+	reshade::log::message(reshade::log::level::error, s.str().c_str());
+}
+
+void log_png_loaded(std::filesystem::path dds_path)
+{
+	if (g_shared_state->debug_log)
+	{
+		std::stringstream s;
+		s << "addon - png loader :  png texture loaded : " << dds_path.string() << "; ";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+void log_init_swapchain(swapchain* swapchain)
+{
+	if (g_shared_state->debug_log)
+	{
+		std::stringstream s;
+		s << "addon - init_swapchain;";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
 }

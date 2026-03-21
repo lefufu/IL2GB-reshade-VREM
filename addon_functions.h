@@ -97,3 +97,5 @@ extern void inject_texture(command_list* commandList, uint32_t stot, uint64_t te
 extern void intialize_counters();
 extern void save_all_technique_status();
 extern void pure_technique_vector();
+extern void read_textures(reshade::api::device* device);
+extern void delete_loaded_textures(reshade::api::device* device);

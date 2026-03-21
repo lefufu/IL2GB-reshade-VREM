@@ -26,11 +26,13 @@
     <ClCompile Include="hunting.cpp" />
     <ClCompile Include="on_bind_render_targets_and_depth_stencil.cpp" />
     <ClCompile Include="on_create_pipeline.cpp" />
+    <ClCompile Include="on_init_swapchain.cpp" />
     <ClCompile Include="on_reshade_overlay.cpp" />
     <ClCompile Include="on_reshade_reloaded_effects.cpp" />
     <ClCompile Include="save_render_target.cpp" />
     <ClCompile Include="save_shader_code.cpp" />
     <ClCompile Include="save_texture_image.cpp" />
+    <ClCompile Include="stb_image_impl.cpp" />
     <ClCompile Include="technique.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="get_settings_from_uniforms.cpp" />
@@ -48,9 +50,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="addon_functions.h" />
+    <ClInclude Include="addon_load_png.hpp" />
     <ClInclude Include="addon_logs.h" />
     <ClInclude Include="addon_objects.h" />
     <ClInclude Include="addon_injection.h" />
+    <ClInclude Include="addon_load_dds.hpp" />
     <ClInclude Include="export_CB.hpp" />
     <ClInclude Include="export_texture.hpp" />
     <ClInclude Include="to_string.hpp" />
@@ -176,7 +180,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>H:\utils\Repos\IL2GB_VREM;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>H:\utils\Repos\IL2GB_VREM\Include_from_reshade\stb;H:\utils\Repos\IL2GB_VREM\Include_from_reshade;H:\utils\Repos\IL2GB_VREM;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -184,6 +188,7 @@
       <EnableUAC>false</EnableUAC>
       <OptimizeReferences />
       <EnableCOMDATFolding />
+      <AdditionalLibraryDirectories>H:\utils\Repos\IL2GB_VREM\x64libs_from_reshade;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy H:\utils\Repos\IL2GB_VREM\x64\Debug\IL2GB_VREM.dll "D:\jeux\IL-2 Sturmovik Great Battles\bin\gamet"</Command>

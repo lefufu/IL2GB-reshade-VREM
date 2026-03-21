@@ -46,9 +46,51 @@
 #include "to_string.hpp"
 #include "addon_logs.h"
 #include "addon_objects.h"
+#include "config.hpp"
+
+//#include "addon_load_dds.hpp"
+#include "addon_load_png.hpp"
+
+
 
 using namespace reshade::api;
 
+// *******************************************************************************************************
+/// 
+/// read textures to be used in modified PS shaders
+/// 
+
+void read_textures(reshade::api::device* device)
+{
+	
+	// load stopwatch texture
+
+	//file name
+	wchar_t file_prefix[MAX_PATH] = L"";
+	GetModuleFileNameW(nullptr, file_prefix, ARRAYSIZE(file_prefix));
+	std::filesystem::path replace_path = file_prefix;
+	replace_path = replace_path.parent_path();
+	replace_path /= RESHADE_ADDON_SHADER_LOAD_DIR;
+	replace_path /= STOPWATCH_TEXT_NAME;
+
+   bool status = LoadPNG::LoadPNGTexture(device, replace_path, a_shared.stopWatchText.resource, a_shared.stopWatchText.rView);
+
+
+}
+
+// *******************************************************************************************************
+/// 
+/// clean textures  used in modified PS shaders
+/// 
+
+void delete_loaded_textures(reshade::api::device* device)
+{
+
+	// delete stopwatch texture
+	LoadPNG::DestroyPNGTexture(device,  a_shared.stopWatchText.resource, a_shared.stopWatchText.rView);
+
+
+}
 
 // *******************************************************************************************************
 /// create a new resource_view by copying the original view_desc but using the 
@@ -282,6 +324,10 @@ void delete_texture_resources(device* device)
 
 	}
 	a_shared.copied_textures.clear();
+
+	//delete the texture loaded from files
+	delete_loaded_textures(device);
+
 }
 
 // *******************************************************************************************************

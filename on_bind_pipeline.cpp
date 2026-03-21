@@ -223,7 +223,8 @@ void process_action_injectText(command_list* commandList, std::unordered_map<uin
 {
 	// inject texture using push_descriptor() if things has been initialized => draw index is > -1
 
-//check if the current planeMask is declared
+	//texture read from shaders
+	//check if the current planeMask is declared
 	auto it_mask = a_shared.copied_textures.find(current_PlaneMask_handle);
 	if (it_mask != a_shared.copied_textures.end())
 	{
@@ -246,6 +247,18 @@ void process_action_injectText(command_list* commandList, std::unordered_map<uin
 			inject_texture(commandList, 6, current_Photo_handle, "Photo");
 		}
 	}
+
+	//texture read from file
+	//stopwatch
+	if (a_shared.stopWatchText.resource.handle != 0)
+	{
+		if (it->second.feature == Feature::PS_global || it->second.feature == Feature::PS_VR_GUI)
+		{
+			//inject stopwatch texture as t7
+			inject_texture(commandList, 7, current_StopWatch_handle, "StopWatch");
+		}
+	}
+
 }
 
 //*******************************************************************************
