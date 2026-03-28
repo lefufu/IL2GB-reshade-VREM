@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////
 //
-// Reshade DCS VREM2 addon. VR Enhancer Mod for DCS using reshade
+// Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
 // "hot" reload of mod possible using a Reshade addon as launcher (loaded with the game)
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
@@ -42,27 +42,32 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include <imgui.h>
+#include "addon_objects.h"
+#include "CDataFile.h"
 #include "loader_addon_shared.h"
 #include "loader_on_event.hpp"
 
-#include "CDataFile.h"
+
 
 //local variables
 VREMHotReloader* g_reloader = nullptr;
 static bool g_reload_in_progress = false;
 static bool g_reload_requested = false;
 
-
 SharedState g_shared_state_l;
+#ifdef _DEBUG
+//not used, just ot avoid link issue
+struct addon_shared a_shared; 
+#endif 
 
 //****************************************************************
 // addon infos
-extern "C" __declspec(dllexport) const char* NAME = "DCS WORLD VREM2";
+extern "C" __declspec(dllexport) const char* NAME = "IL2 GB VREM";
 extern "C" __declspec(dllexport) const char* DESCRIPTION = 
 #if _DEBUG
-"VR Enhancer Mod v2 for DCS World (DEBUG - Hot Reload Enabled).";
+"VR Enhancer Mod for IL2 Great Battle v 1.0 (DEBUG - Hot Reload Enabled).";
 #else
-"VR Enhancer Mod v2 for DCS World (RELEASE).";
+"VR Enhancer Mod for IL2 Great Battle v 1.0 (RELEASE).";
 #endif
 
 #ifndef _DEBUG
@@ -116,7 +121,7 @@ static void draw_settings(reshade::api::effect_runtime* runtime)
     if (ImGui::Button("Capture frame"))
     {
         g_shared_state_l.button_capture = true;
-        g_shared_state_l.PSshader_index = 0;
+		g_shared_state_l.PSshader_index = 0;									
     }
     else
     {
@@ -173,21 +178,29 @@ static void draw_settings(reshade::api::effect_runtime* runtime)
     ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1), "RELEASE MODE - Hot reload & debug messages disabled");
     ImGui::Separator();
 #endif
-
     // display technique options
     ImGui::Separator();
-    ImGui::Text("Render technique in a dedicated rendering step and not on the last draw");
+    ImGui::Text("Integrate the technique into the game's render pipeline and not on the last draw");
     ImGui::Text("(to avoid processing of GUI elements or mask displayed on GUI elements : map,..) ");
+    ImGui::Text("tick option 'Technique into the game's render pipeline' in VREM Mod settings ");
 
-    if (ImGui::Checkbox("Enable non global technique ", &g_shared_state_l.technique_enabled))
+    /*if (ImGui::Checkbox("Enable non global technique ", &g_shared_state_l.technique_enabled))
     {
         // save technique status in file (in get_settings_from_uniform)
         g_shared_state_l.request_update_file = true;
         reshade::log::message(reshade::log::level::info, "****** loader - change flag for technique => request save *******");
-	}
+    } */
 
+    // ImGui::Text("size of vector technique: %d", g_shared_state_l.technique_vector.size());
     if (g_shared_state_l.technique_enabled)
     {
+		// handle double injection issue : if tehcnique is active for end of draw it will not be displayed into the game's render pipeline
+        if (ImGui::Checkbox("Disable technique injection if effect is active", &g_shared_state_l.no_double))
+        {
+            // save technique status in file (in get_settings_from_uniform)
+            g_shared_state_l.request_update_file = true;
+        }
+        
         for (auto& entry : g_shared_state_l.technique_vector)
         {
 
@@ -223,14 +236,12 @@ bool on_reshade_set_technique_state(effect_runtime* runtime, effect_technique te
              if (entry.technique == technique)
              {
                  entry.reshade_technique_status = enabled;
-
              }
 		 }
 
     // let things as requested
     return false;
 }
-
 //****************************************************************
 // to trace overalay is opened
 static bool reshade_open_overlay(reshade::api::effect_runtime* runtime, bool open, reshade::api::input_source source)
@@ -292,6 +303,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         // intialization is doing mapping between exported VREM function and the function used in "register_event"
         // if fuction are not exported in addon there will be no call
 //#ifdef _DEBUG
+
         g_reloader = new VREMHotReloader(addonPath.string());
         //copy path for saving textures or CB in addon
         wcscpy_s(g_shared_state_l.g_vrem_base_path, basePath.wstring().c_str());
@@ -314,6 +326,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
         reshade::register_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
+        reshade::register_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
 #else
         // Mode Release : pas de reloader
         reshade::log::message(reshade::log::level::info, "VREM Loader: RELEASE MODE - Direct calls");
@@ -337,8 +350,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::reshade_overlay>(vrem_on_reshade_overlay); 
         reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(vrem_on_reshade_reloaded_effects); 
 #endif
-        reshade::register_event<reshade::addon_event::reshade_set_technique_state>(on_reshade_set_technique_state);
-        
+		reshade::register_event<reshade::addon_event::reshade_set_technique_state>(on_reshade_set_technique_state);																										   
         //reshade::register_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline); 
         // register event : call of addon exported functions (see loader_on_event.hpp)
         // reshade::register_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
@@ -368,6 +380,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
         reshade::unregister_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
+        reshade::unregister_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
 #else
         //cleaning of addon variables if no hot reload
         vrem_cleanup(nullptr);
@@ -387,7 +400,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::reshade_overlay>(vrem_on_reshade_overlay);
         reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(vrem_on_reshade_reloaded_effects);
 #endif
-        //reshade::unregister_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline);
+        reshade::unregister_event<reshade::addon_event::reshade_set_technique_state>(on_reshade_set_technique_state);
+		//reshade::unregister_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline);
         // unregister event : call of addon exported functions (see loader_on_event.hpp)
         // reshade::unregister_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
         // reshade::unregister_event<reshade::addon_event::reshade_present>(on_reshade_present);

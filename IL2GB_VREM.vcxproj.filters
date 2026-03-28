@@ -128,5 +128,11 @@
     <ClInclude Include="addon_load_png.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="addon_chrono.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDataFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
