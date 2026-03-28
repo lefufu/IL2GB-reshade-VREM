@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////
 //
-// Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
+// Reshade DCS VREM2 addon. VR Enhancer Mod for DCS using reshade
 // "hot" reload of mod possible using a Reshade addon as launcher (loaded with the game)
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
@@ -50,18 +50,26 @@
 #include <filesystem>
 
 #include "loader_addon_shared.h"
+#include "VREM_settings.h"
 #include "addon_logs.h"
 #include "addon_functions.h"
-#include "CDataFile.h"			  
+#include "CDataFile.h"
 
 static PersistentPipelineData* g_persistent = nullptr;
 
 extern CDataFile technique_iniFile;
 
+// static bool addon_init = false;
+// bool addon_init = false;
+// SharedState* g_shared_state = nullptr;
+
+static int s_fps_limit = 0;
+static std::chrono::high_resolution_clock::time_point s_last_time_point;
+
 //*******************************************************************************
-// map uniform name/value in a array to make usage of settings faster and /or map them to CB injected to shaders
+// do map uniform name/value in a array an index to make usage of settings faster 
 // mapping values are in VREM_settings.h
-// mmaping for CB variable is at bottom of the function.
+// float VREM_setting[CB_SETTINGS_SIZE] = { 0 };
 
 using namespace reshade::api;
 
@@ -78,6 +86,10 @@ struct UniformInfo {
     }
 };
 
+
+// static bool overlay_is_open = false;
+// static bool was_open_last_frame = false;
+
 //*******************************************************************************
 // retrieve VREM settings from uniform of VREM_settings technique
 
@@ -87,24 +99,13 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
     std::string name = VREM_SETTINGS_NAME;
     const char* effect_name = name.c_str();
 
-#if _DEBUG_CRASH reshade::log::message(reshade::log::level::info, "addon - get_settings_from_uniforms started");
-#endif
-
-   // load the technique file, as status of technique are not relevant
+    // load the technique file, as status of technique are not relevant
     technique_iniFile.Load(technique_iniFileName);
 
-    // read techhique settings
     // if flag is defined read it 
+    std::string raw = technique_iniFile.GetString("technique_enabled", "technique");
+    if (!raw.empty()) g_shared_state->technique_enabled = technique_iniFile.GetBool("technique_enabled", "technique");
 
-    if (!a_shared.technique_status_loaded)
-    {
-        std::string raw = technique_iniFile.GetString("technique_enabled", "technique");
-        if (!raw.empty()) g_shared_state->technique_enabled = technique_iniFile.GetBool("technique_enabled", "technique");
-
-        raw = technique_iniFile.GetString("technique_enabled", "technique");
-        if (!raw.empty()) g_shared_state->no_double = technique_iniFile.GetBool("no_double", "technique");
-		a_shared.technique_status_loaded = true;
-    }
     runtime->enumerate_uniform_variables(effect_name,
         [&](effect_runtime* rt, effect_uniform_variable var) {
             char name_buffer[256];
@@ -131,38 +132,38 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
             {
                 switch (uniform_format)
                 {
-                    case format::r32_typeless:
-                    {
-                        bool value;
-                        rt->get_uniform_value_bool(var, &value, 1, 0);
-                        uniform_value = value;
-                        break;
-                    }
+                case format::r32_typeless:
+                {
+                    bool value;
+                    rt->get_uniform_value_bool(var, &value, 1, 0);
+                    uniform_value = value;
+                    break;
+                }
 
-                    case format::r32_uint:
-                    {
-                        uint32_t value;
-                        rt->get_uniform_value_uint(var, &value, 1, 0);
-                        uniform_value = value;
-                        break;
-                    }
+                case format::r32_uint:
+                {
+                    uint32_t value;
+                    rt->get_uniform_value_uint(var, &value, 1, 0);
+                    uniform_value = value;
+                    break;
+                }
 
-                    case format::r32_sint:
-                    {
-                        int32_t value;
-                        rt->get_uniform_value_int(var, &value, 1, 0);
-                        uniform_value = value;
-                        break;
-                    }
+                case format::r32_sint:
+                {
+                    int32_t value;
+                    rt->get_uniform_value_int(var, &value, 1, 0);
+                    uniform_value = value;
+                    break;
+                }
 
-                    case format::r32_float:
-                    {
-                        float value;
-                        rt->get_uniform_value_float(var, &value, 1, 0);
-                        uniform_value = value;
-                        break;
+                case format::r32_float:
+                {
+                    float value;
+                    rt->get_uniform_value_float(var, &value, 1, 0);
+                    uniform_value = value;
+                    break;
 
-                    }
+                }
                 }
             }
 
@@ -173,26 +174,26 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
             {
                 a_shared.VREM_setting[settings_mapping[uniform_name]] = uniform_value;
             }
-            
-			//update CB variable if name is defined in variable_mapping
-            auto it = var_mapping.find(uniform_name);
-            if (it != var_mapping.end())
+            //else
             {
-                *(it->second) = uniform_value;
+				// uniform value should be a value to be injected in shaders
+                if (uniform_name == "cb_test_color")
+                {
+                    a_shared.cb_inject_values.testFlag = uniform_value;
+                }
+                else if ( uniform_name == "var_rotor") a_shared.cb_inject_values.rotorFlag = uniform_value;
+                else if (uniform_name == "var_label") a_shared.cb_inject_values.maskLabels = uniform_value;
+                else if (uniform_name == "flag_fps") a_shared.cb_inject_values.testGlobal = uniform_value;
+                else if (uniform_name == "var_haze_factor") a_shared.cb_inject_values.hazeReduction = uniform_value;
+                else if (uniform_name == "var_reflection") a_shared.cb_inject_values.gCockpitIBL = uniform_value;
             }
         });
 
-    // sync technique state with g_shared_state
-	g_shared_state->technique_enabled = a_shared.VREM_setting[SET_TECHNIQUE];
-
-    //save technique settings in file if requested
+	//save technique settings in file if requested
     if (g_shared_state->request_update_file)
     {
         g_shared_state->request_update_file = false;
         save_all_technique_status();
-    }
-
-#if _DEBUG_CRASH  reshade::log::message(reshade::log::level::info, "addon - get_settings_from_uniforms ended");
-#endif
+	}
 }
 

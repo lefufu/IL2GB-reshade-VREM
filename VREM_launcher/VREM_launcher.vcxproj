@@ -27,6 +27,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\CDataFile.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\clone_pipeline.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -227,7 +231,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>H:\utils\Repos\IL2GB_VREM;H:\utils\Repos\IL2GB_VREM\Include_from_reshade;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>H:\utils\Repos\DCS_VREM2;H:\utils\Repos\DCS_VREM2\Include_from_reshade;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -235,7 +239,7 @@
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
-      <Command>copy H:\utils\Repos\IL2GB_VREM\x64\Debug\VREM_launcher.addon64 "D:\jeux\IL-2 Sturmovik Great Battles\bin\game"</Command>
+      <Command>copy H:\utils\Repos\DCS_VREM2\x64\Debug\VREM_launcher.addon64 "G:\jeux\DCS World OpenBeta\bin-mt"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -249,7 +253,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>H:\utils\Repos\IL2GB_VREM;H:\utils\Repos\IL2GB_VREM\Include_from_reshade;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>H:\utils\Repos\DCS_VREM2;H:\utils\Repos\DCS_VREM2\Include_from_reshade;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -259,7 +263,7 @@
       <EnableCOMDATFolding />
     </Link>
     <PostBuildEvent>
-      <Command>copy H:\utils\Repos\IL2GB_VREM\x64\Release\VREM_launcher.addon64 "D:\jeux\IL-2 Sturmovik Great Battles\bin\game"</Command>
+      <Command>copy H:\utils\Repos\DCS_VREM2\x64\Release\VREM_launcher.addon64 "G:\jeux\DCS World OpenBeta\bin-mt"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

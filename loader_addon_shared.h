@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////
 //
-// Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
+// Reshade DCS VREM2 addon. VR Enhancer Mod for DCS using reshade
 // "hot" reload of mod possible using a Reshade addon as launcher (loaded with the game)
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
@@ -50,10 +50,10 @@
 #include <reshade.hpp>
 #include <set>
 #include <vector>
-#include <string>		 
+#include <string>
 
 // name of addon .dll
-#define VREM_ADDON_NAME "IL2GB_VREM.dll"
+#define VREM_ADDON_NAME "DCS_VREM2.dll"
 
 #define MAX_OBJ_PER_PIPELINE 5
 
@@ -63,20 +63,15 @@
 #define _DEBUG_LOGS 0
 #endif
 
-#define _DEBUG_CRASH 0
-
 using namespace reshade::api;
 
 // handled pipeline types
+
 constexpr  reshade::api::pipeline_stage ALLOWED_STAGES = pipeline_stage::pixel_shader | pipeline_stage::vertex_shader;
 static const std::set<pipeline_subobject_type> ALLOWED_SHADERS = {
     pipeline_subobject_type::vertex_shader,
     pipeline_subobject_type::pixel_shader
 };
-
-//max number of objects in pipeline (to filter some case with invalid number
-#define MAX_PIPELINE_OBJECTS 10
-
 
 // Structure to store all pipeline infos
 struct save_pipeline {
@@ -129,13 +124,6 @@ struct PersistentPipelineData {
     std::vector<save_pipeline> saved_pipelines;
 };
 
-// for technique uniform mapping
-struct uniform_mapping {
-    std::string name;
-    float* vrem_variable;
-	effect_uniform_variable unif_variable;
-};
-
 
 // for technique settings
 struct technique_trace {
@@ -144,9 +132,9 @@ struct technique_trace {
     std::string eff_name;
     bool VR_technique_status;
 	bool reshade_technique_status;
-    std::vector<uniform_mapping> uniform;
     int quad_view_target; // 0 : all, 1 Outer, 2 Innner
 };
+
 // Structure to hold shared variables
 struct SharedState {
     reshade::api::device* device = {};
@@ -195,14 +183,15 @@ struct SharedState {
     //for saving texture & CB
 	bool save_texture_flag = false;
     wchar_t g_vrem_base_path[MAX_PATH] = {};
+
     bool  save_cb_flag = false;
+
 	bool  save_rt_flag = false;
 
     //technique definition
-    bool technique_enabled = false;
+	bool technique_enabled = false;
     std::vector<technique_trace> technique_vector;
     bool request_update_file = false;
-    bool no_double = true;
-	bool preprocessor_exported = false;
     
 };
+

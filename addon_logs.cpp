@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////
 //
-// Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
+// Reshade DCS VREM2 addon. VR Enhancer Mod for DCS using reshade
 // "hot" reload of mod possible using a Reshade addon as launcher (loaded with the game)
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
@@ -42,8 +42,8 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include <reshade.hpp>
-#include <filesystem>
 
+#include "VREM_settings.h"
 #include "loader_addon_shared.h"
 #include "to_string.hpp"
 #include "addon_objects.h"
@@ -344,6 +344,7 @@ void log_CB_injected(std::string CBName)
 	{
 		std::stringstream s;
 		s << " -> on_bind_pipeline: CB injected :" << CBName << " ;";
+		s << "  a_shared.cb_inject_values.testFlag = " << a_shared.cb_inject_values.testFlag << ";";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
@@ -386,16 +387,6 @@ void log_start_monitor(std::string texture_name)
 	{
 		std::stringstream s;
 		s << "addon - on_bind_pipeline : start monitor " << texture_name << ", draw : " << a_shared.count_display << "; ";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-	}
-}
-
-void log_stop_monitor(std::string texture_name)
-{
-	if (g_shared_state->debug_log && flag_capture)
-	{
-		std::stringstream s;
-		s << "addon - on_bind_pipeline : stop monitor " << texture_name << ", draw : " << a_shared.count_display << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
@@ -471,11 +462,11 @@ void log_resource_created(std::string texture_name, device* dev, resource_desc c
 		case reshade::api::resource_type::texture_2d:
 		case reshade::api::resource_type::texture_3d:
 			s << ", texture format: " << to_string(check_new_res.texture.format);
-			s << ", texture width: " << std::dec << check_new_res.texture.width;
-			s << ", texture height: " << std::dec << check_new_res.texture.height;
-			s << ", texture depth: " << std::dec << check_new_res.texture.depth_or_layers;
-			s << ", texture samples: " << std::dec << check_new_res.texture.samples;
-			s << ", texture levels: " << std::dec << check_new_res.texture.levels;
+			s << ", texture width: " << check_new_res.texture.width;
+			s << ", texture height: " << check_new_res.texture.height;
+			s << ", texture depth: " << check_new_res.texture.depth_or_layers;
+			s << ", texture samples: " << check_new_res.texture.samples;
+			s << ", texture levels: " << check_new_res.texture.levels;
 			s << ", usage: " << to_string(check_new_res.usage);
 			break;
 		}
@@ -486,7 +477,7 @@ void log_resource_created(std::string texture_name, device* dev, resource_desc c
 	}
 }
 
-void log_resource_view_created(std::string texture_name, device* dev, resource_view res_view, resource_view res_stencil_view, uint64_t handle)
+void log_resource_view_created(std::string texture_name, device* dev, resource_view res_view, uint64_t handle)
 {
 	if (g_shared_state->debug_log)
 	{
@@ -512,30 +503,6 @@ void log_resource_view_created(std::string texture_name, device* dev, resource_v
 		}
 		s << ";";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
-		s.str("");
-		s.clear();
-
-		if (res_stencil_view.handle != 0)
-		{
-			s << "addon - create stencil resource view for " << texture_name << ":, type: " << to_string(res_desc.type) << ", src handle =" << std::hex << handle << ", draw =" << a_shared.count_display;
-
-			switch (res_desc.type) {
-			default:
-			case reshade::api::resource_view_type::unknown:
-				s << "!!! error: resource_type not texture* !!!";
-				break;
-
-			case reshade::api::resource_view_type::texture_1d:
-			case reshade::api::resource_view_type::texture_2d:
-			case reshade::api::resource_view_type::texture_3d:
-			case reshade::api::resource_view_type::texture_2d_multisample:
-				s << ", res. view format: " << to_string(res_desc.format);
-				break;
-			}
-			s << ";";
-			reshade::log::message(reshade::log::level::info, s.str().c_str());
-
-		}
 	}
 }
 
@@ -545,28 +512,19 @@ void log_copy_texture(std::string texture_name, uint64_t handle)
 	if (g_shared_state->debug_log && flag_capture)
 	{
 		std::stringstream s;
-		s << " = >  resource and view(s) copied for " << texture_name << ", src res.hande = " << std::hex << handle << ", for draw (" << a_shared.count_display << ");";
+		s << " = >  resource and view(s) copied for" << texture_name << ", src res.hande = " << std::hex << handle << ", for draw (" << a_shared.count_display << ");";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 
 	}
 }
 
-void log_texture_injected(std::string texture_name, uint64_t handle, bool depth_stencil, uint32_t slot)
+void log_texture_injected(std::string texture_name, uint64_t handle, int drawindex)
 {
 	if (g_shared_state->debug_log && flag_capture)
 	{
 		std::stringstream s;
-		s << " => on_bind_pipeline : " << texture_name << ", src text. handle = " << std::hex << handle;
-		if (!depth_stencil)
-		{
-			s << ", texture injected at slot " << slot << " for draw index : ";
-		}
-		else
-		{
-			s << ", depth texture and stencil injected at slots " << slot << ", " << slot+1 << " for draw index : ";
-		}
-		s << a_shared.count_display << ";";
-
+		s << " => on_bind_pipeline : " << texture_name << ", src text. handle = " << std::hex << handle << ", textures injected for draw index : ";
+		s << drawindex << ";";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
@@ -605,7 +563,7 @@ void log_reset_tracking()
 
 void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
-	if ((g_shared_state->debug_log && flag_capture && (track_for_texture || a_shared.track_for_NS430 || a_shared.render_technique || g_shared_state->shader_hunter)) )
+	if ((g_shared_state->debug_log && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)) )
 	{
 		std::stringstream s;
 		s << "draw(" << vertex_count << ", " << instance_count << ", " << first_vertex << ", " << first_instance << ")";
@@ -615,7 +573,7 @@ void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_v
 
 		if (g_shared_state->shader_hunter) return;
 
-		s << "track_for_depthStencil=" << track_for_texture << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_technique << "; ";
+		s << "track_for_depthStencil=" << track_for_depthStencil << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -626,7 +584,7 @@ void log_ondraw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_v
 
 void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance)
 {
-	if ((g_shared_state->debug_log && flag_capture && (track_for_texture || a_shared.track_for_NS430 || a_shared.render_technique || g_shared_state->shader_hunter)))
+	if ((g_shared_state->debug_log && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)))
 	{
 		std::stringstream s;
 		s << "draw_indexed(" << index_count << ", " << instance_count << ", " << first_index << ", " << vertex_offset << ", " << first_instance << ")";
@@ -634,7 +592,7 @@ void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t
 
 		if (g_shared_state->shader_hunter) return;
 
-		s << "track_for_depthStencil=" << track_for_texture << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_technique << "; ";
+		s << "track_for_depthStencil=" << track_for_depthStencil << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -644,7 +602,7 @@ void log_on_draw_indexed(uint32_t index_count, uint32_t instance_count, uint32_t
 
 void log_on_drawOrDispatch_indirect(indirect_command type, resource buffer, uint64_t offset, uint32_t draw_count, uint32_t stride)
 {
-	if ((g_shared_state->debug_log && flag_capture && (track_for_texture || a_shared.track_for_NS430 || a_shared.render_technique || g_shared_state->shader_hunter)))
+	if ((g_shared_state->debug_log && flag_capture && (track_for_depthStencil || a_shared.track_for_NS430 || a_shared.render_effect || g_shared_state->shader_hunter)))
 	{
 		std::stringstream s;
 		s << "draw_indexed_indirect(" << (void*)buffer.handle << ", " << offset << ", " << draw_count << ", " << stride << ")";
@@ -652,7 +610,7 @@ void log_on_drawOrDispatch_indirect(indirect_command type, resource buffer, uint
 
 		if (g_shared_state->shader_hunter) return;
 
-		s << "track_for_depthStencil=" << track_for_texture << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_technique << "; ";
+		s << "track_for_depthStencil=" << track_for_depthStencil << ", do_not_draw =" << do_not_draw << ", a_shared.render_effect =" << a_shared.render_effect << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -696,8 +654,6 @@ void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_
 	{
 		std::stringstream s;
 
-		
-
 		s << "addon - bind_render_targets_and_depth_stencil() parameters :";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
@@ -710,28 +666,10 @@ void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_
 		s.str("");
 		s.clear();
 
-		
-		if (rtvs[0].handle != 0)
-		{
-			
-			reshade::api::device* dev = cmd_list->get_device();
-
-			resource scr_resource = dev->get_resource_from_view(rtvs[0]);
-			resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
-
-			if (scr_resource.handle != 0)
-			{
-				s << "    width = " << std::dec << src_resource_desc.texture.width << ", height = " << src_resource_desc.texture.height << "; ";
-				reshade::log::message(reshade::log::level::info, s.str().c_str());
-				s.str("");
-				s.clear();
-			}
-		}
-		
 		if (g_shared_state->shader_hunter) return;
 
 		//s << "    saved_RenderTargetViews[" << std::hex << RTV_handle << "].created, width = " << a_shared.saved_RenderTargetViews[RTV_handle].width <<", height = " << a_shared.saved_RenderTargetViews[RTV_handle].height << ";";
-		s << "    last_RTV_saved updated for handle " << std::hex << last_RTV_saved.RV.handle << ", width = " << std::dec << last_RTV_saved.width << ", height = " << last_RTV_saved.height << "; ";
+		s << "    last_RTV_saved updated for handle " << std::hex << last_RTV_saved.RV.handle << ", width = " << last_RTV_saved.width << ", height = " << last_RTV_saved.height << "; ";
 		extern saved_RenderTargetView last_RTV_saved;
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 
@@ -746,18 +684,6 @@ void log_effect_requested()
 		s << "addon - on_bind_pipeline(): set flag for engaging rendering request at next draw, ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
-}
-
-
-void log_inject_preprocessor()
-{
-	if (g_shared_state->debug_log && flag_capture)
-	{
-		std::stringstream s;
-		s << "addon - on_push_descriptors() : inject pre_processor variables ";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-}
-
 }
 
 void log_preprocessor(std::string name, float targetValue, bool update, bool status, float readedValue, bool inFrame, uint16_t step, short int display_to_use)
@@ -792,36 +718,23 @@ void log_preprocessor(std::string name, float targetValue, bool update, bool sta
 
 }
 
-void log_technique_info(effect_runtime* runtime, effect_technique technique, std::string& name, std::string& eff_name, bool VR_technique_status, bool reshade_technique_status, int QV_target, bool has_texture, std::vector<uniform_mapping>& tech_uniforms)
+void log_technique_info(effect_runtime* runtime, effect_technique technique, std::string& name, std::string& eff_name, bool VR_technique_status, int QV_target, bool has_texture)
 {
+
 	if (g_shared_state->debug_log)
 	{
 		std::stringstream s;
-		s << "init of technique in vector, Technique Name: " << name << ", Effect Name: " << eff_name << ", VR_technique_status : " << VR_technique_status <<  ", reshade_technique_status : " << reshade_technique_status << ", QV_target : " << QV_target << "; ";
+		s << "init of technique in vector, Technique Name: " << name << ", Effect Name: " << eff_name << ", Technique status : " << VR_technique_status << ", QV_target : " << QV_target << "; ";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
-
 		if (has_texture)
 			reshade::log::message(reshade::log::level::info, "   Has DEPTH or STENCIL");
 		else
 			reshade::log::message(reshade::log::level::info, "   Do not have DEPTH or STENCIL");
 
-		if (tech_uniforms.empty())
-		{
-			reshade::log::message(reshade::log::level::info, "   No VREM uniforms");
-		}
-		else
-		{
-			for (const auto& u : tech_uniforms)
-			{
-				s << "   VREM uniform: " << u.name << ", value: " << *u.vrem_variable << "; ";
-				reshade::log::message(reshade::log::level::info, s.str().c_str());
-				s.str("");
-				s.clear();
-			}
-		}
 	}
+
 }
 
 void log_export_texture(short int display_to_use)
@@ -1060,7 +973,7 @@ void log_error_map_data()
 }
 
 
-void log_exported_texture(std::string text_path, device* dev, resource tex, resource_view srv)
+void log_exported_texture(std::string text_path)
 {
 	
 	if (g_shared_state->debug_log)
@@ -1068,21 +981,6 @@ void log_exported_texture(std::string text_path, device* dev, resource tex, reso
 		std::stringstream s;
 		s << "addon - Exported texture: " << text_path;
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
-		s.str("");
-		s.clear();
-		reshade::api::resource_desc desc = dev->get_resource_desc(tex);
-		s << "addon - width =" << desc.texture.width << ", height =" << desc.texture.height << ", depth =" << desc.texture.depth_or_layers << ", mips =" << desc.texture.levels << ", samples =" << desc.texture.samples << ";";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-		s.str("");
-		s.clear();
-		//A finir !
-		reshade::api::resource_view_desc view_desc = dev->get_resource_view_desc(srv);
-
-		s << "addon - resource view format =" << to_string(view_desc.format) << ", first_mip =" << view_desc.texture.first_level << ", mip_count =" << view_desc.texture.level_count << ", first_layer =" << view_desc.texture.first_layer << ", layer_count =" << view_desc.texture.layer_count << ";";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-		s.str("");
-		s.clear();
-	
 	}
 
 }
@@ -1124,78 +1022,4 @@ void log_exported_CB(std::string CB_path)
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 
-}
-
-void log_error_unsuported_format(const resource_desc& desc, const std::string& filepath)
-{
-	std::stringstream s;
-	s << "addon - unsupported format: " << to_string(desc.texture.format) << " for texture " << filepath << ";";
-	reshade::log::message(reshade::log::level::error, s.str().c_str());
-}
-
-void log_error_srv_handle_null(const std::string& filepath)
-{
-	std::stringstream s;
-	s << "addon - resourve view handle null for texture: " << filepath << ";";
-	reshade::log::message(reshade::log::level::error, s.str().c_str());
-}
-
-void log_error_txt_handle_null(const std::string& filepath)
-{
-	std::stringstream s;
-	s << "addon - texture view hanlde null for texture: " << filepath << ";";
-	reshade::log::message(reshade::log::level::error, s.str().c_str());
-}
-
-void log_error_too_many_objectsl(reshade::api::pipeline pipeline, uint32_t subobject_count)
-{
-	std::stringstream s;
-	s << "addon - Error, pipeline not saved in list, pipeline handle =" << pipeline.handle << "subobject count = " << subobject_count << ";";
-	reshade::log::message(reshade::log::level::error, s.str().c_str());
-}
-
-void log_empy_render_target()
-{
-	if (g_shared_state->debug_log && flag_capture) 	reshade::log::message(reshade::log::level::info, "addon - empty render target ignored");
-}
-
-void log_error_png_not_found(std::filesystem::path dds_path)
-{
-	std::stringstream s;
-	s << "addon - png loader : error, png texture file not found, name =" << dds_path.string() << ";";
-	reshade::log::message(reshade::log::level::error, s.str().c_str());
-}
-
-void log_error_dds_format(std::filesystem::path dds_path, std::string error)
-{
-	std::stringstream s;
-	s << "addon - dds loader : error, dds format issue, name =" << dds_path.string() << ", error = " << error << ";";
-	reshade::log::message(reshade::log::level::error, s.str().c_str());
-}
-
-void log_error_png_resource(std::filesystem::path dds_path, std::string error)
-{
-	std::stringstream s;
-	s << "addon - dds loader : error, creating " << error <<", name = " << dds_path.string() << "; ";
-	reshade::log::message(reshade::log::level::error, s.str().c_str());
-}
-
-void log_png_loaded(std::filesystem::path dds_path)
-{
-	if (g_shared_state->debug_log)
-	{
-		std::stringstream s;
-		s << "addon - png loader :  png texture loaded : " << dds_path.string() << "; ";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-	}
-}
-
-void log_init_swapchain(swapchain* swapchain)
-{
-	if (g_shared_state->debug_log)
-	{
-		std::stringstream s;
-		s << "addon - init_swapchain;";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-	}
 }
