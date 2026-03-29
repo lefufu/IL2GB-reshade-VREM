@@ -29,10 +29,11 @@ uniform bool UseDepthEdges <
 > = false;
 
 uniform float DepthEdgeThreshold < __UNIFORM_SLIDER_FLOAT1
-    ui_min = 0.001; ui_max = 1.0;
+    ui_min = 0.0001; ui_max = 0.001;
     ui_label = "Depth Edge Threshold";
     ui_tooltip = "Sensitivity of depth-based edge detection.";
-> = 0.01;
+	ui_step = 0.0001;
+> = 0.001;
 
 uniform int DepthEdgeRadius < __UNIFORM_SLIDER_INT1
     ui_min = 1; ui_max = 4;
@@ -116,6 +117,25 @@ float4 FXAALumaPass(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : SV_
 
 bool IsDepthEdge(float2 texcoord)
 {
+    float depthC = tex2Dlod(DepthBuffer, float4(texcoord, 0, 0)).x;
+    float maxDiff = 0.0;
+
+    for (int x = -DepthEdgeRadius; x <= DepthEdgeRadius; x++)
+    {
+        for (int y = -DepthEdgeRadius; y <= DepthEdgeRadius; y++)
+        {
+            if (x == 0 && y == 0) continue;
+            float2 offset = float2(x * BUFFER_RCP_WIDTH, y * BUFFER_RCP_HEIGHT);
+            float depthN  = tex2Dlod(DepthBuffer, float4(texcoord + offset, 0, 0)).x;
+            maxDiff = max(maxDiff, abs(depthC - depthN));
+        }
+    }
+
+    return maxDiff > DepthEdgeThreshold;
+}
+/*
+bool IsDepthEdge(float2 texcoord)
+{
     float depthC = ReShade::GetLinearizedDepth(texcoord);
     float maxDiff = 0.0;
 
@@ -133,6 +153,7 @@ bool IsDepthEdge(float2 texcoord)
 
     return maxDiff > DepthEdgeThreshold;
 }
+*/
 
 #ifndef DEPTH_EDGE_RADIUS
     #define DEPTH_EDGE_RADIUS 2
@@ -177,6 +198,52 @@ bool IsCockpitEdge(float2 texcoord)
     return false;
 }
 
+bool IsPlaneFar(float2 texcoord)
+{
+    bool cIsPlane = (mak_value(tex2D(MaskBuffer, texcoord), tex2D(DepthBuffer, texcoord)) == PLANE);
+	/*
+	float4 mask = tex2Dlod(MaskBuffer, float4(texcoord, 0, 0));
+	float4 depth = tex2Dlod(DepthBuffer, float4(texcoord, 0, 0));
+	int area = mak_value(mask, depth);
+	if (area == PLANE) return true;
+	*/
+
+    #define PLANE_CHECK(ox, oy) \
+        if (cIsPlane != (mak_value(tex2D(MaskBuffer, texcoord + float2((ox) * BUFFER_RCP_WIDTH, (oy) * BUFFER_RCP_HEIGHT)), \
+                                     tex2D(DepthBuffer,   texcoord + float2((ox) * BUFFER_RCP_WIDTH, (oy) * BUFFER_RCP_HEIGHT))) == PLANE)) return true;
+
+    // Radius 1 - cardinaux + diagonales
+    PLANE_CHECK( 1,  0) PLANE_CHECK(-1,  0)
+    PLANE_CHECK( 0,  1) PLANE_CHECK( 0, -1)
+    PLANE_CHECK( 1,  1) PLANE_CHECK(-1,  1)
+    PLANE_CHECK( 1, -1) PLANE_CHECK(-1, -1)
+
+#if DEPTH_EDGE_RADIUS >= 2
+    PLANE_CHECK( 2,  0) PLANE_CHECK(-2,  0)
+    PLANE_CHECK( 0,  2) PLANE_CHECK( 0, -2)
+    PLANE_CHECK( 2,  1) PLANE_CHECK(-2,  1)
+    PLANE_CHECK( 2, -1) PLANE_CHECK(-2, -1)
+    PLANE_CHECK( 1,  2) PLANE_CHECK(-1,  2)
+    PLANE_CHECK( 1, -2) PLANE_CHECK(-1, -2)
+    PLANE_CHECK( 2,  2) PLANE_CHECK(-2,  2)
+    PLANE_CHECK( 2, -2) PLANE_CHECK(-2, -2)
+#endif
+
+#if DEPTH_EDGE_RADIUS >= 3
+    PLANE_CHECK( 3,  0) PLANE_CHECK(-3,  0)
+    PLANE_CHECK( 0,  3) PLANE_CHECK( 0, -3)
+    PLANE_CHECK( 3,  1) PLANE_CHECK(-3,  1) PLANE_CHECK( 3, -1) PLANE_CHECK(-3, -1)
+    PLANE_CHECK( 3,  2) PLANE_CHECK(-3,  2) PLANE_CHECK( 3, -2) PLANE_CHECK(-3, -2)
+    PLANE_CHECK( 3,  3) PLANE_CHECK(-3,  3) PLANE_CHECK( 3, -3) PLANE_CHECK(-3, -3)
+    PLANE_CHECK( 1,  3) PLANE_CHECK(-1,  3) PLANE_CHECK( 1, -3) PLANE_CHECK(-1, -3)
+    PLANE_CHECK( 2,  3) PLANE_CHECK(-2,  3) PLANE_CHECK( 2, -3) PLANE_CHECK(-2, -3)
+#endif
+
+    #undef PLANE_CHECK
+	
+    return false;
+}
+
 float4 FXAAPixelShader(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
 {
 	
@@ -190,37 +257,42 @@ float4 FXAAPixelShader(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : 
 	
 	float EdgeThreshold;
 	
-	bool cockpit_edge = IsCockpitEdge(texcoord);
+	bool planeFar = IsPlaneFar(texcoord);
 	
-	if (cockpit_edge && UseDepthEdges)
-	{
-		fxaa_mode = 2;
-		EdgeThreshold = EdgeThresholdLuma;
-	}
-	else
+	if (!planeFar)
 	{
 		
-		// case 1: depth.x >= 0.001 and in depth edge : own plane, edge only
-		if (depth.x >= 0.001 && depth_edge) 
-		{
-			fxaa_mode = 1;
-			EdgeThreshold = EdgeThresholdDepth;
-		}
-		// case 2: depth.x < 0.001 and not in depth edge : other parts except objects, luma only
-		if ((depth.x < 0.001 && !depth_edge) || !UseDepthEdges) 
+		bool cockpit_edge = IsCockpitEdge(texcoord);
+		
+		if (cockpit_edge && UseDepthEdges)
 		{
 			fxaa_mode = 2;
 			EdgeThreshold = EdgeThresholdLuma;
 		}
-		
-		// case 3: depth.x < 0.001 and not in depth edge : other parts except objects, luma only
-		if ((depth.x < 0.001 && !depth_edge) || !UseDepthEdges) 
+		else
 		{
-			fxaa_mode = 2;
-			EdgeThreshold = EdgeThresholdLuma;
+			
+			// case 1: depth.x >= 0.001 and in depth edge : own plane, edge only
+			if (depth.x >= 0.001 && UseDepthEdges && depth_edge) 
+			{
+				fxaa_mode = 1;
+				EdgeThreshold = EdgeThresholdDepth;
+			}
+			// case 2: depth.x < 0.001 and not in depth edge : other parts except objects, luma only
+			if ((depth.x < 0.001 && !depth_edge) || !UseDepthEdges) 
+			{
+				fxaa_mode = 2;
+				EdgeThreshold = EdgeThresholdLuma;
+			}
+			
+			// case 3: depth.x < 0.001 and not in depth edge : other parts except objects, luma only
+			if ((depth.x < 0.001 && !depth_edge) || !UseDepthEdges) 
+			{
+				fxaa_mode = 2;
+				EdgeThreshold = EdgeThresholdLuma;
+			}
 		}
-	}
-	
+	}	
 
 	if (fxaa_mode)
 	{
@@ -245,16 +317,26 @@ float4 FXAAPixelShader(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : 
 			0 // fxaaConsole360ConstDir
 		);
 		
+		
 		if (DebugEdges)
 		{
-			bool color_change  = length(fxaa.rgb - original.rgb) > 0.0001;
+			
+			//bool color_change  = length(fxaa.rgb - original.rgb) > 0.00001;
+
+			bool color_change  = length(fxaa.rgb - original.rgb) != 0;
 			if (color_change && fxaa_mode == 1) return float4(1.0, 0.0, 0.0, 1.0); // red = luma
 			if (color_change &&  fxaa_mode == 2) return float4(0.0, 0.0, 1.0, 1.0); // bleu   = profondeur seule
 
-			
-			return original;
 		}
+		
+		/*
+		if (DebugEdges)
+		{	
+			if (planeFar) return float4(1.0, 0.0, 0.0, 1.0);
+		}
+		*/
 	}
+
 
     return fxaa;
 }
