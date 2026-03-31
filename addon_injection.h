@@ -50,8 +50,8 @@ static const int CPERFRAME_INDEX = 6;
 static const int RVINDEX = 3;
 
 // size of ShaderInjectData
-static const int CBSIZE = 44;
-
+// static const int CBSIZE = 44;
+static const int CBSIZE = 28;
 // Must be 32bit aligned
 struct ShaderInjectData {
 	float testFlag; //0.x
@@ -73,15 +73,16 @@ struct ShaderInjectData {
 	float testVS; //4.x
 	float map_bright; //4.y
 	float night_mode; //4.z
-	float sharpenFlag; //4.w
-	float debandFlag; //5.x
-	float Threshold; //5.y
-	float Range; //5.z
-	float Iterations; //5.w
-	float Grain; //6.x
-	float frame_counter; //6.y
-	float AAxFactor; //6.z => to be injected in shaders, contain all super and under sampling values, at the opposite of MSAAxfactor only for technique and only for MSAA
-	float AAyFactor; //6.w => to be injected in shaders, at the opposite of MSAAyfactor only for technique, at the opposite of MSAAxfactor only for technique and only for MSAA
+	float clock_scale; //4.w
+	float clock_XPOS; //5.x
+	float clock_YPOS; //5.y
+	float clock_hours_flag; //5.z
+	float clock_hours; //5.w
+	float clock_mins; //6.x
+	float clock_secs; //6.y
+	float clock_display; //6.z 
+	float dunmmy; //6.w 
+	/*
 	float IHADSSxOffset; //7.x
 	float IHADSSBoresight; //7.y
 	float IHADSSNoLeft; //7.z
@@ -97,5 +98,5 @@ struct ShaderInjectData {
 	float TADSNight; //10.x
 	float TADSDay; //10.y
 	float gCockpitIBL; //10.z
-	float dunmmy2; //10.w
+	float dunmmy2; //10.w */
 };

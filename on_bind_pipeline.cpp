@@ -126,7 +126,7 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 
 		//dump textures at next push_descriptors
 		a_shared.flag_texture_dump = false;
-	}*/
+	}
 
 
 	// PS for GUI : set flag
@@ -138,7 +138,7 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 #if _DEBUG_LOGS  
 		log_start_monitor("GUItodraw");
 #endif
-	}
+	}*/
 
 
 	/* DCS stuff
@@ -250,11 +250,11 @@ void process_action_injectText(command_list* commandList, std::unordered_map<uin
 
 	//texture read from file
 	//stopwatch
-	if (a_shared.stopWatchText.resource.handle != 0)
+	if (a_shared.stopWatchText.resource.handle != 0 && a_shared.VREM_setting[SET_STOPWATCH])
 	{
-		if (it->second.feature == Feature::PS_global || it->second.feature == Feature::PS_VR_GUI)
+		if (it->second.feature == Feature::PS_global || it->second.feature == Feature::PS_VR_GUI) 
 		{
-			//inject stopwatch texture as t7
+			//inject stopwatch texture as t9
 			inject_texture(commandList, 7, current_StopWatch_handle, "StopWatch");
 		}
 	}
@@ -431,7 +431,7 @@ void process_action_action_action_injectCB(command_list* commandList, std::unord
 		a_shared.last_feature = it->second.feature;
 	}
 	*/
-
+	/*
 	//CPERFRAME/haze for other shaders :  need to keep orig. value
 	if (it->second.feature == Feature::Sky && a_shared.CB_copied[CPERFRAME_CB_NB] && a_shared.VREM_setting[SET_MISC])
 	{
@@ -459,8 +459,8 @@ void process_action_action_action_injectCB(command_list* commandList, std::unord
 		// last_replaced_shader = pipelineHandle.handle;
 		a_shared.last_feature = it->second.feature;
 
-	}
-
+	}*/
+	/*
 	//CPERFRAME/reflect for instrument
 	if (it->second.feature == Feature::NoReflect && a_shared.CB_copied[CPERFRAME_CB_NB])
 	{
@@ -486,6 +486,7 @@ void process_action_action_action_injectCB(command_list* commandList, std::unord
 		// last_replaced_shader = pipelineHandle.handle;
 		a_shared.last_feature = it->second.feature;
 	}
+	*/
 }
 
 #ifdef _DEBUG

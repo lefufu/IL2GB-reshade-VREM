@@ -122,9 +122,6 @@
     <ClInclude Include="export_CB.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="addon_load_dds.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="addon_load_png.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

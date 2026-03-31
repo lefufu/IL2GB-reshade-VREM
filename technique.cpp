@@ -198,12 +198,12 @@ void save_all_technique_status()
 bool read_technique_status_from_file(std::string name)
 {
  
-    bool status;
+    bool status = false;
 
-    if (name == VR_ONLY_EFFECT)
+    /*if (name == VR_ONLY_EFFECT)
         // do not use this effect for VR
         status = false;
-    else
+    else*/
         status = technique_iniFile.GetBool(name, "technique");
 
     return status;
@@ -251,6 +251,8 @@ void enumerateTechniques(effect_runtime* runtime)
             rt->get_technique_name(technique, g_charBuffer, &g_charBufferSize);
             std::string name(g_charBuffer);
 
+            technique_status = rt->get_technique_state(technique);
+
             //do not handle the technique used for VREM settings
             if ((name + ".fx") != VREM_SETTINGS_NAME)
             {
@@ -258,7 +260,7 @@ void enumerateTechniques(effect_runtime* runtime)
                 g_charBufferSize = CHAR_BUFFER_SIZE;
                 rt->get_technique_effect_name(technique, g_charBuffer, &g_charBufferSize);
                 std::string eff_name(g_charBuffer);
-                technique_status = rt->get_technique_state(technique);
+                //technique_status = rt->get_technique_state(technique);
 
                 // add technique in vector if active
                 //if (technique_status)
@@ -285,26 +287,6 @@ void enumerateTechniques(effect_runtime* runtime)
                         }
                     }
 
-
-                    /*bool has_uniform = false;
-                    reshade::api::effect_uniform_variable unif = rt->find_uniform_variable(g_charBuffer, QV_TARGET_NAME);
-                    int QV_target = a_shared.effect_target_QV;
-                    if (unif != 0) rt->get_uniform_value_int(unif, &QV_target, 1);
-
-
-                    if (name == "Deband")
-                    {
-                        reshade::log::message(reshade::log::level::info, "******** deband ");
-                        char charBuff[CHAR_BUFFER_SIZE] = "enable_webe";
-                        reshade::api::effect_uniform_variable unif = rt->find_uniform_variable(g_charBuffer, charBuff);
-                        if (unif != 0)
-                        {
-                            reshade::log::message(reshade::log::level::info, "******** enable_weber found ");
-						}
-
-                    }
-                    */
-
                     // add the technique in the vector
                     bool VRtechnique_status = read_technique_status_from_file(name);
                     //for support of QV in other mod...
@@ -314,10 +296,16 @@ void enumerateTechniques(effect_runtime* runtime)
                     //g_shared_state->technique_vector.push_back({ technique, name, eff_name , VRtechnique_status, technique_status, QV_target });
 #if _DEBUG_LOGS
                     //log 
-                    log_technique_info(rt, technique, name, eff_name, VRtechnique_status, technique_status, QV_target, has_depth_or_stencil, tech_uniforms);
+                    //log_technique_info(rt, technique, name, eff_name, VRtechnique_status, technique_status, QV_target, has_depth_or_stencil, tech_uniforms);
 #endif
 
                 }
+            }
+            else if (!technique_status)
+            {
+				// ensure the settings technique is enabled
+                rt->set_technique_state(technique, true);
+
             }
   
             });

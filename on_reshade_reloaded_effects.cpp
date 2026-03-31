@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////
 //
-// Reshade DCS VREM2 addon. VR Enhancer Mod for DCS using reshade
+// Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
 // "hot" reload of mod possible using a Reshade addon as launcher (loaded with the game)
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
@@ -46,7 +46,6 @@
 #include "loader_addon_shared.h"
 #include "addon_functions.h"
 #include "addon_objects.h"
-#include "VREM_settings.h"
 #include "addon_logs.h"
 
 #include "to_string.hpp"
@@ -69,12 +68,9 @@ bool  get_uniform_and_techniques(effect_runtime* runtime) {
 		log_display_settings();
 
 #endif
-		// if reload: new options may be settup => re generate the filtered shader list
-		g_shared_state->filtered_pipeline_to_setup = true;
-		filtered_pipeline.clear();
-		
+	
 		// read techniques activated to use them later for technique rendering in VR
-		if (a_shared.VREM_setting[SET_EFFECTS])
+		if (a_shared.VREM_setting[SET_TECHNIQUE])
 		{
 			enumerateTechniques(runtime);
 #if _DEBUG_LOGS
@@ -98,8 +94,21 @@ extern "C" {
 	VREM_EXPORT void vrem_on_reshade_reloaded_effects(effect_runtime* runtime)
 	{
 
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects started");
+#endif
+
 		// should work only for reload
 		bool status = get_uniform_and_techniques(runtime);
+
+		// if reload: new options may be settup => re generate the filtered shader list
+		g_shared_state->filtered_pipeline_to_setup = true;
+		filtered_pipeline.clear();
+
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_reloaded_effects ended");
+#endif
+
 	}
 #ifdef _DEBUG
 }

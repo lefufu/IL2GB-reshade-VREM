@@ -47,6 +47,7 @@
 #include "loader_addon_shared.h"
 #include "addon_functions.h"
 #include "addon_logs.h"
+#include "addon_chrono.hpp"
 
 using namespace reshade::api;
 
@@ -60,7 +61,7 @@ void intialize_counters()
 
     a_shared.cb_inject_values.mapMode = 1.0;
     do_not_draw = false;
-    a_shared.cb_inject_values.GUItodraw = 0.0;
+    //a_shared.cb_inject_values.GUItodraw = 0.0;
 
     a_shared.render_technique = false;
     a_shared.track_for_render_target = false;
@@ -122,14 +123,21 @@ void handle_keypress(effect_runtime* runtime)
         }
     }
 */
-
+    //--------------------------------
     // display pilot note 
-    if (runtime->is_key_down(VK_PILOTE_NOTE) && a_shared.VREM_setting[SET_PHOTO])
-        a_shared.cb_inject_values.photo_on = 1.0;
-    else
+    
+    if (runtime->is_key_pressed(VK_PILOTE_NOTE) && !runtime->is_key_down(VK_PILOTE_NOTE_MOD) && a_shared.VREM_setting[SET_PHOTO])
     {
-        a_shared.cb_inject_values.photo_on = 0.0;
+        if (a_shared.cb_inject_values.photo_on == 1.0)
+        {
+            a_shared.cb_inject_values.photo_on = 0.0;
+        }
+        else if (a_shared.cb_inject_values.photo_on == 0.0)
+        {
+            a_shared.cb_inject_values.photo_on = 1.0;
+        }
     }
+
 
     // change pilot note index
     if (runtime->is_key_pressed(VK_PILOTE_NOTE) && runtime->is_key_down(VK_PILOTE_NOTE_MOD) && a_shared.VREM_setting[SET_PHOTO])
@@ -139,7 +147,7 @@ void handle_keypress(effect_runtime* runtime)
         if (a_shared.target_photo_number > a_shared.max_photo_number)
             a_shared.target_photo_number = 0;
     }
-
+    //--------------------------------
     // night mode
     if (runtime->is_key_pressed(VK_NIGHT_MODE) && runtime->is_key_down(VK_NIGHT_MODE_MOD) && a_shared.VREM_setting[SET_MISC])
     {
@@ -150,6 +158,31 @@ void handle_keypress(effect_runtime* runtime)
         else if (a_shared.cb_inject_values.night_mode == 0.0)
         {
             a_shared.cb_inject_values.night_mode = 1.0;
+        }
+    }
+    //--------------------------------
+    //stopwatch
+    if (runtime->is_key_pressed(VK_STOPWATCH) && runtime->is_key_down(VK_STOPWATCH_MOD_START) && a_shared.VREM_setting[SET_STOPWATCH])
+    {
+        if (Chrono::IsStopped()) Chrono::Start();
+        else if (Chrono::IsRunning()) Chrono::Pause();
+        else if (Chrono::IsPaused())  Chrono::Resume();
+    }
+
+    if (runtime->is_key_pressed(VK_STOPWATCH) && runtime->is_key_down(VK_STOPWATCH_MOD_RESET) && a_shared.VREM_setting[SET_STOPWATCH])
+    {
+        Chrono::Reset();
+    }
+
+    if (runtime->is_key_pressed(VK_STOPWATCH) && !runtime->is_key_down(VK_STOPWATCH_MOD_RESET) && !runtime->is_key_down(VK_STOPWATCH_MOD_START))
+    {
+        if (a_shared.cb_inject_values.clock_display == 1.0)
+        {
+            a_shared.cb_inject_values.clock_display = 0.0;
+        }
+        else if (a_shared.cb_inject_values.clock_display == 0.0)
+        {
+            a_shared.cb_inject_values.clock_display = 1.0;
         }
     }
 
@@ -163,6 +196,19 @@ void handle_keypress(effect_runtime* runtime)
 
 }
 
+
+// *******************************************************************************************************
+// setup stopwatch values
+//
+static void set_stopwatch_needles()
+{
+    auto [h, m, s] = Chrono::GetTime();
+
+    // Mise à jour des uniforms ReShade
+    a_shared.cb_inject_values.clock_hours = h;
+    a_shared.cb_inject_values.clock_mins = m;
+    a_shared.cb_inject_values.clock_secs = s;
+}
 
 #ifdef _DEBUG
 extern "C" {
@@ -183,7 +229,8 @@ extern "C" {
 
 		// to get VREM settings => read from uniform values (if overlay is open or at first init)
         if (g_shared_state->overlay_is_open || addon_init == true) {
-            get_settings_from_uniforms(runtime);
+            //get_settings_from_uniforms(runtime);
+            get_uniform_and_techniques(runtime);
             addon_init = false;
         }
 
@@ -202,6 +249,13 @@ extern "C" {
             if (g_shared_state->filtered_pipeline_to_setup) {
                 g_shared_state->filtered_pipeline_to_setup = setup_filtered_pipelines(g_shared_state->device, runtime);
             }
+
+            //read texture from file
+            if (a_shared.texture_to_read)
+            {
+                a_shared.texture_to_read = false;
+                read_textures(device);
+            }
         }
         else
         {
@@ -213,6 +267,10 @@ extern "C" {
         //------------------------------------
         // handle key press to toggle features 
         handle_keypress(runtime);
+
+        //------------------------------------
+        //handle stopwatch update
+        if (a_shared.VREM_setting[SET_STOPWATCH]) set_stopwatch_needles();
 
 #ifdef _DEBUG
 

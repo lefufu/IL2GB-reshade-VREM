@@ -378,7 +378,7 @@ extern void vrem_on_init_pipeline_layout(device* dev, uint32_t paramCount, const
 extern void vrem_on_push_descriptors(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update);
 extern void vrem_on_reshade_reloaded_effects(effect_runtime* runtime);
 extern void vrem_on_reshade_overlay(effect_runtime* runtime);
-extern void vrem_on_init_swapchain(swapchain* swapchain)
+extern void vrem_on_init_swapchain(swapchain* swapchain);
 #endif
 
 

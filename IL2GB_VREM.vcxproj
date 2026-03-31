@@ -54,7 +54,6 @@
     <ClInclude Include="addon_logs.h" />
     <ClInclude Include="addon_objects.h" />
     <ClInclude Include="addon_injection.h" />
-    <ClInclude Include="addon_load_dds.hpp" />
     <ClInclude Include="addon_chrono.hpp" />
     <ClInclude Include="CDataFile.h" />
     <ClInclude Include="export_CB.hpp" />
