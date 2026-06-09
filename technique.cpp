@@ -136,18 +136,13 @@ void init_preprocess(effect_runtime* runtime)
         a_shared.init_preprocessor = true;
         int check = 0;
         g_shared_state->runtime = runtime;
-
+        /*
         check += default_preprocessor(runtime, "MSAAX", 1.0, false, -1);
         check += default_preprocessor(runtime, "MSAAY", 1.0, false, -1);
         check += default_preprocessor(runtime, "BUFFER_WIDTH", 1920.0, false, -1);
         check += default_preprocessor(runtime, "BUFFER_HEIGHT", 1080.0, false, -1);
         check += default_preprocessor(runtime, "BUFFER_RCP_WIDTH", 1.0/1920, false, -1);
         check += default_preprocessor(runtime, "BUFFER_RCP_HEIGHT", 1.0 / 1080, false, -1);
-        /*
-        check += default_preprocessor(runtime, "BUFFER_WIDTH_QVIN", 1920.0, false, -1);
-        check += default_preprocessor(runtime, "BUFFER_HEIGHT_QVIN", 1080.0, false, -1);
-        check += default_preprocessor(runtime, "BUFFER_RCP_WIDTH_QVIN", 1.0 / 1920, false, -1);
-        check += default_preprocessor(runtime, "BUFFER_RCP_HEIGHT_QVIN", 1.0 / 1080, false, -1);
         */
 
         // set one technique to activate pre process
@@ -292,7 +287,11 @@ void enumerateTechniques(effect_runtime* runtime)
                     //for support of QV in other mod...
 					int QV_target = 0;
 
-                    g_shared_state->technique_vector.push_back({ technique, name, eff_name, VRtechnique_status, technique_status, tech_uniforms, QV_target });
+                    //define if technique is VR
+                    bool is_VREM = false;
+                    if (name.starts_with(TECH_PRE))
+                        is_VREM = true;   
+                    g_shared_state->technique_vector.push_back({ technique, name, eff_name, VRtechnique_status, technique_status, tech_uniforms, QV_target, is_VREM });
                     //g_shared_state->technique_vector.push_back({ technique, name, eff_name , VRtechnique_status, technique_status, QV_target });
 #if _DEBUG_LOGS
                     //log 
@@ -399,7 +398,7 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
 #endif
         }
 
-
+        /*
         //export preprocessor variables (once) 
         if (display_to_use <= 1 && !g_shared_state->preprocessor_exported)
         {
@@ -414,6 +413,7 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
             log_inject_preprocessor();
 #endif
         }
+        */
 
         // render all activated techniques if not 2D mirror or in 2D (reshade is already rendering the effect) 
         // if (!g_shared_state->no_double)

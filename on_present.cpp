@@ -78,6 +78,10 @@ void intialize_counters()
 
     a_shared.current_photo_number = 0;
 
+	track_for_texture = false;
+	
+	last_RTV_saved.copied = false;
+	
     // initialize flags for texture copy
     current_PlaneMask_handle = 0;
     for (auto& [handle, ds_copy] : a_shared.copied_textures) {
@@ -143,6 +147,8 @@ void handle_keypress(effect_runtime* runtime)
     if (runtime->is_key_pressed(VK_PILOTE_NOTE) && runtime->is_key_down(VK_PILOTE_NOTE_MOD) && a_shared.VREM_setting[SET_PHOTO])
     {
         a_shared.default_photo_number = false;
+        //ask re immport of texture
+        a_shared.photo_copied = false;
         a_shared.target_photo_number = a_shared.target_photo_number + 1;
         if (a_shared.target_photo_number > a_shared.max_photo_number)
             a_shared.target_photo_number = 0;
@@ -233,29 +239,38 @@ extern "C" {
             get_uniform_and_techniques(runtime);
             addon_init = false;
         }
-
+        /*
         // create all pipeline_layouts for pushing dedicated CB (if not created)
         create_all_modified_CB_layout(device);
 
 		// create all pipelines layput for pushing dedicated RV (if not created)
         create_RV_pipeline_layout(device);
+        */
 
-        // parse the shader list to load all shader codes and store codes in shader_code_cache (if not done)
-        //read_all_shader_code();
   
         if (a_shared.VREM_setting[SET_DEFAULT])
         { 
             // wait as much as possible to generate filtered shader list and clone pipelines if needed
             if (g_shared_state->filtered_pipeline_to_setup) {
-                g_shared_state->filtered_pipeline_to_setup = setup_filtered_pipelines(g_shared_state->device, runtime);
+
+                // create all pipeline_layouts for pushing dedicated CB (if not created)
+                create_all_modified_CB_layout(device);
+
+                // create all pipelines layput for pushing dedicated RV (if not created)
+                create_RV_pipeline_layout(device);
+
+                bool dummy = setup_filtered_pipelines(g_shared_state->device, runtime);
+
+                //read texture from file
+                if (a_shared.texture_to_read)
+                {
+                    a_shared.texture_to_read = false;
+                    read_textures(device);
+                }
+
+                g_shared_state->filtered_pipeline_to_setup = false;
             }
 
-            //read texture from file
-            if (a_shared.texture_to_read)
-            {
-                a_shared.texture_to_read = false;
-                read_textures(device);
-            }
         }
         else
         {

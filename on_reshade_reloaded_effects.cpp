@@ -65,7 +65,7 @@ bool  get_uniform_and_techniques(effect_runtime* runtime) {
 	if (a_shared.VREM_setting[SET_DEFAULT])
 	{
 #if _DEBUG_LOGS
-		log_display_settings();
+		//log_display_settings();
 
 #endif
 	
@@ -74,7 +74,7 @@ bool  get_uniform_and_techniques(effect_runtime* runtime) {
 		{
 			enumerateTechniques(runtime);
 #if _DEBUG_LOGS
-			log_effect_reloaded();
+			//log_effect_reloaded();
 #endif
 			a_shared.technique_compiled = true;
 		}

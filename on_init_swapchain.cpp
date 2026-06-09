@@ -76,7 +76,7 @@ extern "C" {
 		device *dev = swapchain->get_device();
 
 		// read texture (stopwatch)
-		read_textures(dev);
+		// read_textures(dev);
 
 	}
 #ifdef _DEBUG

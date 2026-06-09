@@ -80,141 +80,18 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 	// PS for own plane 
 	if (it->second.feature == Feature::PS_lastGlobal)
 	{
-		a_shared.wait_for_technique = a_shared.wait_for_technique + 1;
+		// tempo to authorize fist launch of techniques
+		if (a_shared.wait_for_technique <= FRAME_BEFORE_TECHNIQUE)
+			a_shared.wait_for_technique = a_shared.wait_for_technique + 1;
+
+		// to avoid copy photo for all frames
+		a_shared.photo_copied = true;
+
 		// log infos
 #if _DEBUG_LOGS  
 		log_start_monitor("Last global");
 #endif
 	}
-
-	//trace VR mode (not working)
-	/*
-	if (it->second.feature == Feature::PS_VRMirror)
-	{
-		a_shared.cb_inject_values.max_display = 1.0;
-#if _DEBUG_LOGS  
-		log_mirror_view();
-#endif
-	}*/
-
-	/*
-	// PS for ego plane : stop collecting textures for mask
-	if (it->second.feature == Feature::PS_ownPlane)
-	{
-		// stop tracking resource
-		track_for_texture = false;
-		a_shared.flag_texture_dump = false;
-
-		// as same VS is called two time, do not get texture for later call (external)
-		// a_shared.not_track_mask_anymore = true;
-
-#if _DEBUG_LOGS  
-					// log infos
-		log_stop_monitor("ego plane mask");
-#endif
-
-	} */
-	/*
-	if (it->second.feature == Feature::PS_external)
-	{
-		// for security in case of (2 call for the same VS)
-		track_for_texture = false;
-
-		// as same VS is called two time, do not get texture for later call
-		a_shared.not_track_mask_anymore = true;
-
-
-		//dump textures at next push_descriptors
-		a_shared.flag_texture_dump = false;
-	}
-
-
-	// PS for GUI : set flag
-	if (it->second.feature == Feature::GUI)
-	{
-		a_shared.cb_inject_values.GUItodraw = 1.0;
-
-		// log infos
-#if _DEBUG_LOGS  
-		log_start_monitor("GUItodraw");
-#endif
-	}*/
-
-
-	/* DCS stuff
-	if (it->second.feature == Feature::VS_global2)
-	{
-		// handle the case where the Ps is called 2 time consecutivelly because of mirror view
-		if (a_shared.last_feature != Feature::Global && !a_shared.cb_inject_values.mapMode)
-		{
-
-			// if texure has been copied previously, increase draw count, otherwise do nothing, to avoid counting shader calls for MFD rendering
-			// if (a_shared.depthStencil_copy_started)
-			{
-
-				a_shared.count_display += 1;
-				// log max of count_display to enable or not features for VR / Quad view
-				a_shared.count_draw = max(a_shared.count_draw, a_shared.count_display);
-				// it's stupid but I'm too lazy to change code now..
-				a_shared.cb_inject_values.count_display = a_shared.count_display;
-
-				a_shared.track_for_render_target = false;
-#if _DEBUG_LOGS
-							// log infos
-							log_increase_count_display();
-#endif
-
-							if (a_shared.VREM_setting[SET_EFFECTS] && !a_shared.cb_inject_values.mapMode)
-							{
-								// handle effects : setup flag for draw
-								a_shared.render_technique = true;
-								//a_shared.track_for_render_target = false;
-#if _DEBUG_LOGS
-								// log infos
-								log_effect_requested();
-#endif
-							}
-						}
-						*/
-
-						/* else
-						{
-							// log infos
-							log_not_increase_draw_count();
-						} */
-						/*
-							}
-
-
-							// set up draw flag to avoid push_constant() doing effect before draw (it will be overwritten by the PS)
-							a_shared.draw_passed = false;
-						} */
-
-						// set flag for tracking render target if feature enabled and not in 2D
-				// if (it->second.feature == Feature::Effects && shared_data.effects_feature && shared_data.count_draw > 1)
-				// TODO test to make it work in 2D
-	/*
-	if (it->second.feature == Feature::mapMode)
-	{
-		a_shared.cb_inject_values.mapMode = 0.0;
-		a_shared.cockpit_rendering_started = true;
-	}
-
-	// PS for mirror view : setup VR mode
-	if (it->second.feature == Feature::max_display)
-	{
-		a_shared.cb_inject_values.max_display = 1.0;
-		// identify which view was used before mirror view
-		// defaut
-		a_shared.mirror_VR = 0;
-		// secure only 1 and 2 view processed
-		if (a_shared.count_display == 1) a_shared.mirror_VR = 0;
-		if (a_shared.count_display == 2) a_shared.mirror_VR = 1;
-#if _DEBUG_LOGS
-					log_mirror_view();
-#endif
-				}
-				*/
 }
 
 //*******************************************************************************
@@ -282,7 +159,8 @@ void process_action_replace(command_list* commandList, pipeline_stage stages, pi
 		log_CB_injected("VREM CB");
 #endif
 	}
-	if (it->second.action & action_replace_bind || ((it->second.action & action_replace) && g_shared_state->debug))
+	// if (it->second.action & action_replace_bind || ((it->second.action & action_replace) && g_shared_state->debug))
+	if (it->second.action & action_replace_bind )
 	{
 		// shader is to be replaced by the new one created in on_Init_Pipeline
 		commandList->bind_pipeline(stages, it->second.substitute_pipeline);
@@ -397,98 +275,6 @@ void process_action_action_renderTechnique(std::unordered_map<uint64_t, Shader_D
 	}
 }
 
-
-//*******************************************************************************
-// inject modified CB (not used in IL2 yet, keep only for future DCS VREM2 mod)
-void process_action_action_action_injectCB(command_list* commandList, std::unordered_map<uint64_t, Shader_Definition>::iterator it)
-{
-	// inject constant buffer other than the one containing VREM setting
-	/*
-	//CPERFRAME/haze for global illumination :  need to modify value for haze but set orgi. value for reflection
-	if (it->second.feature == Feature::GetStencil && a_shared.CB_copied[CPERFRAME_CB_NB] && a_shared.VREM_setting[SET_MISC])
-	{
-
-		//modify value for Haze
-		a_shared.dest_CB_array[CPERFRAME_CB_NB][FOG_INDEX] = a_shared.orig_values[CPERFRAME_CB_NB][GATMINTENSITY_SAVE] * a_shared.cb_inject_values.hazeReduction;
-		// other value
-		a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_X] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_X_SAVE];
-		a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_Y] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_Y_SAVE];
-		// use push constant() to push CPerFrame 
-		// pipeline_layout for CB initialized in init_pipeline() once for all
-		commandList->push_constants(
-			shader_stage::all,
-			a_shared.saved_pipeline_layout_CB[CPERFRAME_CB_NB],
-			0,
-			0, // can not injecting only the haze value to be updated (so first = FOG_INDEX) because it is making the game crash...
-			CPERFRAME_SIZE,
-			&a_shared.dest_CB_array[CPERFRAME_CB_NB]
-		);
-#if _DEBUG_LOGS  
-		log_CB_injected("CPerFrame updated for fog, GCOCKPITIBL default");
-#endif
-
-		// last_replaced_shader = pipelineHandle.handle;
-		a_shared.last_feature = it->second.feature;
-	}
-	*/
-	/*
-	//CPERFRAME/haze for other shaders :  need to keep orig. value
-	if (it->second.feature == Feature::Sky && a_shared.CB_copied[CPERFRAME_CB_NB] && a_shared.VREM_setting[SET_MISC])
-	{
-
-		//modify value for Haze
-		a_shared.dest_CB_array[CPERFRAME_CB_NB][FOG_INDEX] = a_shared.orig_values[CPERFRAME_CB_NB][GATMINTENSITY_SAVE];
-		//other value
-		a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_X] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_X_SAVE];
-		a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_Y] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_Y_SAVE];
-
-		// use push constant() to push CPerFrame 
-		// pipeline_layout for CB initialized in init_pipeline() once for all
-		commandList->push_constants(
-			shader_stage::all,
-			a_shared.saved_pipeline_layout_CB[CPERFRAME_CB_NB],
-			0,
-			0,
-			CPERFRAME_SIZE,
-			&a_shared.dest_CB_array[CPERFRAME_CB_NB]
-		);
-#if _DEBUG_LOGS  
-		log_CB_injected("CPerFrame original");
-#endif
-
-		// last_replaced_shader = pipelineHandle.handle;
-		a_shared.last_feature = it->second.feature;
-
-	}*/
-	/*
-	//CPERFRAME/reflect for instrument
-	if (it->second.feature == Feature::NoReflect && a_shared.CB_copied[CPERFRAME_CB_NB])
-	{
-
-		//modify value
-		a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_X] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_X_SAVE] * a_shared.cb_inject_values.gCockpitIBL;
-		a_shared.dest_CB_array[CPERFRAME_CB_NB][GCOCKPITIBL_INDEX_Y] = a_shared.orig_values[CPERFRAME_CB_NB][GCOCKPITIBL_Y_SAVE] * a_shared.cb_inject_values.gCockpitIBL;
-
-		// use push constant() to push CPerFrame 
-		// pipeline_layout for CB initialized in init_pipeline() once for all
-		commandList->push_constants(
-			shader_stage::all,
-			a_shared.saved_pipeline_layout_CB[CPERFRAME_CB_NB],
-			0,
-			0,
-			CPERFRAME_SIZE,
-			&a_shared.dest_CB_array[CPERFRAME_CB_NB]
-		);
-#if _DEBUG_LOGS  
-		log_CB_injected("CPerFrame for GCOCKPITIBL");
-#endif
-
-		// last_replaced_shader = pipelineHandle.handle;
-		a_shared.last_feature = it->second.feature;
-	}
-	*/
-}
-
 #ifdef _DEBUG
 extern "C" {
 #endif
@@ -580,9 +366,6 @@ extern "C" {
 
 			// setup flag for trendering technique
 			if (it->second.action & action_renderTechnique) process_action_action_renderTechnique(it);
-
-			// not used in IL2 inject modified CB (modifed or restored version)
-			// if (it->second.action & action_injectCB) process_action_action_action_injectCB(commandList, it);
 
 			// trace current feature for next call
 			a_shared.last_feature = it->second.feature;

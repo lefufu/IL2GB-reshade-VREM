@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////
 //
-// Reshade DCS VREM2 addon. VR Enhancer Mod for IDCS using reshade
+// Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
 // "hot" reload of mod possible using a Reshade addon as launcher (loaded with the game)
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
@@ -323,7 +323,7 @@ void log_create_CBlayout(std::string CBName, int CB_number)
 		std::stringstream s;
 		s << "addon - new pipeline layout created, hash =" << reinterpret_cast<void*>(&a_shared.saved_pipeline_layout_CB[CB_number].handle) << " ).  for CB " << CBName << " injection, ";
 		s << "  dx_register_index=" << CBINDEX << "; ";
-		reshade::log::message(reshade::log::level::error, s.str().c_str());
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }
 
@@ -441,8 +441,8 @@ void log_push_descriptor(shader_stage stages, pipeline_layout layout, uint32_t p
 void log_creation_start(std::string texture_name)
 {
 
-	if (g_shared_state->debug)
-	//if (g_shared_state->debug_log && flag_capture)
+	// if (g_shared_state->debug)
+	if (g_shared_state->debug_log && flag_capture)
 	{
 		std::stringstream s;
 		s << " create resources and resource views to copy " << texture_name << ", count_display = " << a_shared.count_display << ";";
@@ -472,7 +472,6 @@ void log_texture(std::stringstream *s, resource_desc check_new_res)
 	}
 	*s << ";";
 }
-
 void log_resource_created(std::string texture_name, device* dev, resource_desc check_new_res, uint64_t handle)
 {
 
@@ -482,7 +481,7 @@ void log_resource_created(std::string texture_name, device* dev, resource_desc c
 		// display resource info
 		std::stringstream s;
 		s << "addon - create resource for " << texture_name  << ":, type: " << to_string(check_new_res.type) << ", src handle =" << std::hex << handle << ", draw =" << a_shared.count_display;
-		/*
+	/*
 		switch (check_new_res.type) {
 		default:
 		case reshade::api::resource_type::unknown:
@@ -503,7 +502,7 @@ void log_resource_created(std::string texture_name, device* dev, resource_desc c
 		}
 		s << ";";
 		*/
-		log_texture(&s, check_new_res);
+		log_texture(&s, check_new_res);				 
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -570,15 +569,12 @@ void log_copy_texture(std::string texture_name, uint64_t handle)
 	{
 		std::stringstream s;
 		s << " = >  resource and view(s) copied for " << texture_name << ", src res.hande = " << std::hex << handle << ", for draw (" << a_shared.count_display << ");";
-		
 		auto it = a_shared.copied_textures.find(handle);
 		if (it != a_shared.copied_textures.end())
 		{
 			resource texure = it->second.texresource;
 			resource_desc check_new_res = g_shared_state->device->get_resource_desc(texure);
 			log_texture(&s, check_new_res);
-		}
-
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 
 	}
@@ -743,12 +739,11 @@ void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_
 		s.str("");
 		s.clear();
 
-		if (count > 0)
-		{
 
+		if (count > 0)
 			if (rtvs[0].handle != 0)
 			{
-
+				
 				reshade::api::device* dev = cmd_list->get_device();
 
 				resource scr_resource = dev->get_resource_from_view(rtvs[0]);
@@ -762,7 +757,6 @@ void log_renderTarget_depth(uint32_t count, const resource_view* rtvs, resource_
 					s.clear();
 				}
 			}
-		}
 		
 		if (g_shared_state->shader_hunter) return;
 
@@ -865,11 +859,7 @@ void log_export_texture(short int display_to_use)
 	if (g_shared_state->debug_log && flag_capture)
 	{
 		std::stringstream s;
-		//if (a_shared.cb_inject_values.AAMode == 1.0)
-			s << " => on_push_descriptors : export pre processor DEPTH and STENCIL texture for display_to_use = " << display_to_use << ";";
-
-		/*if (a_shared.cb_inject_values.AAMode == 2.0 || a_shared.cb_inject_values.AAMode == 4.0)
-			s << " => on_push_descriptors : export pre processor DEPTH_MSAA and STENCIL_MSAA texture for display_to_use = " << display_to_use << ";"; */
+		s << " => on_push_descriptors : export pre processor DEPTH and STENCIL texture for display_to_use = " << display_to_use << ";";
 
 		reshade::log::message(reshade::log::level::warning, s.str().c_str());
 	}
@@ -892,7 +882,7 @@ void log_texture_view(reshade::api::device* dev, std::string name, reshade::api:
 		s.clear();
 
 		s << "  associated resource handle " << std::hex << res.handle << " , type =" << to_string(desc_res.type) << " , usage =" << " 0x" << std::hex << (uint32_t)desc_res.usage;
-		s << std::dec << ", width: " << desc_res.texture.width << ", height: " << std::dec << desc_res.texture.height << ", levels: " << desc_res.texture.levels << ", format: " << to_string(desc_res.texture.format);
+		s << std::dec << ", width: " << desc_res.texture.width << ", height: " << std::dec <<desc_res.texture.height << ", levels: " << desc_res.texture.levels << ", format: " << to_string(desc_res.texture.format);
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 		s.str("");
 		s.clear();
@@ -1236,26 +1226,6 @@ void log_init_swapchain(swapchain* swapchain)
 	{
 		std::stringstream s;
 		s << "addon - init_swapchain;";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-	}
-}
-
-void log_set_uniform_value(std::string uniform_name, float value)
-{
-	if (g_shared_state->debug_log && flag_capture)
-	{
-		std::stringstream s;
-		s << "addon - set_uniform_value, uniform name = '" << uniform_name << "', value = " << value << ";";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-	}
-}
-
-void log_begin_effects()
-{
-	if (g_shared_state->debug_log && flag_capture)
-	{
-		std::stringstream s;
-		s << "addon - reshade begin effect, set uniform values if needed;";
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }

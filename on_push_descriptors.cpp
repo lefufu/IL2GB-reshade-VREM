@@ -132,7 +132,7 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 		{
 
 			// to retrieve infos for pushing texture in bind_pipeline
-			current_PlaneMask_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "PlaneMask");
+			current_PlaneMask_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "PlaneMask", false);
 		}
 
 
@@ -140,14 +140,15 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 		{
 
 			// to retrieve infos for pushing texture in bind_pipeline
-			current_depth_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, depth_num, "Depth");
+			current_depth_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, depth_num, "Depth", false);
 		}
 
 
 	}
 
-	// get photo texture, it should be T4
-	if (a_shared.last_feature == Feature::VS_ownPlane && a_shared.cb_inject_values.photo_on)
+	// get photo texture, it should be T4 and the same for all frame and all display
+	if (a_shared.last_feature == Feature::VS_ownPlane && a_shared.cb_inject_values.photo_on && !a_shared.photo_copied)
+	//if (a_shared.last_feature == Feature::VS_ownPlane && a_shared.cb_inject_values.photo_on )
 	{
 		uint32_t text_num = 4;
 		// get only texture when needed (widht = 1024, format = bc2_unorm)
@@ -166,10 +167,10 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 			{
 
 				// to retrieve infos for pushing texture in bind_pipeline
-				current_Photo_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "Photo");
+				current_Photo_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "Photo", false);
 			}
-
-			a_shared.current_photo_number = a_shared.current_photo_number + 1;
+			// compute max. of texture displayed in order to cycle, if VR count only for left eye
+			if (a_shared.count_display == 0) a_shared.current_photo_number = a_shared.current_photo_number + 1;
 			if (a_shared.current_photo_number > a_shared.max_photo_number)
 				a_shared.max_photo_number = a_shared.current_photo_number;
 

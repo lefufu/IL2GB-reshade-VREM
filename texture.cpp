@@ -64,16 +64,18 @@ void read_textures(reshade::api::device* device)
 {
 	
 	// load stopwatch texture
+	if (a_shared.VREM_setting[SET_STOPWATCH])
+	{
+		//file name
+		wchar_t file_prefix[MAX_PATH] = L"";
+		GetModuleFileNameW(nullptr, file_prefix, ARRAYSIZE(file_prefix));
+		std::filesystem::path replace_path = file_prefix;
+		replace_path = replace_path.parent_path();
+		replace_path /= RESHADE_ADDON_SHADER_LOAD_DIR;
+		replace_path /= STOPWATCH_TEXT_NAME;
 
-	//file name
-	wchar_t file_prefix[MAX_PATH] = L"";
-	GetModuleFileNameW(nullptr, file_prefix, ARRAYSIZE(file_prefix));
-	std::filesystem::path replace_path = file_prefix;
-	replace_path = replace_path.parent_path();
-	replace_path /= RESHADE_ADDON_SHADER_LOAD_DIR;
-	replace_path /= STOPWATCH_TEXT_NAME;
-
-   bool status = LoadPNG::LoadPNGTexture(device, replace_path, a_shared.stopWatchText.resource, a_shared.stopWatchText.rView);
+		bool status = LoadPNG::LoadPNGTexture(device, replace_path, a_shared.stopWatchText.resource, a_shared.stopWatchText.rView);
+   }
 
 
 }
@@ -116,7 +118,7 @@ resource_view copy_resource_view(device* dev,  resource_view src_resource_view, 
 /// <summary>
 ///  create needed resource, then copy existing resource into the new one, then create the new associated resource views
 /// </summary>
-uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update, uint32_t dec_number, std::string textName)
+uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update, uint32_t dec_number, std::string textName, bool setMSAA)
 {
 
 	device* dev = cmd_list->get_device();

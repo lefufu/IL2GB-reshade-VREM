@@ -51,13 +51,13 @@
 
 extern SharedState* g_shared_state;
 extern bool addon_init;
-
+/*
 #ifdef _DEBUG
 #define DEBUG_LOGS 1
 #else
 #define DEBUG_LOGS 0
 #endif
-
+*/
 //*****************************************************************************
 // mod parameters
 // 
@@ -348,7 +348,7 @@ struct resourceview_trace {
 	// bool depth_exported_for_technique;
 };
 
-//test resource for depthStencil copy
+//to handle created resources, for texture copy or texture read from file
 struct resource_DS_copy {
 	bool copied = false;
 	reshade::api::resource texresource = {};
@@ -488,6 +488,7 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	uint32_t max_photo_number = 0;
 	uint32_t target_photo_number = 0;
 	bool default_photo_number = true;
+	bool photo_copied = false;
 
 	//texture readed from file
 	bool texture_to_read = true;
@@ -540,7 +541,7 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	//own plane texture
 	{0xf7fce9a6, Shader_Definition(action_log | action_get_text  , Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
 	//cockpit+test
-	{0x63ba565f, Shader_Definition(action_log| action_get_text| action_replace_bind , Feature::VS_ownPlane, L"test_far_VS.cso", 0, {SET_PHOTO, SET_TESTVS })},
+	{0x63ba565f, Shader_Definition(action_log| action_get_text| action_replace , Feature::VS_ownPlane, L"test_far_VS.cso", 0, {SET_PHOTO, SET_TESTVS })},
 
 	// external only
 	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
@@ -552,41 +553,46 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{0xe2d95d7a, Shader_Definition(action_log, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
 
 	//global PS for image modification (last PS), used to set eye, display mask for debug. Its render target is used for effect
-	{0x9f694be6, Shader_Definition(action_replace_bind | action_injectText | action_log | action_renderTechnique, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG, SET_TECHNIQUE, SET_STOPWATCH })},
+	{0x9f694be6, Shader_Definition(action_replace | action_injectText | action_log | action_renderTechnique, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG, SET_TECHNIQUE, SET_STOPWATCH })},
 
 	//VR mirror
 	{0x39aa3616, Shader_Definition(action_log, Feature::PS_VRMirror, L"", 0, {SET_DEFAULT})},
 	
 	//sight PS
-	{0x45983fba, Shader_Definition(action_replace_bind , Feature::PS_sight, L"sight_PS.cso", 0, {SET_SIGHT})},
+	{0x45983fba, Shader_Definition(action_replace , Feature::PS_sight, L"sight_PS.cso", 0, {SET_SIGHT})},
 
 	// sun halo
-	{0x27fca33b, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_sun, L"mask_sun.cso", 0, {SET_MISC})},
+	{0x27fca33b, Shader_Definition(action_replace | action_injectText , Feature::PS_sun, L"mask_sun.cso", 0, {SET_MISC})},
 	
 	//VR GUI
-	{0x7379c02c, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_VR_GUI, L"VR_GUI_PS.cso", 0, {SET_PHOTO})},
+	{0x7379c02c, Shader_Definition(action_replace | action_injectText , Feature::PS_VR_GUI, L"VR_GUI_PS.cso", 0, {SET_PHOTO})},
 	
 	// icons
-	{0x8c76b5ee, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_icon, L"icon_PS.cso", 0, {SET_ICON})},
+	{0x8c76b5ee, Shader_Definition(action_replace | action_injectText , Feature::PS_icon, L"icon_PS.cso", 0, {SET_ICON})},
 	// icon text
-	{0xdcb7b073, Shader_Definition(action_replace_bind | action_injectText , Feature::PS_icon_text, L"icon_text_PS.cso", 0, {SET_ICON})},
+	{0xdcb7b073, Shader_Definition(action_replace | action_injectText , Feature::PS_icon_text, L"icon_text_PS.cso", 0, {SET_ICON})},
 
 	//to dump textures & CB (currenlty filled : VS for global PS)
 	//{0xdf640d43, Shader_Definition(action_dump , Feature::VS_dump, L"", 0, {SET_DEFAULT})},
 
 	// test
-	{0x3b7d44c2, Shader_Definition(action_replace_bind , Feature::VS_test, L"test_near_VS.cso", 0, {SET_TESTVS})},
+	{0x3b7d44c2, Shader_Definition(action_replace , Feature::VS_test, L"test_near_VS.cso", 0, {SET_TESTVS})},
 	
 };
 
 //*****************************************************************************
 // mapping between variable name in technique and variable in CB to inject in shader
 
+//used to differenciate VREM technique rendering from reshade own swap chain rendering 
+#define UNIF_TECH_DISPLAY "unif_tech_display"
+// name of VREM specific techniques
+#define TECH_PRE "VREM_"
+
 // settings
 inline std::unordered_map<std::string, int> settings_mapping = {
 	{"set_default", SET_DEFAULT},
 	{"set_sight", SET_SIGHT},
-	{"set_mask", SET_MISC },
+	{"set_misc", SET_MISC },
 	{"set_technique", SET_TECHNIQUE },
 	{"set_debug", SET_DEBUG },
 	{"set_photo", SET_PHOTO },
@@ -627,3 +633,12 @@ static const std::unordered_map<std::string, float*> var_mapping = {
 	//test
 	{"unif_test", &a_shared.cb_inject_values.sightEye},
 };
+
+
+// to trigger render targfet tracking depending on settings (no single options)
+inline bool settings_for_render_target()
+{
+	return (	
+		(a_shared.VREM_setting[SET_TECHNIQUE] && g_shared_state->technique_enabled) 
+		);
+}

@@ -51,6 +51,7 @@
 
 // static thread_local std::vector<std::vector<uint8_t>> shader_code;
 // extern std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;
+extern std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code_cache;				
 
 // *******************************************************************************************************
 /// <summary>
@@ -86,7 +87,7 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 
 	uint64_t last_handle;
 
-	filtered_pipeline.reserve(g_shared_state->VREM_pipelines.saved_pipelines.size());
+	//filtered_pipeline.reserve(g_shared_state->VREM_pipelines.saved_pipelines.size());
 	std::optional<Shader_Definition> shader_def_opt;
 
 	/*
@@ -135,9 +136,26 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 		else {
 			// add pipeline in the filtered list
 
-			// reshade::log::message(reshade::log::level::info, "*** addon - add pipeline in the filtered list");
-
 			shader_def_opt = is_in_mod_hash(p.hash, p.subobject_count);
+			
+			//handle static replacement
+			if (!shader_def_opt.has_value())
+			{
+				for (auto& [orig_hash, shader_def] : shader_by_hash)
+				{
+					if (!(shader_def.action & action_replace)) continue;
+
+					auto it_cso = shader_code_cache.find(orig_hash);
+					if (it_cso == shader_code_cache.end()) continue;
+
+					// compare le bytecode PS sauvegardé avec le .cso correspondant au hash original
+					if (p.ps_bytecode == it_cso->second || p.vs_bytecode == it_cso->second)
+					{
+						shader_def_opt = shader_def;
+						break;
+					}
+				}
+			}
 
 			i++;
 
@@ -156,11 +174,13 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 				if (active)
 				{
 					// cloned pipeline if needed
-					if ((shader_def_opt.value().action & action_replace_bind) || (shader_def_opt.value().action & action_replace))
+					// if ((shader_def_opt.value().action & action_replace_bind) || (shader_def_opt.value().action & action_replace))
+					if ((shader_def_opt.value().action & action_replace_bind) )
 					{
 
 						//clone the pipeline with the new shader code
-						pipeline cloned_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, p.hash);
+						//pipeline cloned_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, p.hash);
+						pipeline cloned_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects, p.pipeline, p.hash);																								 
 						if (cloned_pipeline.handle == 0)
 						{
 							log_pipeline_clone_error(p.pipeline.handle);
@@ -191,7 +211,8 @@ bool setup_filtered_pipelines(reshade::api::device* device, reshade::api::effect
 		{
 	
 			uint32_t hash_color[1] = { CONSTANT_HASH };
-			a_shared.cloned_constant_color_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, hash_color);
+			//a_shared.cloned_constant_color_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects.data(), p.pipeline, hash_color);
+			a_shared.cloned_constant_color_pipeline = clone_pipeline(p.device, p.layout, p.subobject_count, p.subobjects, p.pipeline, hash_color);																															 
 		}
 
 	}

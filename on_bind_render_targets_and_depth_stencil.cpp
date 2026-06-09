@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////
 //
 // Reshade IL2 VREM addon. VR Enhancer Mod for IL2 using reshade
@@ -74,7 +73,8 @@ extern "C" {
 #endif
 		// copy render target if tracking	
 		// if (a_shared.track_for_render_target && a_shared.count_display > -1 && !a_shared.cb_inject_values.mapMode && count > 0 && (a_shared.VREM_setting[SET_TECHNIQUE]))
-		if (a_shared.track_for_render_target && a_shared.count_display > -1 &&  count > 0 && a_shared.VREM_setting[SET_TECHNIQUE])
+		// if (a_shared.track_for_render_target && a_shared.count_display > -1 &&  count > 0 && a_shared.VREM_setting[SET_TECHNIQUE])
+		if (a_shared.track_for_render_target && a_shared.count_display > -1 &&  count > 0)																																																											
 		{
 
 			/* if (flag_capture) reshade::log::message(reshade::log::level::info, "***** addon - vrem_on_bind_render_targets_and_depth_stencil : tracking");
@@ -100,7 +100,8 @@ extern "C" {
 				last_RTV_saved.RV = rtvs[0];
 				last_RTV_saved.width = src_resource_desc.texture.width;
 				last_RTV_saved.height = src_resource_desc.texture.height;
-#if _DEBUG_LOGS  			cmd_list, count, rtvs, dsv, cmd_list, current_RTV_handle);
+#if _DEBUG_LOGS  			
+				log_renderTarget_depth(count, rtvs, dsv, cmd_list, current_RTV_handle);
 #endif			
 			}
 			else

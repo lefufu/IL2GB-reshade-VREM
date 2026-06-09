@@ -166,7 +166,7 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
                 }
             }
 #if DEBUG_LOGS
-            log_uniform(effect_name, uniform_name, uniform_value);
+            // log_uniform(effect_name, uniform_name, uniform_value);
 #endif
             
             // update vrem settings if name is defined in settings_mapping
