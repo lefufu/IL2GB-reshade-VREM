@@ -149,7 +149,8 @@ struct technique_trace {
 	bool reshade_technique_status;
     std::vector<uniform_mapping> uniform;
     int quad_view_target; // 0 : all, 1 Outer, 2 Innner
-	bool is_VREM;			 
+	bool is_VREM;	
+    uint32_t initialized = 0;
 };
 // Structure to hold shared variables
 struct SharedState {

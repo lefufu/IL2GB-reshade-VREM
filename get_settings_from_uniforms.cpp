@@ -165,8 +165,8 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
                     }
                 }
             }
-#if DEBUG_LOGS
-            // log_uniform(effect_name, uniform_name, uniform_value);
+#if _DEBUG_LOGS
+            //log_uniform(effect_name, uniform_name, uniform_value);
 #endif
             
             // update vrem settings if name is defined in settings_mapping
@@ -181,6 +181,7 @@ void get_settings_from_uniforms(effect_runtime* runtime) {
             {
                 *(it->second) = uniform_value;
             }
+
         });
 
     // sync technique state with g_shared_state

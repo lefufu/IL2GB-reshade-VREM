@@ -214,6 +214,8 @@ extern "C" {
 
 		// render effect part
 		// do not engage effect if option not selected 
+
+
 		if (a_shared.render_technique && a_shared.draw_passed && a_shared.VREM_setting[SET_TECHNIQUE])
 		{
 		

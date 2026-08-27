@@ -78,8 +78,12 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 	}
 
 	// PS for own plane 
-	if (it->second.feature == Feature::PS_lastGlobal)
+	// if (it->second.feature == Feature::PS_lastGlobal)
+	if (it->second.feature == Feature::PS_global)
 	{
+		
+		
+		
 		// tempo to authorize fist launch of techniques
 		if (a_shared.wait_for_technique <= FRAME_BEFORE_TECHNIQUE)
 			a_shared.wait_for_technique = a_shared.wait_for_technique + 1;
@@ -127,7 +131,7 @@ void process_action_injectText(command_list* commandList, std::unordered_map<uin
 
 	//texture read from file
 	//stopwatch
-	if (a_shared.stopWatchText.resource.handle != 0 && a_shared.VREM_setting[SET_STOPWATCH])
+	if (a_shared.copied_textures[current_StopWatch_handle].texresource.handle != 0 && a_shared.VREM_setting[SET_STOPWATCH])
 	{
 		if (it->second.feature == Feature::PS_global || it->second.feature == Feature::PS_VR_GUI) 
 		{
@@ -262,6 +266,7 @@ void process_action_action_trackRT(std::unordered_map<uint64_t, Shader_Definitio
 // setup flags to render technique
 void process_action_action_renderTechnique(std::unordered_map<uint64_t, Shader_Definition>::iterator it)
 {
+	
 	if (g_shared_state->technique_enabled)
 	{
 		

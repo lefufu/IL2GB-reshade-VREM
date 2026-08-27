@@ -74,7 +74,7 @@ void intialize_counters()
 
     a_shared.not_track_mask_anymore = false;
 
-    a_shared.wait_for_technique = 0;
+    //a_shared.wait_for_technique = 0;
 
     a_shared.current_photo_number = 0;
 
@@ -329,7 +329,7 @@ extern "C" {
 #endif
 
 		//force capture for testing
-        // flag_capture = true;
+        //flag_capture = true;
 
 #if _DEBUG_CRASH  
         reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_present ending");

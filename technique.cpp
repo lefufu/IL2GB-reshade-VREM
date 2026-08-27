@@ -280,6 +280,7 @@ void enumerateTechniques(effect_runtime* runtime)
 							//the uniform exist in the shader, we need to add the info in the vector to update it later
                             tech_uniforms.push_back({ unif_name, value, unif });
                         }
+
                     }
 
                     // add the technique in the vector
@@ -291,14 +292,18 @@ void enumerateTechniques(effect_runtime* runtime)
                     bool is_VREM = false;
                     if (name.starts_with(TECH_PRE))
                         is_VREM = true;   
-                    g_shared_state->technique_vector.push_back({ technique, name, eff_name, VRtechnique_status, technique_status, tech_uniforms, QV_target, is_VREM });
-                    //g_shared_state->technique_vector.push_back({ technique, name, eff_name , VRtechnique_status, technique_status, QV_target });
+
+					//added initialization flag to refresh uniforms
+                    g_shared_state->technique_vector.push_back({ technique, name, eff_name, VRtechnique_status, technique_status, tech_uniforms, QV_target, is_VREM});
+
+                   //  g_shared_state->technique_vector.push_back({ technique, name, eff_name, VRtechnique_status, technique_status, tech_uniforms, QV_target, is_VREM, false });
 #if _DEBUG_LOGS
                     //log 
                     //log_technique_info(rt, technique, name, eff_name, VRtechnique_status, technique_status, QV_target, has_depth_or_stencil, tech_uniforms);
 #endif
 
                 }
+
             }
             else if (!technique_status)
             {
@@ -306,6 +311,76 @@ void enumerateTechniques(effect_runtime* runtime)
                 rt->set_technique_state(technique, true);
 
             }
+            /*
+            //DEBUG
+            rt->enumerate_uniform_variables(g_charBuffer,
+                [&](effect_runtime* rt, effect_uniform_variable var) {
+                    char name_buffer[256];
+                    rt->get_uniform_variable_name(var, name_buffer);
+                    std::string uniform_name(name_buffer);
+
+                    rt->get_uniform_variable_effect_name(var, name_buffer);
+                    std::string effect_name(name_buffer);
+
+
+                    reshade::api::format uniform_format;
+                    uint32_t out_row, out_colomns, out_array_length;
+                    float uniform_value = 0;
+
+                    rt->get_uniform_variable_type(var, &uniform_format, &out_row, &out_colomns, &out_array_length);
+                    if (out_array_length > 1)
+                    {
+
+                        log_error_array_uniform(effect_name, uniform_name, out_array_length);
+                    }
+                    else
+                    {
+                        switch (uniform_format)
+                        {
+                        case format::r32_typeless:
+                        {
+                            bool value;
+                            rt->get_uniform_value_bool(var, &value, 1, 0);
+                            uniform_value = value;
+                            break;
+                        }
+
+                        case format::r32_uint:
+                        {
+                            uint32_t value;
+                            rt->get_uniform_value_uint(var, &value, 1, 0);
+                            uniform_value = value;
+                            break;
+                        }
+
+                        case format::r32_sint:
+                        {
+                            int32_t value;
+                            rt->get_uniform_value_int(var, &value, 1, 0);
+                            uniform_value = value;
+                            break;
+                        }
+
+                        case format::r32_float:
+                        {
+                            float value;
+                            rt->get_uniform_value_float(var, &value, 1, 0);
+                            uniform_value = value;
+                            break;
+
+                        }
+                        }
+                    }
+
+                    {
+                        std::stringstream s;
+                        s << "+-+- enumerateTechniques : effect = " << name << ", uniform = " << uniform_name << ", value = " << uniform_value << "; ";
+                        reshade::log::message(reshade::log::level::info, s.str().c_str());
+                    }
+
+
+                });
+            */
   
             });
     }
@@ -379,23 +454,30 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
         //texture needed defined if at least 1 shader is using DEPTH or STENCIL, computed when reading technique list
         if (a_shared.texture_needed)
         {
-            
-            // export DEPTH and STENCIL once for all effects (must be done in 2D too !!)
-            // update DEPTH texture
 
-            if (a_shared.copied_textures[current_depth_handle].texresource_view.handle!=0)
-                g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.copied_textures[current_depth_handle].texresource_view, a_shared.copied_textures[current_depth_handle].texresource_view);
-            // update STENCIL texture
-            if (a_shared.copied_textures[current_depth_handle].texresource_view_stencil.handle != 0)
-                g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_depth_handle].texresource_view_stencil, a_shared.copied_textures[current_depth_handle].texresource_view_stencil);
-                // g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_depth_handle].texresource_view_stencil, a_shared.copied_textures[current_depth_handle].texresource_view_stencil);
-            // update MASK texture
-            if (a_shared.copied_textures[current_PlaneMask_handle].texresource_view.handle != 0)
-                g_shared_state->runtime->update_texture_bindings("MASK", a_shared.copied_textures[current_PlaneMask_handle].texresource_view, a_shared.copied_textures[current_PlaneMask_handle].texresource_view);
+
+            // export DEPTH and STENCIL once for all effects (must be done in 2D too !!)
+            {
+ 
+                // update DEPTH texture
+                if (a_shared.copied_textures[current_depth_handle].texresource_view.handle != 0)
+                    g_shared_state->runtime->update_texture_bindings("DEPTH", a_shared.copied_textures[current_depth_handle].texresource_view, a_shared.copied_textures[current_depth_handle].texresource_view);
+                
+                
+                // update STENCIL texture
+                if (a_shared.copied_textures[current_depth_handle].texresource_view_stencil.handle != 0)
+                    g_shared_state->runtime->update_texture_bindings("STENCIL", a_shared.copied_textures[current_depth_handle].texresource_view_stencil, a_shared.copied_textures[current_depth_handle].texresource_view_stencil);
+               
+                // update MASK texture
+                if (a_shared.copied_textures[current_PlaneMask_handle].texresource_view.handle != 0)
+                    g_shared_state->runtime->update_texture_bindings("MASK", a_shared.copied_textures[current_PlaneMask_handle].texresource_view, a_shared.copied_textures[current_PlaneMask_handle].texresource_view);
+                
 #if _DEBUG_LOGS
-            log_export_texture(display_to_use);
+                log_export_texture(display_to_use);
 
 #endif
+            }
+
         }
 
         /*
@@ -421,29 +503,48 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
 
             // render all activated techniques if not 2D mirror or in 2D (reshade is already rendering the effect) 
             
-                for (int i = 0; i < g_shared_state->technique_vector.size(); ++i)
+            if (flag_capture)
+            {
+                std::stringstream s;
+                s << "*** render_technique : before technique block" << "; ";
+                reshade::log::message(reshade::log::level::info, s.str().c_str());
+            }
+
+            for (int i = 0; i < g_shared_state->technique_vector.size(); ++i)
+            {
+                if (g_shared_state->technique_vector[i].VR_technique_status && (!g_shared_state->no_double || (g_shared_state->no_double && !g_shared_state->technique_vector[i].reshade_technique_status)))
                 {
-                
-                    if (g_shared_state->technique_vector[i].VR_technique_status && (!g_shared_state->no_double || (g_shared_state->no_double && !g_shared_state->technique_vector[i].reshade_technique_status)))
+                    //set uniform for technique if needed
+                    if (g_shared_state->technique_vector[i].uniform.size() > 0)
                     {
-                        //set uniform for technique if needed
-                        if (g_shared_state->technique_vector[i].uniform.size() > 0)
+                    
+                        for (const auto& u : g_shared_state->technique_vector[i].uniform)
                         {
-                    
-                            for (const auto& u : g_shared_state->technique_vector[i].uniform)
-                            {
-                                g_shared_state->runtime->set_uniform_value_float(u.unif_variable, *u.vrem_variable);
-                            }
-                    
+                            g_shared_state->runtime->set_uniform_value_float(u.unif_variable, *u.vrem_variable);
                         }
-                
-                        // engage effect (will be compiled at the first launch)
-                        g_shared_state->runtime->render_technique(g_shared_state->technique_vector[i].technique, cmd_list, last_RTV_saved.RV, last_RTV_saved.RV);
-    #if _DEBUG_LOGS
-                        log_effect(g_shared_state->technique_vector[i], cmd_list, last_RTV_saved.RV);
-    #endif
+                    
                     }
+                
+                    // engage effect (will be compiled at the first launch)
+
+                    {
+						//refresh technique if needed (for uniform update)
+                        if (g_shared_state->technique_vector[i].initialized == 0)
+                        {
+                            g_shared_state->runtime->set_technique_state(g_shared_state->technique_vector[i].technique, true);
+                            g_shared_state->technique_vector[i].initialized = 1;
+                            g_shared_state->runtime->set_technique_state(g_shared_state->technique_vector[i].technique, false);
+                        }
+
+                        g_shared_state->runtime->render_technique(g_shared_state->technique_vector[i].technique, cmd_list, last_RTV_saved.RV, last_RTV_saved.RV);
+                    }
+
+#if _DEBUG_LOGS
+                    log_effect(g_shared_state->technique_vector[i], cmd_list, last_RTV_saved.RV);
+#endif
+
                 }
+            }
         }
     }
 }
