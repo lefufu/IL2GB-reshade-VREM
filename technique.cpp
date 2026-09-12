@@ -503,13 +503,6 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
 
             // render all activated techniques if not 2D mirror or in 2D (reshade is already rendering the effect) 
             
-            if (flag_capture)
-            {
-                std::stringstream s;
-                s << "*** render_technique : before technique block" << "; ";
-                reshade::log::message(reshade::log::level::info, s.str().c_str());
-            }
-
             for (int i = 0; i < g_shared_state->technique_vector.size(); ++i)
             {
                 if (g_shared_state->technique_vector[i].VR_technique_status && (!g_shared_state->no_double || (g_shared_state->no_double && !g_shared_state->technique_vector[i].reshade_technique_status)))
@@ -529,13 +522,16 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
 
                     {
 						//refresh technique if needed (for uniform update)
+                        
                         if (g_shared_state->technique_vector[i].initialized == 0)
                         {
                             g_shared_state->runtime->set_technique_state(g_shared_state->technique_vector[i].technique, true);
                             g_shared_state->technique_vector[i].initialized = 1;
                             g_shared_state->runtime->set_technique_state(g_shared_state->technique_vector[i].technique, false);
                         }
+                        
 
+						
                         g_shared_state->runtime->render_technique(g_shared_state->technique_vector[i].technique, cmd_list, last_RTV_saved.RV, last_RTV_saved.RV);
                     }
 
@@ -545,6 +541,8 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
 
                 }
             }
+			//render all effects on render target => will it work in VR ?
+            //g_shared_state->runtime->render_effects(cmd_list, last_RTV_saved.RV, last_RTV_saved.RV);
         }
     }
 }

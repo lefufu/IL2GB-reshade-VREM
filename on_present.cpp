@@ -91,6 +91,8 @@ void intialize_counters()
     //for testing purpose
     a_shared.cb_inject_values.testVS = 0.0;
 
+    a_shared.second_call = false;
+
 }
 
 
@@ -140,6 +142,8 @@ void handle_keypress(effect_runtime* runtime)
         {
             a_shared.cb_inject_values.photo_on = 1.0;
         }
+
+       
     }
 
 

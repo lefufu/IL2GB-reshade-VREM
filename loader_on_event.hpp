@@ -87,6 +87,7 @@ struct AddonFunctions {
     void* on_reshade_present = nullptr;
     void* on_reshade_overlay = nullptr;
     void* on_reshade_reloaded_effects = nullptr;
+    void* on_reshade_render_technique = nullptr;
     void* on_reshade_set_technique_state = nullptr;
     void* on_destroy_pipeline = nullptr;
     void* on_init_swapchain = nullptr;
@@ -181,6 +182,7 @@ private:
         funcs.cleanup = (CleanupFunc)GetProcAddress(addon_module, "vrem_cleanup");
         funcs.on_reshade_present = GetProcAddress(addon_module, "vrem_on_reshade_present");
         funcs.on_reshade_reloaded_effects = GetProcAddress(addon_module, "vrem_on_reshade_reloaded_effects");
+        funcs.on_reshade_render_technique = GetProcAddress(addon_module, "vrem_on_reshade_render_technique");
 
         funcs.on_init_pipeline = GetProcAddress(addon_module, "vrem_on_init_pipeline");
         funcs.on_bind_pipeline = GetProcAddress(addon_module, "vrem_on_bind_pipeline");
@@ -348,6 +350,13 @@ static void on_reshade_reloaded_effects(effect_runtime* runtime) {
     if (g_reloader && g_reloader->get_functions().on_reshade_reloaded_effects) {
         typedef void (*Func)(effect_runtime*);
         ((Func)g_reloader->get_functions().on_reshade_reloaded_effects)(runtime);
+    }
+}
+
+static void on_reshade_render_technique(reshade::api::effect_runtime* runtime, reshade::api::effect_technique technique, reshade::api::command_list* cmd_list, reshade::api::resource_view rtv, reshade::api::resource_view rtv_srgb) {
+    if (g_reloader && g_reloader->get_functions().on_reshade_render_technique) {
+        typedef void (*Func)(effect_runtime*, effect_technique, command_list*, resource_view, resource_view);
+        ((Func)g_reloader->get_functions().on_reshade_render_technique)(runtime,  technique,  cmd_list,  rtv, rtv_srgb);
     }
 }
 

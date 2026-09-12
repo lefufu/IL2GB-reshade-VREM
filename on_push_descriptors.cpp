@@ -107,48 +107,80 @@ void dump_text_cb(command_list* cmd_list, shader_stage stages, pipeline_layout l
 // injection of texture 
 void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
 {
+
+	device* dev = cmd_list->get_device();
 #if _DEBUG_LOGS
 	//log infos
-	log_push_descriptor(stages, layout, param_index, update);
+	log_push_descriptor(stages, layout, param_index, update, dev);
 #endif
 
 
-	device* dev = cmd_list->get_device();
-
 	// get mask from ext plane  PS, filter by the number of resource
-	if (a_shared.last_feature == Feature::VS_ext_ownPlane && (update.count == 15 || update.count == 16))
+	if (a_shared.last_feature == Feature::VS_ext_ownPlane && (update.count == 15 || update.count == 16 || update.count == 18))
 	{
-		//default for update.count == 16
-		uint32_t text_num = 10;
-		uint32_t depth_num = 12;
-		if (update.count == 15)
+		uint32_t text_num = 0;
+		uint32_t depth_num = 0;
+
+		//default for update.count == 16 for no MSAA
+		if (update.count == 16 && a_shared.cb_inject_values.MSAA == 0.0)
+		{
+			text_num = 10;
+			depth_num = 12;
+		}
+
+		if (update.count == 15 && a_shared.cb_inject_values.MSAA == 0.0)
 		{
 			text_num = 9;
 			depth_num = 11;
 		}
 
-		// in some case the resource view handle is null, skip these cases
-		if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0)
+		if (update.count == 18 && (a_shared.cb_inject_values.MSAA == 2.0 || a_shared.cb_inject_values.MSAA == 4.0))
 		{
-
-			// to retrieve infos for pushing texture in bind_pipeline
-			current_PlaneMask_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "PlaneMask", false);
+			text_num = 15;
+			depth_num = 17;
 		}
 
-
-		if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[depth_num].handle != 0)
+		if (text_num)
 		{
+			if ((a_shared.cb_inject_values.MSAA > 0 && !a_shared.second_call) || a_shared.cb_inject_values.MSAA == 0)
+			{
+#if _DEBUG_LOGS				
+				if (g_shared_state->debug && flag_capture)
+				{
+					std::stringstream s;
+					s << "+++ get_texture, update.count " << update.count << ", text_num = " << text_num << ", depth_num = " << depth_num << ", a_shared.second_call = " << a_shared.second_call << ";";
+					reshade::log::message(reshade::log::level::info, s.str().c_str());
+				}
+#endif				
+				// in some case the resource view handle is null, skip these cases
+				if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[text_num].handle != 0)
+				{
 
-			// to retrieve infos for pushing texture in bind_pipeline
-			current_depth_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, depth_num, "Depth", false);
+					// to retrieve infos for pushing texture in bind_pipeline
+					current_PlaneMask_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "PlaneMask", false);
+				}
+
+
+				if (reinterpret_cast<const reshade::api::resource_view*>(update.descriptors)[depth_num].handle != 0)
+				{
+
+					// to retrieve infos for pushing texture in bind_pipeline
+					current_depth_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, depth_num, "Depth", false);
+				}
+
+				//free the blocking for MSAA second call
+				if (a_shared.second_call)
+				{
+					a_shared.second_call = false;
+				}
+			}
 		}
-
 
 	}
 
 	// get photo texture, it should be T4 and the same for all frame and all display
-	if (a_shared.last_feature == Feature::VS_ownPlane && a_shared.cb_inject_values.photo_on && !a_shared.photo_copied)
-	//if (a_shared.last_feature == Feature::VS_ownPlane && a_shared.cb_inject_values.photo_on )
+	//if (a_shared.last_feature == Feature::VS_ownPlane && a_shared.cb_inject_values.photo_on && !a_shared.photo_copied)
+	if (a_shared.last_feature == Feature::VS_ownPlane && a_shared.cb_inject_values.photo_on )
 	{
 		uint32_t text_num = 4;
 		// get only texture when needed (widht = 1024, format = bc2_unorm)
@@ -157,6 +189,7 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 		src_resource_view_texture = static_cast<const reshade::api::resource_view*>(update.descriptors)[text_num];
 		resource scr_resource = dev->get_resource_from_view(src_resource_view_texture);
 		resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
+
 
 		//copy texure having size and mips level, tha last one is the good one!
 		if (src_resource_desc.texture.width == 1024 && src_resource_desc.texture.levels == 11 )
@@ -168,6 +201,9 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 
 				// to retrieve infos for pushing texture in bind_pipeline
 				current_Photo_handle = copy_texture_from_desc(cmd_list, stages, layout, param_index, update, text_num, "Photo", false);
+				if (current_Photo_handle)
+					a_shared.photo_copied = true;
+
 			}
 			// compute max. of texture displayed in order to cycle, if VR count only for left eye
 			if (a_shared.count_display == 0) a_shared.current_photo_number = a_shared.current_photo_number + 1;

@@ -5,7 +5,7 @@
 // and a dll containing the mod logic itselve. Mod settings are in uniforms of a technique
 // 
 // ----------------------------------------------------------------------------------------
-//  data shared between the mod and the shaders using CB 
+// on_reshade_render_technique : disable technique rendering
 // ----------------------------------------------------------------------------------------
 // 
 // (c) Lefuneste.
@@ -40,63 +40,56 @@
 // * ShortFuse https://github.com/clshortfuse/renodx
 // 
 /////////////////////////////////////////////////////////////////////////
-#pragma once
 
-// CB number to be injected in the shaders
-static const int CBINDEX = 13;
-static const int CPERFRAME_INDEX = 6;
+#include <reshade.hpp>
 
-// texture number to be injected in the shaders for depth/stencil
-static const int RVINDEX = 3;
+#include "loader_addon_shared.h"
+#include "addon_functions.h"
+#include "addon_objects.h"
+#include "addon_logs.h"
 
-// size of ShaderInjectData
-// static const int CBSIZE = 44;
-static const int CBSIZE = 32;
-// Must be 32bit aligned
-struct ShaderInjectData {
-	float testFlag; //0.x
-	float sightFactor; //0.y
-	float testGlobal; //0.z
-	float maskSun; //0.w
-	float count_display; //1.x
-	float mapMode; //1.y
-	float max_display; //1.z
-	float sightEye; //1.w
-	float photo_scale; //2.x 
-	float photo_XPOS; //2.y
-	float photo_YPOS; //2.z
-	float photo_on; //2.w
-	float disable_triangle; //3.x
-	float grey_icons; //3.y
-	float grey_level; //3.z
-	float mask_icon; //3.w
-	float testVS; //4.x
-	float map_bright; //4.y
-	float night_mode; //4.z
-	float clock_scale; //4.w
-	float clock_XPOS; //5.x
-	float clock_YPOS; //5.y
-	float clock_hours_flag; //5.z
-	float clock_hours; //5.w
-	float clock_mins; //6.x
-	float clock_secs; //6.y
-	float clock_display; //6.z 
-	float smoke_reduce; //6.w 
-	float MSAA; //7.x
-	float dunnmy1; //7.y
-	float dunnmy2; //7.z
-	float dunnmy3; //7.w
-	/*
-	float NS430Xpos; //8.x
-	float NS430Ypos; //8.y
-	float NS430Scale; //8.z
-	float NS430Convergence; //8.w
-	float NVGSize; //9.x
-	float GUIYScale; //9.y
-	float GUItodraw; //9.z
-	float NVGYPos; //9.w
-	float TADSNight; //10.x
-	float TADSDay; //10.y
-	float gCockpitIBL; //10.z
-	float dunmmy2; //10.w */
-};
+#include "to_string.hpp"
+
+using namespace reshade::api;
+
+
+
+#ifdef _DEBUG
+extern "C" {
+#endif
+	// *******************************************************************************************************
+	// vrem_on_reshade_render_technique() : to call when effects are reloaded, should not do aything before real effect compilation (another call from on_present)
+	// called a lot !n
+	VREM_EXPORT void vrem_on_reshade_render_technique(reshade::api::effect_runtime* runtime, reshade::api::effect_technique technique, reshade::api::command_list* cmd_list, reshade::api::resource_view rtv, reshade::api::resource_view rtv_srgb)
+	{
+
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_render_technique started");
+#endif
+
+		// browse the list of techniques to see if this one is in the list of techniques to skip
+		/*
+        for (auto& t : g_shared_state->technique_vector)
+        {
+            if (t.technique == technique)
+            {
+                return true;
+            }
+        }
+		*/
+
+		//if (a_shared.render_technique && a_shared.technique_compiled)
+		{
+			reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_render_technique : technique rendering skipped");
+			//return true; // skip rendering of the technique
+		}
+		//return false; // reshade will render the technique as usual
+
+#if _DEBUG_CRASH 
+		reshade::log::message(reshade::log::level::info, "addon - vrem_on_reshade_render_technique ended");
+#endif
+
+	}
+#ifdef _DEBUG
+}
+#endif

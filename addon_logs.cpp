@@ -412,45 +412,7 @@ void log_mirror_view()
 
 }
 
-void log_push_descriptor(shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update)
-{
-	if (g_shared_state->debug_log && flag_capture)
-	{
-		std::stringstream s;
-		s << "on_push_descriptors(" << to_string(stages) << ", " << (void*)layout.handle << ", " << param_index << ", { " << to_string(update.type) << ", " << update.binding << ", " << update.count << " })";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-		s.str("");
-		s.clear();
-
-		if (update.type == descriptor_type::shader_resource_view)
-		{
-			// add info on textures hash
-			for (uint32_t i = 0; i < update.count; ++i)
-			{
-				auto item = static_cast<const reshade::api::resource_view*>(update.descriptors)[i];
-				s << "=> on_push_descriptors(), resource_view[" << i << "],  handle = " << reinterpret_cast<void*>(item.handle) << " })";
-				reshade::log::message(reshade::log::level::info, s.str().c_str());
-				s.str("");
-				s.clear();
-			}
-		}
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-	}
-}
-
-void log_creation_start(std::string texture_name)
-{
-
-	if (g_shared_state->debug)
-	//if (g_shared_state->debug_log && flag_capture)
-	{
-		std::stringstream s;
-		s << " create resources and resource views to copy " << texture_name << ", count_display = " << a_shared.count_display << ";";
-		reshade::log::message(reshade::log::level::info, s.str().c_str());
-	}
-}
-
-void log_texture(std::stringstream *s, resource_desc check_new_res)
+void log_texture(std::stringstream* s, resource_desc check_new_res)
 {
 	switch (check_new_res.type) {
 	default:
@@ -472,6 +434,65 @@ void log_texture(std::stringstream *s, resource_desc check_new_res)
 	}
 	*s << ";";
 }
+
+void log_push_descriptor(shader_stage stages, pipeline_layout layout, uint32_t param_index, const descriptor_table_update& update, device* dev)
+{
+	if (g_shared_state->debug_log && flag_capture)
+	{
+		std::stringstream s;
+		s << "on_push_descriptors(" << to_string(stages) << ", " << (void*)layout.handle << ", " << param_index << ", { " << to_string(update.type) << ", " << update.binding << ", " << update.count << " })";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+		s.str("");
+		s.clear();
+
+
+		if (update.type == descriptor_type::shader_resource_view)
+		{
+			// add info on textures hash
+			for (uint32_t i = 0; i < update.count; ++i)
+			{
+				auto item = static_cast<const reshade::api::resource_view*>(update.descriptors)[i];
+
+				reshade::api::resource_view src_resource_view_texture;
+				src_resource_view_texture = static_cast<const reshade::api::resource_view*>(update.descriptors)[i];
+				if (src_resource_view_texture == 0)
+				{
+					s << "=> on_push_descriptors(), resource_view[" << i << "],  handle = " << reinterpret_cast<void*>(item.handle) << ", texture view is null; ";
+					reshade::log::message(reshade::log::level::info, s.str().c_str());
+					s.str("");
+					s.clear();
+					continue;
+				}
+				else
+				{
+					resource scr_resource = dev->get_resource_from_view(src_resource_view_texture);
+					resource_desc src_resource_desc = dev->get_resource_desc(scr_resource);
+
+					s << "=> on_push_descriptors(), resource_view[" << i << "],  handle = " << reinterpret_cast<void*>(item.handle) << ", texture width = " << src_resource_desc.texture.width << ", texture height = " << src_resource_desc.texture.height << ", texture levels = " << src_resource_desc.texture.levels << "; ";
+					log_texture(&s, src_resource_desc);
+					reshade::log::message(reshade::log::level::info, s.str().c_str());
+					s.str("");
+					s.clear();
+				}
+
+			}
+		}
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+void log_creation_start(std::string texture_name)
+{
+
+	if (g_shared_state->debug && flag_capture)
+	//if (g_shared_state->debug_log && flag_capture)
+	{
+		std::stringstream s;
+		s << " create resources and resource views to copy " << texture_name << ", count_display = " << a_shared.count_display << ";";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
 
 void log_resource_created(std::string texture_name, device* dev, resource_desc check_new_res, uint64_t handle)
 {
@@ -607,7 +628,10 @@ void log_texture_injected(std::string texture_name, uint64_t handle, bool depth_
 void log_error_creating_view()
 {
 
-	reshade::log::message(reshade::log::level::error, "Error when creating resources or resources view");
+	if (g_shared_state->debug_log && flag_capture)
+	{
+		reshade::log::message(reshade::log::level::error, "Error when creating resources or resources view");
+	}
 }
 
 void log_create_RVlayout()
@@ -1256,6 +1280,22 @@ void log_begin_effects()
 	{
 		std::stringstream s;
 		s << "addon - reshade begin effect, set uniform values if needed;";
+		reshade::log::message(reshade::log::level::info, s.str().c_str());
+	}
+}
+
+
+
+void log_MSAA(float msaafactor)
+{
+	if (g_shared_state->debug_log && flag_capture)
+	{
+		std::stringstream s;
+		if (msaafactor > 1.0f)
+			s << "addon - vrem_on_bind_pipeline : MSAA "<< msaafactor << "detected;";
+		else
+			s << "addon - vrem_on_bind_pipeline : no MSAA detected;";
+
 		reshade::log::message(reshade::log::level::info, s.str().c_str());
 	}
 }

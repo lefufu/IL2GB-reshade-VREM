@@ -192,6 +192,10 @@ enum class Feature : uint32_t
 	PS_icon_text = 12,
 	PS_icon = 13,
 	PS_lastGlobal = 14,
+	PS_smoke = 15,
+	PS_MSAA2x = 16,
+	PS_MSAA4x = 17,
+	PS_MSAA0x = 18,
 	VS_test = 98,
 	VS_dump = 99,
 	//old things for compatibility
@@ -247,8 +251,11 @@ inline std::unordered_map<Feature, std::string> debug_feature_name = {
 	{Feature::VS_test, "VS_test"},
 	{Feature::PS_lastGlobal, "PS_lastGlobal"},
 	{Feature::PS_VR_GUI, "PS_VR_GUI"},
-	
-	
+	{Feature::PS_smoke, "PS_smoke"},
+	{Feature::PS_MSAA0x, "PS_MSAA0x"},
+	{Feature::PS_MSAA2x, "PS_MSAA2x"},
+	{Feature::PS_MSAA4x, "PS_MSAA4x"},
+
 };
 
 //*****************************************************************************
@@ -363,11 +370,13 @@ struct saved_RenderTargetView {
 	uint32_t height = 0;
 };
 
+/*
 // to read texture from file
 struct AddonText {
       reshade::api::resource      resource = {  };
       reshade::api::resource_view rView     = {  };
  };
+ */
 
 struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 {
@@ -493,8 +502,10 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	//texture readed from file
 	bool texture_to_read = true;
 	//stopwatch
-	struct AddonText stopWatchText;
+	//struct AddonText stopWatchText;
 
+	//handle double call for MSAA
+	bool second_call = false;
 
 };
 
@@ -538,22 +549,30 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 {
 
 	// ** get maks for own plane, t8 should be OK
-	//own plane texture
-	{0xf7fce9a6, Shader_Definition(action_log | action_get_text  , Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
-	//cockpit+test
-	{0x63ba565f, Shader_Definition(action_log| action_get_text| action_replace , Feature::VS_ownPlane, L"test_far_VS.cso", 0, {SET_PHOTO, SET_TESTVS })},
+	//own plane texture for mask
+	{0xf7fce9a6, Shader_Definition(action_log | action_get_text | action_dump , Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	//cockpit+test for photo
+	{0x63ba565f, Shader_Definition(action_log| action_get_text| action_replace, Feature::VS_ownPlane, L"test_far_VS.cso", 0, {SET_PHOTO, SET_TESTVS })},
 
-	// external only
+
+	//MSAA2X PS shader specific to cockpit view (MSAA edges) to define MSAA mode
+	{0x1f3c7d8e, Shader_Definition(action_log , Feature::PS_ownPlane, L"", 0, {SET_MISC})},
+	
+	// external only (not used ?)
 	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
 
 	//global PS before the one below, used to get render target
+	{0x580a46fa, Shader_Definition(action_log, Feature::PS_MSAA0x, L"", 0, {SET_TECHNIQUE})},
+	{0x786513c1, Shader_Definition(action_log, Feature::PS_MSAA2x, L"", 0, {SET_TECHNIQUE})},
+	{0x2649e6bc, Shader_Definition(action_log, Feature::PS_MSAA4x, L"", 0, {SET_TECHNIQUE})},
+	
+	//global PS before the one below, used to get render target
 	{0xe2d95d7a, Shader_Definition(action_track_RT, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
-
 	//last global PS, to postpone rendering of technique
-	{0xe2d95d7a, Shader_Definition(action_log, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
+	//{0xe2d95d7a, Shader_Definition(action_log, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
 
 	//global PS for image modification (last PS), used to set eye, display mask for debug. Its render target is used for effect
-	{0x9f694be6, Shader_Definition(action_replace | action_injectText | action_log | action_renderTechnique, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG, SET_TECHNIQUE, SET_STOPWATCH })},
+	{0x9f694be6, Shader_Definition(action_replace | action_injectText | action_log | action_renderTechnique, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG, SET_TECHNIQUE, SET_STOPWATCH, SET_PHOTO })},
 
 	//VR mirror
 	{0x39aa3616, Shader_Definition(action_log, Feature::PS_VRMirror, L"", 0, {SET_DEFAULT})},
@@ -572,8 +591,15 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// icon text
 	{0xdcb7b073, Shader_Definition(action_replace | action_injectText , Feature::PS_icon_text, L"icon_text_PS.cso", 0, {SET_ICON})},
 
-	//to dump textures & CB (currenlty filled : VS for global PS)
-	//{0xdf640d43, Shader_Definition(action_dump , Feature::VS_dump, L"", 0, {SET_DEFAULT})},
+	// smoke & fire PS
+	{0xBDD87098, Shader_Definition(action_replace , Feature::PS_smoke, L"smoke_PS.cso", 0, {SET_MISC})},
+	{0xb516b9e1, Shader_Definition(action_replace , Feature::PS_smoke, L"fire1_PS.cso", 0, {SET_MISC})},
+	{0x7a0f314a, Shader_Definition(action_replace , Feature::PS_smoke, L"fire3_PS.cso", 0, {SET_MISC})},
+
+	
+
+	//to dump textures & CB (currenlty filled : VS_smoke)
+	// {0x66fc3b4b, Shader_Definition(action_dump , Feature::VS_dump, L"", 0, {SET_DEFAULT})},
 
 	// test
 	{0x3b7d44c2, Shader_Definition(action_replace , Feature::VS_test, L"test_near_VS.cso", 0, {SET_TESTVS})},
@@ -624,14 +650,13 @@ static const std::unordered_map<std::string, float*> var_mapping = {
 	{"var_clock_XPOS", &a_shared.cb_inject_values.clock_XPOS},
 	{"var_clock_YPOS", &a_shared.cb_inject_values.clock_YPOS},
 	{"set_clock_hours", &a_shared.cb_inject_values.clock_hours_flag},
-	/*{"var_clock_hours", &a_shared.cb_inject_values.clock_hours},
-	{"var_clock_mins", &a_shared.cb_inject_values.clock_mins},
-	{"var_clock_secs", &a_shared.cb_inject_values.clock_secs},*/
-	
+	{"var_smoke_reduce", &a_shared.cb_inject_values.smoke_reduce},
+
 	// to share variables from addon to technique 
 	{"unif_display", &a_shared.cb_inject_values.count_display},
 	//test
 	{"unif_test", &a_shared.cb_inject_values.sightEye},
+	{"unif_MSAA", &a_shared.cb_inject_values.MSAA},
 };
 
 

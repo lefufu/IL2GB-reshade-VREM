@@ -65,9 +65,9 @@ struct addon_shared a_shared;
 extern "C" __declspec(dllexport) const char* NAME = "IL2 GB VREM";
 extern "C" __declspec(dllexport) const char* DESCRIPTION = 
 #if _DEBUG
-"VR Enhancer Mod for IL2 Great Battle v 1.3 (DEBUG - Hot Reload Enabled).";
+"VR Enhancer Mod for IL2 Great Battle v 1.3.1 (DEBUG - Hot Reload Enabled).";
 #else
-"VR Enhancer Mod for IL2 Great Battle v 1.3 (RELEASE).";
+"VR Enhancer Mod for IL2 Great Battle v 1.3.1 (RELEASE).";
 #endif
 
 #ifndef _DEBUG
@@ -215,7 +215,6 @@ static void draw_settings(reshade::api::effect_runtime* runtime)
             {
                 // save technique status in file (in get_settings_from_uniform)
                 g_shared_state_l.request_update_file = true;
-                reshade::log::message(reshade::log::level::info, "****** loader - change status of technique => request save *******");
             }
             ImGui::EndDisabled();
         }
@@ -327,6 +326,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
         reshade::register_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
+		//reshade::register_event<reshade::addon_event::reshade_render_technique>(on_reshade_render_technique);
 #else
         // Mode Release : pas de reloader
         reshade::log::message(reshade::log::level::info, "VREM Loader: RELEASE MODE - Direct calls");
@@ -349,6 +349,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(vrem_on_bind_render_targets_and_depth_stencil);
         reshade::register_event<reshade::addon_event::reshade_overlay>(vrem_on_reshade_overlay); 
         reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(vrem_on_reshade_reloaded_effects); 
+        //reshade::register_event<reshade::addon_event::reshade_render_technique>(vrem_on_reshade_render_technique);
 #endif
 		reshade::register_event<reshade::addon_event::reshade_set_technique_state>(on_reshade_set_technique_state);																										   
         //reshade::register_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline); 
@@ -381,6 +382,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
         reshade::unregister_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
+        //reshade::unregister_event<reshade::addon_event::reshade_render_technique>(on_reshade_render_technique);
 #else
         //cleaning of addon variables if no hot reload
         vrem_cleanup(nullptr);
@@ -399,6 +401,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(vrem_on_bind_render_targets_and_depth_stencil);
         reshade::unregister_event<reshade::addon_event::reshade_overlay>(vrem_on_reshade_overlay);
         reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(vrem_on_reshade_reloaded_effects);
+        //reshade::unregister_event<reshade::addon_event::reshade_render_technique>(vrem_on_reshade_render_technique);
 #endif
         reshade::unregister_event<reshade::addon_event::reshade_set_technique_state>(on_reshade_set_technique_state);
 		//reshade::unregister_event<reshade::addon_event::destroy_pipeline>(on_destroy_pipeline);

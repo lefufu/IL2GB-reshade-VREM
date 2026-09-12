@@ -89,11 +89,43 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 			a_shared.wait_for_technique = a_shared.wait_for_technique + 1;
 
 		// to avoid copy photo for all frames
-		a_shared.photo_copied = true;
+		//a_shared.photo_copied = true;
 
 		// log infos
 #if _DEBUG_LOGS  
 		log_start_monitor("Last global");
+#endif
+	}
+
+	if (it->second.feature == Feature::PS_MSAA0x)
+	{
+		a_shared.cb_inject_values.MSAA = 0.0;
+
+#if _DEBUG_LOGS  
+		// log infos
+		log_MSAA(0.0);
+#endif
+	}
+
+	if (it->second.feature == Feature::PS_MSAA2x)
+	{
+		a_shared.cb_inject_values.MSAA = 2.0;
+		a_shared.second_call = true;
+
+#if _DEBUG_LOGS  
+		// log infos
+		log_MSAA(2.0);
+#endif
+	}
+
+	if (it->second.feature == Feature::PS_MSAA4x)
+	{
+		a_shared.cb_inject_values.MSAA = 4.0;
+		a_shared.second_call = true;
+
+#if _DEBUG_LOGS  
+		// log infos
+		log_MSAA(4.0);
 #endif
 	}
 }
@@ -126,6 +158,7 @@ void process_action_injectText(command_list* commandList, std::unordered_map<uin
 		{
 			//inject photo texture
 			inject_texture(commandList, 6, current_Photo_handle, "Photo");
+
 		}
 	}
 

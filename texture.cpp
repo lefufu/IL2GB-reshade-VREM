@@ -74,7 +74,8 @@ void read_textures(reshade::api::device* device)
 		replace_path /= RESHADE_ADDON_SHADER_LOAD_DIR;
 		replace_path /= STOPWATCH_TEXT_NAME;
 
-		bool status = LoadPNG::LoadPNGTexture(device, replace_path, a_shared.stopWatchText.resource, a_shared.stopWatchText.rView);
+		// bool status = LoadPNG::LoadPNGTexture(device, replace_path, a_shared.stopWatchText.resource, a_shared.stopWatchText.rView);
+		bool status = LoadPNG::LoadPNGTexture(device, replace_path, current_StopWatch_handle);
    }
 
 
@@ -89,8 +90,9 @@ void delete_loaded_textures(reshade::api::device* device)
 {
 
 	// delete stopwatch texture
-	LoadPNG::DestroyPNGTexture(device,  a_shared.stopWatchText.resource, a_shared.stopWatchText.rView);
-
+	// LoadPNG::DestroyPNGTexture(device,  a_shared.stopWatchText.resource, a_shared.stopWatchText.rView);
+	if (current_StopWatch_handle != 0)
+		LoadPNG::DestroyPNGTexture(device, a_shared.copied_textures[current_StopWatch_handle].texresource, a_shared.copied_textures[current_StopWatch_handle].texresource_view);
 
 }
 
@@ -142,8 +144,16 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 		// create a new single ressource containing stencil and depth
 #if _DEBUG_LOGS
 		log_creation_start(textName);
-#endif
 
+		if (flag_capture)
+		{
+			std::stringstream s;
+			s << "*** create resources src_resource_desc.type =  " << to_string(src_resource_desc.type) << ", texture.format = " << to_string(src_resource_desc.texture.format) << ";";
+			log_texture(&s, src_resource_desc);
+			reshade::log::message(reshade::log::level::info, s.str().c_str());
+		}
+#endif	
+		
 		bool status = dev->create_resource(src_resource_desc, nullptr, resource_usage::shader_resource, &text_copy.texresource, nullptr);
 		if (!status)
 		{
@@ -220,8 +230,11 @@ uint64_t copy_texture_from_desc(command_list* cmd_list, shader_stage stages, pip
 		//log copy done
 		log_copy_texture(textName, scr_resource.handle);
 #endif
+		return scr_resource.handle;
 	}
-	return scr_resource.handle;
+	else
+		return 0;
+	
 }
 /*
 // *******************************************************************************************************

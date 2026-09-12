@@ -29,6 +29,7 @@
     <ClCompile Include="on_init_swapchain.cpp" />
     <ClCompile Include="on_reshade_overlay.cpp" />
     <ClCompile Include="on_reshade_reloaded_effects.cpp" />
+    <ClCompile Include="on_reshade_render_technique.cpp" />
     <ClCompile Include="save_render_target.cpp" />
     <ClCompile Include="save_shader_code.cpp" />
     <ClCompile Include="save_texture_image.cpp" />
