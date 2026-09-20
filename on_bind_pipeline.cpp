@@ -77,6 +77,16 @@ void process_action_log(std::unordered_map<uint64_t, Shader_Definition>::iterato
 #endif
 	}
 
+	if (it->second.feature == Feature::PS_VR_GUI)
+	{
+		a_shared.cb_inject_values.VRmode = 1.0;
+
+#if _DEBUG_LOGS  
+		// log infos
+		log_VRmode();
+#endif
+	}
+
 	// PS for own plane 
 	// if (it->second.feature == Feature::PS_lastGlobal)
 	if (it->second.feature == Feature::PS_global)
@@ -168,7 +178,7 @@ void process_action_injectText(command_list* commandList, std::unordered_map<uin
 	{
 		if (it->second.feature == Feature::PS_global || it->second.feature == Feature::PS_VR_GUI) 
 		{
-			//inject stopwatch texture as t9
+			//inject stopwatch texture as t7
 			inject_texture(commandList, 7, current_StopWatch_handle, "StopWatch");
 		}
 	}
@@ -297,7 +307,7 @@ void process_action_action_trackRT(std::unordered_map<uint64_t, Shader_Definitio
 
 //*******************************************************************************
 // setup flags to render technique
-void process_action_action_renderTechnique(std::unordered_map<uint64_t, Shader_Definition>::iterator it)
+void process_action_action_renderTechnique(std::unordered_map<uint64_t, Shader_Definition>::iterator it, command_list* commandList)
 {
 	
 	if (g_shared_state->technique_enabled)
@@ -306,6 +316,26 @@ void process_action_action_renderTechnique(std::unordered_map<uint64_t, Shader_D
 		a_shared.track_for_render_target = false;
 
 		a_shared.render_technique = true;
+
+		if (a_shared.cb_inject_values.MSAA > 0)
+		{
+			//try to render technique and push it to a texture
+			short int display_to_use = a_shared.count_display - 1;
+			//render_technique(display_to_use, commandList);
+
+			//copy the render target in g_color_resolve.resolved_srv_srgb)
+			//update_color_binding_from_backbuffer(g_shared_state->runtime, commandList, last_RTV_saved.RV);
+
+			//inject g_color_resolve.resolved_srv_srgb in texture t8
+
+			a_shared.copied_textures[last_RTV_saved.RenderTargetResource.handle].texresource_view = g_color_resolve.resolved_srv;
+			a_shared.copied_textures[last_RTV_saved.RenderTargetResource.handle].texresource = g_color_resolve.resolved_tex;
+			a_shared.copied_textures[last_RTV_saved.RenderTargetResource.handle].texresource_view_stencil = reshade::api::resource_view{};
+
+			inject_texture(commandList, 8, last_RTV_saved.RenderTargetResource.handle, "Render target");
+
+		}
+
 #if _DEBUG_LOGS  
 		// log infos
 		log_start_monitor("end of traking Render target");
@@ -403,7 +433,7 @@ extern "C" {
 			if (it->second.action & action_track_RT) process_action_action_trackRT(it);
 
 			// setup flag for trendering technique
-			if (it->second.action & action_renderTechnique) process_action_action_renderTechnique(it);
+			if (it->second.action & action_renderTechnique) process_action_action_renderTechnique(it, commandList);
 
 			// trace current feature for next call
 			a_shared.last_feature = it->second.feature;

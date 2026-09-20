@@ -98,6 +98,7 @@ extern "C" {
 				// get information of render target
 				last_RTV_saved.copied = true;
 				last_RTV_saved.RV = rtvs[0];
+				last_RTV_saved.RenderTargetResource = scr_resource;
 				last_RTV_saved.width = src_resource_desc.texture.width;
 				last_RTV_saved.height = src_resource_desc.texture.height;
 

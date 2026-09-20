@@ -471,7 +471,17 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
                 // update MASK texture
                 if (a_shared.copied_textures[current_PlaneMask_handle].texresource_view.handle != 0)
                     g_shared_state->runtime->update_texture_bindings("MASK", a_shared.copied_textures[current_PlaneMask_handle].texresource_view, a_shared.copied_textures[current_PlaneMask_handle].texresource_view);
+               
+                //if MSAA update COLOR texture (backbuffer) 
+                //if (a_shared.cb_inject_values.MSAA > 0 && a_shared.cb_inject_values.VRmode == 0)
+                if (a_shared.cb_inject_values.MSAA > 0)
+                {
+                    
+					// copy backbuffer to a texture in g_color_resolve.resolved_srv_srgb
+                    update_color_binding_from_backbuffer(g_shared_state->runtime, cmd_list, last_RTV_saved.RV);
+                    //g_shared_state->runtime->update_texture_bindings("COLOR", g_color_resolve.resolved_srv, g_color_resolve.resolved_srv_srgb);
                 
+                }
 #if _DEBUG_LOGS
                 log_export_texture(display_to_use);
 
@@ -496,6 +506,7 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
 #endif
         }
         */
+
 
         // render all activated techniques if not 2D mirror or in 2D (reshade is already rendering the effect) 
         // if (!g_shared_state->no_double)
@@ -523,16 +534,16 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
                     {
 						//refresh technique if needed (for uniform update)
                         
-                        if (g_shared_state->technique_vector[i].initialized == 0)
+                        //if (g_shared_state->technique_vector[i].initialized == 0 && g_shared_state->no_double)
+                        if (g_shared_state->technique_vector[i].initialized == 0 )
                         {
                             g_shared_state->runtime->set_technique_state(g_shared_state->technique_vector[i].technique, true);
                             g_shared_state->technique_vector[i].initialized = 1;
                             g_shared_state->runtime->set_technique_state(g_shared_state->technique_vector[i].technique, false);
                         }
-                        
-
-						
+                       						
                         g_shared_state->runtime->render_technique(g_shared_state->technique_vector[i].technique, cmd_list, last_RTV_saved.RV, last_RTV_saved.RV);
+                        a_shared.vrem_technique_rendered_flag = true;
                     }
 
 #if _DEBUG_LOGS

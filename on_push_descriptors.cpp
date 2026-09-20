@@ -128,13 +128,19 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 			depth_num = 12;
 		}
 
+		if (update.count == 16 && a_shared.cb_inject_values.MSAA == 2.0 && a_shared.cb_inject_values.VRmode == 1.0)
+		{
+			text_num = 13;
+			depth_num = 15;
+		}
+
 		if (update.count == 15 && a_shared.cb_inject_values.MSAA == 0.0)
 		{
 			text_num = 9;
 			depth_num = 11;
 		}
 
-		if (update.count == 18 && (a_shared.cb_inject_values.MSAA == 2.0 || a_shared.cb_inject_values.MSAA == 4.0))
+		if ( update.count == 18 && ((a_shared.cb_inject_values.MSAA == 2.0 || a_shared.cb_inject_values.MSAA == 4.0) && a_shared.cb_inject_values.VRmode == 0.0))
 		{
 			text_num = 15;
 			depth_num = 17;
@@ -142,7 +148,7 @@ void get_texture(command_list* cmd_list, shader_stage stages, pipeline_layout la
 
 		if (text_num)
 		{
-			if ((a_shared.cb_inject_values.MSAA > 0 && !a_shared.second_call) || a_shared.cb_inject_values.MSAA == 0)
+			if ((a_shared.cb_inject_values.MSAA > 0 && !a_shared.second_call && !a_shared.cb_inject_values.VRmode) || a_shared.cb_inject_values.MSAA == 0 || a_shared.cb_inject_values.VRmode)
 			{
 #if _DEBUG_LOGS				
 				if (g_shared_state->debug && flag_capture)
@@ -252,7 +258,8 @@ extern "C" {
 		// do not engage effect if option not selected 
 
 
-		if (a_shared.render_technique && a_shared.draw_passed && a_shared.VREM_setting[SET_TECHNIQUE])
+		// if (a_shared.render_technique && a_shared.draw_passed && a_shared.VREM_setting[SET_TECHNIQUE] && a_shared.cb_inject_values.MSAA == 0)
+		if (a_shared.render_technique && a_shared.draw_passed && a_shared.VREM_setting[SET_TECHNIQUE] )
 		{
 		
 			render_technique(display_to_use, cmd_list);

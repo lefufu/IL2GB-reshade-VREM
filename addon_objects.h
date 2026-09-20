@@ -301,6 +301,21 @@ static const uint32_t VK_STOPWATCH_MOD_RESET = VK_CONTROL;
 //*****************************************************************************
 // not to be modified : declaration of class & objects used for the mod logic and shared between functions
 // 
+
+// to handle render target copy for technique ingestion in MSAA
+struct ColorResolveState
+{
+	reshade::api::resource        resolved_tex = {};
+	reshade::api::resource_view   resolved_srv = {};
+	reshade::api::resource_view   resolved_srv_srgb = {};
+	uint32_t                      width = 0;
+	uint32_t                      height = 0;
+	reshade::api::format          format = reshade::api::format::unknown;
+	bool                          is_msaa_source = false;
+};
+
+extern ColorResolveState g_color_resolve;
+
 // structure to contain actions to process shader/pipeline
 struct Shader_Definition {
 	uint32_t action; //what is to be done for the pipeline/shader
@@ -366,6 +381,7 @@ struct resource_DS_copy {
 struct saved_RenderTargetView {
 	bool copied = false;
 	resource_view RV = {};
+	resource RenderTargetResource = {};
 	uint32_t width = 0;
 	uint32_t height = 0;
 };
@@ -507,6 +523,9 @@ struct __declspec(uuid("6598CABA-191D-4E3C-8D3E-F61427F2BA51")) addon_shared
 	//handle double call for MSAA
 	bool second_call = false;
 
+	//TODO DEBUG
+	bool vrem_technique_rendered_flag = false;
+
 };
 
 extern struct addon_shared a_shared;
@@ -550,7 +569,11 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 
 	// ** get maks for own plane, t8 should be OK
 	//own plane texture for mask
-	{0xf7fce9a6, Shader_Definition(action_log | action_get_text | action_dump , Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	// {0xf7fce9a6, Shader_Definition(action_log | action_get_text | action_dump , Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	// 
+	// Essai : track RT pour rendre les effets dans PS1
+	{0xf7fce9a6, Shader_Definition(action_log | action_get_text | action_track_RT , Feature::VS_ext_ownPlane, L"", 0, {SET_DEFAULT})},
+	//
 	//cockpit+test for photo
 	{0x63ba565f, Shader_Definition(action_log| action_get_text| action_replace, Feature::VS_ownPlane, L"test_far_VS.cso", 0, {SET_PHOTO, SET_TESTVS })},
 
@@ -561,19 +584,26 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	// external only (not used ?)
 	{0xd966cd46, Shader_Definition(action_log, Feature::PS_external, L"", 0, {SET_DEFAULT})},
 
-	//global PS before the one below, used to get render target
-	{0x580a46fa, Shader_Definition(action_log, Feature::PS_MSAA0x, L"", 0, {SET_TECHNIQUE})},
-	{0x786513c1, Shader_Definition(action_log, Feature::PS_MSAA2x, L"", 0, {SET_TECHNIQUE})},
-	{0x2649e6bc, Shader_Definition(action_log, Feature::PS_MSAA4x, L"", 0, {SET_TECHNIQUE})},
+	//cockpit + external PS 2D + VR (image darkened includign ground ans sky when disabled)
+	{0x580a46fa, Shader_Definition(action_log, Feature::PS_MSAA0x, L"", 0, {SET_TECHNIQUE, SET_MISC})},
+	// cockpit +external PS MSAA 2D only 
+	{0x786513c1, Shader_Definition(action_log, Feature::PS_MSAA2x, L"", 0, {SET_TECHNIQUE, SET_MISC})},
+	{0x2649e6bc, Shader_Definition(action_log, Feature::PS_MSAA4x, L"", 0, {SET_TECHNIQUE, SET_MISC})},
+	// cockpit +external PS MSAA VR only 
+	{0x69312ddc, Shader_Definition(action_log, Feature::PS_MSAA2x, L"", 0, {SET_TECHNIQUE, SET_MISC})},
 	
+	// essais : pre global utilisé pour render technique 
 	//global PS before the one below, used to get render target
-	{0xe2d95d7a, Shader_Definition(action_track_RT, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
+	// {0xe2d95d7a, Shader_Definition(action_track_RT, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
+	{0xe2d95d7a, Shader_Definition(action_renderTechnique, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
+
 	//last global PS, to postpone rendering of technique
 	//{0xe2d95d7a, Shader_Definition(action_log, Feature::PS_preGlobal, L"", 0, {SET_TECHNIQUE})},
 
+	// essais : pre global utilisé pour render technique 
 	//global PS for image modification (last PS), used to set eye, display mask for debug. Its render target is used for effect
-	{0x9f694be6, Shader_Definition(action_replace | action_injectText | action_log | action_renderTechnique, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG, SET_TECHNIQUE, SET_STOPWATCH, SET_PHOTO })},
-
+	// {0x9f694be6, Shader_Definition(action_replace | action_injectText | action_log | action_renderTechnique, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG, SET_TECHNIQUE, SET_STOPWATCH, SET_PHOTO })},
+	{0x9f694be6, Shader_Definition(action_replace | action_injectText | action_log, Feature::PS_global, L"Global.cso", 0, {SET_DEFAULT, SET_DEBUG, SET_TECHNIQUE, SET_STOPWATCH, SET_PHOTO })},
 	//VR mirror
 	{0x39aa3616, Shader_Definition(action_log, Feature::PS_VRMirror, L"", 0, {SET_DEFAULT})},
 	
@@ -584,7 +614,7 @@ inline std::unordered_map<uint32_t, Shader_Definition> shader_by_hash =
 	{0x27fca33b, Shader_Definition(action_replace | action_injectText , Feature::PS_sun, L"mask_sun.cso", 0, {SET_MISC})},
 	
 	//VR GUI
-	{0x7379c02c, Shader_Definition(action_replace | action_injectText , Feature::PS_VR_GUI, L"VR_GUI_PS.cso", 0, {SET_PHOTO})},
+	{0x7379c02c, Shader_Definition(action_replace | action_injectText | action_log , Feature::PS_VR_GUI, L"VR_GUI_PS.cso", 0, {SET_PHOTO})},
 	
 	// icons
 	{0x8c76b5ee, Shader_Definition(action_replace | action_injectText , Feature::PS_icon, L"icon_PS.cso", 0, {SET_ICON})},

@@ -277,6 +277,7 @@ static void on_reshade_present(effect_runtime* runtime) {
 #endif
 }
 
+
 //*******************************************************************************
 // declaration of addon 
 
@@ -326,7 +327,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
         reshade::register_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
-		//reshade::register_event<reshade::addon_event::reshade_render_technique>(on_reshade_render_technique);
+		reshade::register_event<reshade::addon_event::resolve_texture_region>(on_resolve_texture_region);
+        
+
 #else
         // Mode Release : pas de reloader
         reshade::log::message(reshade::log::level::info, "VREM Loader: RELEASE MODE - Direct calls");
@@ -382,7 +385,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
         reshade::unregister_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
-        //reshade::unregister_event<reshade::addon_event::reshade_render_technique>(on_reshade_render_technique);
+        // Fix: Explicit cast to resolve overload ambiguity
+        reshade::unregister_event<reshade::addon_event::resolve_texture_region>(on_resolve_texture_region);
 #else
         //cleaning of addon variables if no hot reload
         vrem_cleanup(nullptr);
