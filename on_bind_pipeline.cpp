@@ -317,6 +317,7 @@ void process_action_action_renderTechnique(std::unordered_map<uint64_t, Shader_D
 
 		a_shared.render_technique = true;
 
+		/*
 		if (a_shared.cb_inject_values.MSAA > 0)
 		{
 			//try to render technique and push it to a texture
@@ -335,6 +336,7 @@ void process_action_action_renderTechnique(std::unordered_map<uint64_t, Shader_D
 			inject_texture(commandList, 8, last_RTV_saved.RenderTargetResource.handle, "Render target");
 
 		}
+		*/
 
 #if _DEBUG_LOGS  
 		// log infos

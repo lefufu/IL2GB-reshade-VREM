@@ -65,9 +65,9 @@ struct addon_shared a_shared;
 extern "C" __declspec(dllexport) const char* NAME = "IL2 GB VREM";
 extern "C" __declspec(dllexport) const char* DESCRIPTION = 
 #if _DEBUG
-"VR Enhancer Mod for IL2 Great Battle v 1.3.1 (DEBUG - Hot Reload Enabled).";
+"VR Enhancer Mod for IL2 Great Battle v 1.4 (DEBUG - Hot Reload Enabled).";
 #else
-"VR Enhancer Mod for IL2 Great Battle v 1.3.1 (RELEASE).";
+"VR Enhancer Mod for IL2 Great Battle v 1.4 (RELEASE).";
 #endif
 
 #ifndef _DEBUG
@@ -327,7 +327,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::register_event<reshade::addon_event::reshade_overlay>(on_reshade_overlay);
         reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
         reshade::register_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
-		reshade::register_event<reshade::addon_event::resolve_texture_region>(on_resolve_texture_region);
+		//reshade::register_event<reshade::addon_event::resolve_texture_region>(on_resolve_texture_region);
         
 
 #else
@@ -386,7 +386,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
         reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(on_reshade_reloaded_effects);
         reshade::unregister_event<reshade::addon_event::init_swapchain>(on_init_swapchain);
         // Fix: Explicit cast to resolve overload ambiguity
-        reshade::unregister_event<reshade::addon_event::resolve_texture_region>(on_resolve_texture_region);
+        //reshade::unregister_event<reshade::addon_event::resolve_texture_region>(on_resolve_texture_region);
 #else
         //cleaning of addon variables if no hot reload
         vrem_cleanup(nullptr);

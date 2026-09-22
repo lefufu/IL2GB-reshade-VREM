@@ -471,7 +471,8 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
                 // update MASK texture
                 if (a_shared.copied_textures[current_PlaneMask_handle].texresource_view.handle != 0)
                     g_shared_state->runtime->update_texture_bindings("MASK", a_shared.copied_textures[current_PlaneMask_handle].texresource_view, a_shared.copied_textures[current_PlaneMask_handle].texresource_view);
-               
+                 
+                /*
                 //if MSAA update COLOR texture (backbuffer) 
                 //if (a_shared.cb_inject_values.MSAA > 0 && a_shared.cb_inject_values.VRmode == 0)
                 if (a_shared.cb_inject_values.MSAA > 0)
@@ -482,6 +483,7 @@ void render_technique(short int display_to_use, command_list* cmd_list) {
                     //g_shared_state->runtime->update_texture_bindings("COLOR", g_color_resolve.resolved_srv, g_color_resolve.resolved_srv_srgb);
                 
                 }
+                */
 #if _DEBUG_LOGS
                 log_export_texture(display_to_use);
 
